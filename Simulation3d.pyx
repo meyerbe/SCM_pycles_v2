@@ -10,6 +10,8 @@ try:
 except:
     import pickle as pickle # for Python 3 users
 # __
+cimport Grid
+from Grid import Grid
 # from Initialization import InitializationFactory, AuxillaryVariables
 # from Thermodynamics import ThermodynamicsFactory
 # from Microphysics import MicrophysicsFactory
@@ -20,7 +22,6 @@ except:
 # from ConditionalStatistics import ConditionalStatistics
 # from Thermodynamics cimport LatentHeat
 # cimport ParallelMPI
-# cimport Grid
 # cimport PrognosticVariables
 # cimport DiagnosticVariables
 # cimport ScalarAdvection
@@ -50,7 +51,8 @@ class Simulation3d:
 
     def initialize(self, namelist):
         # self.Pa = ParallelMPI.ParallelMPI(namelist)
-        # self.Gr = Grid.Grid(namelist, self.Pa)
+        self.Gr = Grid(namelist)
+        # self.Gr = Grid.Grid(namelist)
         # self.PV = PrognosticVariables.PrognosticVariables(self.Gr)
         # self.Ke = Kinematics.Kinematics()
         # self.DV = DiagnosticVariables.DiagnosticVariables()
@@ -176,34 +178,34 @@ class Simulation3d:
         # if not self.Restart.is_restart_run:
         #     self.force_io(self.Pa)
 
-        while (self.TS.t < self.TS.t_max):
-            time1 = time.time()
-            print('time: '+str(self.TS.t))
-            # for self.TS.rk_step in xrange(self.TS.n_rk_steps):
-            #     self.Ke.update(self.Gr,PV_)
-
-                # self.Th.update(self.Gr,self.Ref,PV_,DV_)
-                # self.Micro.update(self.Gr, self.Ref, PV_, DV_, self.TS, self.Pa )
-                # self.SA.update(self.Gr,self.Ref,PV_, DV_,  self.Pa)
-                # self.MA.update(self.Gr,self.Ref,PV_,self.Pa)
-                # self.Sur.update(self.Gr, self.Ref,self.PV, self.DV,self.Pa,self.TS)
-                # self.SGS.update(self.Gr,self.DV,self.PV, self.Ke, self.Sur,self.Pa)
-                # self.Damping.update(self.Gr, self.Ref,self.PV, self.DV, self.Pa)
-                # self.SD.update(self.Gr,self.Ref,self.PV,self.DV)
-                # self.MD.update(self.Gr,self.Ref,self.PV,self.DV,self.Ke)
-                # self.Fo.update(self.Gr, self.Ref, self.PV, self.DV, self.Pa)
-                # self.Ra.update(self.Gr, self.Ref, self.PV, self.DV, self.Sur, self.TS, self.Pa)
-                # self.Budg.update(self.Gr,self.Ra, self.Sur, self.TS, self.Pa)
-                # self.TS.update(self.Gr, self.PV, self.Pa)
-                # PV_.Update_all_bcs(self.Gr, self.Pa)
-                # self.Pr.update(self.Gr, self.Ref, self.DV, self.PV, self.Pa)
-                # self.TS.adjust_timestep(self.Gr, self.PV, self.DV,self.Pa)
-                # self.io()
-                #PV_.debug(self.Gr,self.Ref,self.StatsIO,self.Pa)
-                # self.Pa.root_print('rk_step: '+str(self.TS.rk_step)+' (total steps: '+str(self.TS.n_rk_steps)+')')
-            time2 = time.time()
-            print('T = ' + str(self.TS.t) + ' dt = ' + str(self.TS.dt) +
-                               ' cfl_max = ' + str(self.TS.cfl_max) + ' walltime = ' + str(time2 - time1))
+        # while (self.TS.t < self.TS.t_max):
+        #     time1 = time.time()
+        #     print('time: '+str(self.TS.t))
+        #     # for self.TS.rk_step in xrange(self.TS.n_rk_steps):
+        #     #     self.Ke.update(self.Gr,PV_)
+        #
+        #         # self.Th.update(self.Gr,self.Ref,PV_,DV_)
+        #         # self.Micro.update(self.Gr, self.Ref, PV_, DV_, self.TS, self.Pa )
+        #         # self.SA.update(self.Gr,self.Ref,PV_, DV_,  self.Pa)
+        #         # self.MA.update(self.Gr,self.Ref,PV_,self.Pa)
+        #         # self.Sur.update(self.Gr, self.Ref,self.PV, self.DV,self.Pa,self.TS)
+        #         # self.SGS.update(self.Gr,self.DV,self.PV, self.Ke, self.Sur,self.Pa)
+        #         # self.Damping.update(self.Gr, self.Ref,self.PV, self.DV, self.Pa)
+        #         # self.SD.update(self.Gr,self.Ref,self.PV,self.DV)
+        #         # self.MD.update(self.Gr,self.Ref,self.PV,self.DV,self.Ke)
+        #         # self.Fo.update(self.Gr, self.Ref, self.PV, self.DV, self.Pa)
+        #         # self.Ra.update(self.Gr, self.Ref, self.PV, self.DV, self.Sur, self.TS, self.Pa)
+        #         # self.Budg.update(self.Gr,self.Ra, self.Sur, self.TS, self.Pa)
+        #         # self.TS.update(self.Gr, self.PV, self.Pa)
+        #         # PV_.Update_all_bcs(self.Gr, self.Pa)
+        #         # self.Pr.update(self.Gr, self.Ref, self.DV, self.PV, self.Pa)
+        #         # self.TS.adjust_timestep(self.Gr, self.PV, self.DV,self.Pa)
+        #         # self.io()
+        #         #PV_.debug(self.Gr,self.Ref,self.StatsIO,self.Pa)
+        #         # self.Pa.root_print('rk_step: '+str(self.TS.rk_step)+' (total steps: '+str(self.TS.n_rk_steps)+')')
+        #     time2 = time.time()
+        #     print('T = ' + str(self.TS.t) + ' dt = ' + str(self.TS.dt) +
+        #                        ' cfl_max = ' + str(self.TS.cfl_max) + ' walltime = ' + str(time2 - time1))
 
         # self.Restart.cleanup()
 
