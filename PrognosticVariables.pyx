@@ -8,7 +8,8 @@ from cpython.mem cimport PyMem_Malloc, PyMem_Realloc, PyMem_Free
 import numpy as np
 cimport numpy as np
 cimport mpi4py.libmpi as mpi
-# from NetCDFIO cimport NetCDFIO_Stats
+import sys
+from NetCDFIO cimport NetCDFIO_Stats
 
 # import Grid
 # cimport ParallelMPI
@@ -29,55 +30,66 @@ cdef class PrognosticVariables:
         self.velocity_names_directional = ["" for dim in range(Gr.dims)]
         return
 
-    # cpdef add_variable(self,name,units,bc_type,var_type,ParallelMPI.ParallelMPI Pa):
-    #
-    #     #Store names and units
-    #     self.name_index[name] = self.nv
-    #     self.index_name.append(name)
-    #     self.units[name] = units
-    #     self.nv = len(self.name_index.keys())
-    #
-    #     #Add bc type to array
-    #     if bc_type == "sym":
-    #         self.bc_type = np.append(self.bc_type,[1.0])
-    #     elif bc_type =="asym":
-    #         self.bc_type = np.append(self.bc_type,[-1.0])
-    #     else:
-    #         Pa.root_print("Not a valid bc_type. Killing simulation now!")
+
+
+    cpdef add_variable(self,name,units,bc_type,var_type):
+
+        #Store names and units
+        self.name_index[name] = self.nv
+        self.index_name.append(name)
+        self.units[name] = units
+        self.nv = len(self.name_index.keys())
+
+        #Add bc type to array
+        if bc_type == "sym":
+            self.bc_type = np.append(self.bc_type,[1.0])
+        elif bc_type =="asym":
+            self.bc_type = np.append(self.bc_type,[-1.0])
+        else:
+            print("Not a valid bc_type. Killing simulation now!")
+            sys.exit()
+            # Pa.kill()
+
+        #Set the type of the variable being added 0=velocity; 1=scalars
+        if var_type == "velocity":
+            self.var_type = np.append(self.var_type,0)
+            self.nv_velocities += 1
+        elif var_type == "scalar":
+            self.var_type = np.append(self.var_type,1)
+            self.nv_scalars += 1
+        else:
+            print("Not a valid var_type. Killing simulation now!")
+            sys.exit()
     #         Pa.kill()
-    #
-    #     #Set the type of the variable being added 0=velocity; 1=scalars
-    #     if var_type == "velocity":
-    #         self.var_type = np.append(self.var_type,0)
-    #         self.nv_velocities += 1
-    #     elif var_type == "scalar":
-    #         self.var_type = np.append(self.var_type,1)
-    #         self.nv_scalars += 1
-    #     else:
-    #         Pa.root_print("Not a valid var_type. Killing simulation now!")
-    #         Pa.kill()
-    #
-    #     return
-    #
-    # cpdef set_velocity_direction(self,name,Py_ssize_t direction,ParallelMPI.ParallelMPI Pa):
-    #     try:
-    #         self.velocity_directions[direction] = self.get_nv(name)
-    #     except:
-    #         Pa.root_print('problem setting velocity '+ name+' to direction '+ str(direction))
-    #         Pa.root_print('Killing simulation now!')
-    #         Pa.kill()
-    #
-    #     self.velocity_names_directional[direction] = name
-    #     return
-    #
-    # cpdef initialize(self,Grid.Grid Gr, NetCDFIO_Stats NS, ParallelMPI.ParallelMPI Pa):
-    #     self.values = np.zeros((self.nv*Gr.dims.npg),dtype=np.double,order='c')
-    #     self.tendencies = np.zeros((self.nv*Gr.dims.npg),dtype=np.double,order='c')
-    #
-    #     #Add prognostic variables to Statistics IO
-    #     Pa.root_print('Setting up statistical output files for Prognostic Variables')
-    #     for var_name in self.name_index.keys():
-    #         #Add mean profile
+
+        return
+
+
+
+    cpdef set_velocity_direction(self,name,Py_ssize_t direction):
+        try:
+            self.velocity_directions[direction] = self.get_nv(name)
+        except:
+            print('problem setting velocity ' + name + ' to direction ' + str(direction))
+            print('Killing simulation now!')
+            sys.exit()
+            # Pa.kill()
+
+        self.velocity_names_directional[direction] = name
+        return
+
+
+
+    # cpdef initialize(self, Gr, NetCDFIO_Stats NS):
+    cpdef initialize(self, Gr):
+        self.values = np.zeros((self.nv*Gr.npg),dtype=np.double,order='c')
+        self.tendencies = np.zeros((self.nv*Gr.npg),dtype=np.double,order='c')
+
+        #Add prognostic variables to Statistics IO
+        print('Setting up statistical output files for Prognostic Variables')
+        for var_name in self.name_index.keys():
+            #Add mean profile
+            pass
     #         NS.add_profile(var_name+'_mean',Gr,Pa)
     #
     #         if var_name == 'u' or var_name == 'v':
@@ -98,9 +110,9 @@ cdef class PrognosticVariables:
     #
     #     if 'qt' in self.name_index.keys() and 's' in self.name_index.keys():
     #         NS.add_profile('qt_s_product_mean', Gr, Pa)
-    #     return
+        return
     #
-    # cpdef stats_io(self, Grid.Grid Gr, ReferenceState.ReferenceState RS ,NetCDFIO_Stats NS, ParallelMPI.ParallelMPI Pa):
+    # cpdef stats_io(self, Grid.Grid Gr, ReferenceState.ReferenceState RS ,NetCDFIO_Stats NS):
     #     cdef:
     #         Py_ssize_t var_shift, var_shift2
     #         double [:] tmp
@@ -147,7 +159,7 @@ cdef class PrognosticVariables:
     #
     #     return
     #
-    # cpdef debug(self, Grid.Grid Gr, ReferenceState.ReferenceState RS ,NetCDFIO_Stats NS, ParallelMPI.ParallelMPI Pa):
+    # cpdef debug(self, Grid.Grid Gr, ReferenceState.ReferenceState RS ,NetCDFIO_Stats NS):
     #     '''
     #
     #     This function is for debugging purpuses. It prints the maximum and minimum of each variable and their
@@ -180,7 +192,7 @@ cdef class PrognosticVariables:
     #
     #
     #
-    # cdef void update_all_bcs(self,Grid.Grid Gr, ParallelMPI.ParallelMPI Pa):
+    # cdef void update_all_bcs(self,Grid.Grid Gr):
     #
     #     cdef double* send_buffer
     #     cdef double* recv_buffer
@@ -232,7 +244,7 @@ cdef class PrognosticVariables:
     #         PyMem_Free(recv_buffer)
     #     return
     #
-    # cpdef Update_all_bcs(self,Grid.Grid Gr, ParallelMPI.ParallelMPI Pa ):
+    # cpdef Update_all_bcs(self,Grid.Grid Gr):
     #       self.update_all_bcs(Gr, Pa)
     #       return
     #

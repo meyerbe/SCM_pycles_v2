@@ -1,4 +1,4 @@
-# from NetCDFIO cimport NetCDFIO_Stats
+from NetCDFIO cimport NetCDFIO_Stats
 cimport Grid
 # cimport ParallelMPI
 # cimport ReferenceState
@@ -30,23 +30,24 @@ cdef class PrognosticVariables:
         cdef double [:] tendencies
         cdef long [:] velocity_directions
         list velocity_names_directional
-    #
-    # cpdef add_variable(self,name,units,bc_type,var_type,ParallelMPI.ParallelMPI Pa)
-    # cpdef initialize(self,Grid.Grid Gr, NetCDFIO_Stats NS, ParallelMPI.ParallelMPI Pa)
+
+    cpdef add_variable(self,name,units,bc_type,var_type)
+    # cpdef initialize(self, Gr, NetCDFIO_Stats NS)
+    cpdef initialize(self, Gr)
     # cdef:
-    #     void update_all_bcs(self, Grid.Grid Gr, ParallelMPI.ParallelMPI Pa)
-    # cpdef Update_all_bcs(self,Grid.Grid Gr, ParallelMPI.ParallelMPI Pa)
-    # cpdef debug(self, Grid.Grid Gr, ReferenceState.ReferenceState RS ,NetCDFIO_Stats NS, ParallelMPI.ParallelMPI Pa)
-    # cpdef set_velocity_direction(self,name,Py_ssize_t direction,ParallelMPI.ParallelMPI Pa)
-    # cdef inline Py_ssize_t get_nv(self, str variable_name):
-    #     return self.name_index[variable_name]
-    # cdef inline Py_ssize_t get_varshift(self, Grid.Grid Gr, str variable_name):
-    #     return self.name_index[variable_name] * Gr.dims.npg
+    #     void update_all_bcs(self, Grid.Grid Gr)
+    # cpdef Update_all_bcs(self,Grid.Grid Gr)
+    # cpdef debug(self, Grid.Grid Gr, ReferenceState.ReferenceState RS ,NetCDFIO_Stats NS)
+    cpdef set_velocity_direction(self,name,Py_ssize_t direction)
+    cdef inline Py_ssize_t get_nv(self, str variable_name):
+        return self.name_index[variable_name]
+    cdef inline Py_ssize_t get_varshift(self, Gr, str variable_name):
+        return self.name_index[variable_name] * Gr.dims.npg
     # cpdef get_variable_array(self,name,Grid.Grid Gr)
     # cpdef get_tendency_array(self,name,Grid.Grid Gr)
     # cpdef tend_nan(self,PA,message)
     # cpdef val_nan(self,PA,message)
     # cpdef val_bounds(self,var_name,Grid.Grid Gr)
-    # cpdef stats_io(self, Grid.Grid Gr, ReferenceState.ReferenceState RS, NetCDFIO_Stats NS, ParallelMPI.ParallelMPI Pa)
+    # cpdef stats_io(self, Grid.Grid Gr, ReferenceState.ReferenceState RS, NetCDFIO_Stats NS)
     # cpdef restart(self, Grid.Grid Gr, Restart.Restart Re)
     # cpdef init_from_restart(self, Grid.Grid Gr, Restart.Restart Re)

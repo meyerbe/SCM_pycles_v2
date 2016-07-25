@@ -86,12 +86,12 @@ class Simulation3d:
         # __
 
         # Add new prognostic variables
-        # self.PV.add_variable('u', 'm/s', "sym", "velocity", self.Pa)
-        # self.PV.set_velocity_direction('u', 0, self.Pa)
-        # self.PV.add_variable('v', 'm/s', "sym", "velocity", self.Pa)
-        # self.PV.set_velocity_direction('v', 1, self.Pa)
-        # self.PV.add_variable('w', 'm/s', "asym", "velocity", self.Pa)
-        # self.PV.set_velocity_direction('w', 2, self.Pa)
+        self.PV.add_variable('u', 'm/s', "sym", "velocity")
+        self.PV.set_velocity_direction('u', 0)
+        self.PV.add_variable('v', 'm/s', "sym", "velocity")
+        self.PV.set_velocity_direction('v', 1)
+        self.PV.add_variable('w', 'm/s', "asym", "velocity")
+        self.PV.set_velocity_direction('w', 2)
 
         # AuxillaryVariables(namelist, self.PV, self.DV, self.Pa)
 
@@ -106,6 +106,7 @@ class Simulation3d:
         # self.Th.initialize(self.Gr, self.PV, self.DV, self.StatsIO, self.Pa)
         # self.Micro.initialize(self.Gr, self.PV, self.DV, self.StatsIO, self.Pa)
         # self.SGS.initialize(self.Gr,self.PV,self.StatsIO, self.Pa)
+        self.PV.initialize(self.Gr)
         # self.PV.initialize(self.Gr, self.StatsIO, self.Pa)
         # self.Ke.initialize(self.Gr, self.StatsIO, self.Pa)
 

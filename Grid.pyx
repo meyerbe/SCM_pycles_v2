@@ -25,10 +25,11 @@ class Grid:
 
     # Gr.dims.npd = n[0] * n[1] * n[2] ( = nx * ny * nz)            --> global number of pts in 3D grid
     # Gr.dims.npl = nl[0] * nl[1] * nl[2]                           --> local number of pts in 3D grid
-    # Gr.dims.npg = nlg[0] * nlg[1] * nlg[2]                        --> local number of pts in 3D grid incl. ghost pts
+    # Gr.dims.npg = nlg[0] * nlg[1] * nlg[2] ( = nxg * nyg * nzg )  --> local number of pts in 3D grid incl. ghost pts
 
 
     def __init__(self,namelist):
+        print('init Grid')
      #Global grid point nx, ny, nz
         self.dims = namelist['grid']['dims']
 
@@ -40,15 +41,25 @@ class Grid:
         self.dx = namelist['grid']['dx']
         self.dy = namelist['grid']['dy']
         self.dz = namelist['grid']['dz']
+        self.dxi = 1.0/self.dx
+        self.dyi = 1.0/self.dy
+        self.dzi = 1.0/self.dz
 
         #Get the dimensions of the physical domain
         self.lx = np.double(self.dx * self.nx)
         self.ly = np.double(self.dy * self.ny)
         self.lz = np.double(self.dz * self.nz)
 
-
         #The number of ghost points
         self.gw = namelist['grid']['gw']
+
+
+        self.nxg = self.nx + 2*self.gw
+        self.nyg = self.ny + 2*self.gw
+        self.nzg = self.nz + 2*self.gw
+
+        self.npd = np.max([self.nx,1])*np.max([self.ny,1])*np.max([self.nz,1])
+        self.npg = self.nxg * self.nyg * self.nzg
 
         return
 
