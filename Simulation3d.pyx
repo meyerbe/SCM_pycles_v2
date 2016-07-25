@@ -12,6 +12,7 @@ except:
 # __
 cimport Grid
 from Grid import Grid
+cimport PrognosticVariables
 # from Initialization import InitializationFactory, AuxillaryVariables
 # from Thermodynamics import ThermodynamicsFactory
 # from Microphysics import MicrophysicsFactory
@@ -22,7 +23,7 @@ from Grid import Grid
 # from ConditionalStatistics import ConditionalStatistics
 # from Thermodynamics cimport LatentHeat
 # cimport ParallelMPI
-# cimport PrognosticVariables
+
 # cimport DiagnosticVariables
 # cimport ScalarAdvection
 # cimport MomentumAdvection
@@ -51,9 +52,8 @@ class Simulation3d:
 
     def initialize(self, namelist):
         # self.Pa = ParallelMPI.ParallelMPI(namelist)
-        self.Gr = Grid(namelist)
-        # self.Gr = Grid.Grid(namelist)
-        # self.PV = PrognosticVariables.PrognosticVariables(self.Gr)
+        self.Gr = Grid(namelist)        # self.Gr = Grid.Grid(namelist)
+        self.PV = PrognosticVariables.PrognosticVariables(self.Gr)
         # self.Ke = Kinematics.Kinematics()
         # self.DV = DiagnosticVariables.DiagnosticVariables()
         # self.Pr = PressureSolver.PressureSolver()

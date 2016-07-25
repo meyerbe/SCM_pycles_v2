@@ -51,11 +51,11 @@ cdef class MomentumAdvection:
             Py_ssize_t shift_advecting
 
 
-        for i_advected in xrange(Gr.dims.dims):
+        for i_advected in xrange(Gr.dims):
             # Compute the shift to the starting location of the advected
             # velocity in the PV values array
             shift_advected = PV.velocity_directions[i_advected] * Gr.dims.npg
-            for i_advecting in xrange(Gr.dims.dims):
+            for i_advecting in xrange(Gr.dims):
 
                 # Compute the shift to the starting location of the advecting
                 # velocity in the PV values array
@@ -98,7 +98,7 @@ cdef class MomentumAdvection:
         :return: memory view type double rank-3
         '''
         cdef:
-            Py_ssize_t shift_flux = i_advected * Gr.dims.dims * Gr.dims.npg + i_advecting * Gr.dims.npg
+            Py_ssize_t shift_flux = i_advected * Gr.dims * Gr.dims.npg + i_advecting * Gr.dims.npg
             Py_ssize_t i, j, k, ijk, ishift, jshift
             Py_ssize_t istride = Gr.dims.nlg[1] * Gr.dims.nlg[2]
             Py_ssize_t jstride = Gr.dims.nlg[2]

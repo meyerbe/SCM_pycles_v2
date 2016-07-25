@@ -30,6 +30,8 @@ class Grid:
 
     def __init__(self,namelist):
      #Global grid point nx, ny, nz
+        self.dims = namelist['grid']['dims']
+
         self.nx = namelist['grid']['nx']
         self.ny = namelist['grid']['ny']
         self.nz = namelist['grid']['nz']

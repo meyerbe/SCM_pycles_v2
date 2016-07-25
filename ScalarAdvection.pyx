@@ -52,7 +52,7 @@ cdef class ScalarAdvection:
 
     cpdef initialize(self,Grid.Grid Gr, PrognosticVariables.PrognosticVariables PV, NetCDFIO_Stats NS, ParallelMPI.ParallelMPI Pa):
 
-        self.flux = np.zeros((PV.nv_scalars*Gr.dims.npg*Gr.dims.dims,),dtype=np.double,order='c')
+        self.flux = np.zeros((PV.nv_scalars*Gr.dims.npg*Gr.dims,),dtype=np.double,order='c')
 
         #Initialize output fields
         for i in xrange(PV.nv):
@@ -74,9 +74,9 @@ cdef class ScalarAdvection:
             if PV.var_type[i] == 1: #Only compute advection if variable i is a scalar
                 scalar_shift = i * Gr.dims.npg
                 #No rescaling of fluxes
-                for d in xrange(Gr.dims.dims): #Loop over the cardinal direction
+                for d in xrange(Gr.dims): #Loop over the cardinal direction
                     #The flux has a different shift since it is only for the scalars
-                    flux_shift = scalar_count * (Gr.dims.dims * Gr.dims.npg) + d * Gr.dims.npg
+                    flux_shift = scalar_count * (Gr.dims * Gr.dims.npg) + d * Gr.dims.npg
 
                     #Make sure that we get the velocity components in the correct order
                     #Check for a scalar-specific velocity
@@ -127,7 +127,7 @@ cdef class ScalarAdvection:
 
         for i in xrange(PV.nv):
             if PV.var_type[i] == 1:
-                flux_shift = scalar_count * (Gr.dims.dims * Gr.dims.npg) + d * Gr.dims.npg
+                flux_shift = scalar_count * (Gr.dims * Gr.dims.npg) + d * Gr.dims.npg
                 tmp = Pa.HorizontalMean(Gr, &self.flux[flux_shift])
                 for k in xrange(Gr.dims.gw,Gr.dims.nlg[2]-Gr.dims.gw):
                     tmp_interp[k] = 0.5*(tmp[k-1]+tmp[k])

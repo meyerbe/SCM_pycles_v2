@@ -54,7 +54,13 @@ _ext = Extension('Grid', ['Grid.pyx'], include_dirs=include_path,
                  extra_compile_args=extra_compile_args, libraries=libraries, library_dirs=library_dirs,
                  runtime_library_dirs=library_dirs)
 extensions.append(_ext)
-#
+
+_ext = Extension('PrognosticVariables', ['PrognosticVariables.pyx'], include_dirs=include_path,
+                 extra_compile_args=extra_compile_args, libraries=libraries, library_dirs=library_dirs,
+                 runtime_library_dirs=library_dirs)
+extensions.append(_ext)
+
+
 # _ext = Extension('Initialization', ['Initialization.pyx'], include_dirs=include_path,
 #                  extra_compile_args=extra_compile_args, libraries=libraries, library_dirs=library_dirs,
 #                  runtime_library_dirs=library_dirs)
@@ -90,17 +96,12 @@ extensions.append(_ext)
 #                  runtime_library_dirs=library_dirs)
 # extensions.append(_ext)
 
-
-
 # _ext = Extension('ParallelMPI', ['ParallelMPI.pyx'], include_dirs=include_path,
 #                  extra_compile_args=extra_compile_args, libraries=libraries, library_dirs=library_dirs,
 #                  runtime_library_dirs=library_dirs)
 # extensions.append(_ext)
 #
-# _ext = Extension('PrognosticVariables', ['PrognosticVariables.pyx'], include_dirs=include_path,
-#                  extra_compile_args=extra_compile_args, libraries=libraries, library_dirs=library_dirs,
-#                  runtime_library_dirs=library_dirs)
-# extensions.append(_ext)
+
 #
 # _ext = Extension('DiagnosticVariables', ['DiagnosticVariables.pyx'], include_dirs=include_path,
 #                  extra_compile_args=extra_compile_args, libraries=libraries, library_dirs=library_dirs,
