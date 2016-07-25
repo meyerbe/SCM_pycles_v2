@@ -53,7 +53,7 @@ class Grid:
         #The number of ghost points
         self.gw = namelist['grid']['gw']
 
-
+        #Compute the global dims
         self.nxg = self.nx + 2*self.gw
         self.nyg = self.ny + 2*self.gw
         self.nzg = self.nz + 2*self.gw
@@ -61,5 +61,49 @@ class Grid:
         self.npd = np.max([self.nx,1])*np.max([self.ny,1])*np.max([self.nz,1])
         self.npg = self.nxg * self.nyg * self.nzg
 
+
+        #Compute the coordinates
+        # self.compute_global_dims()
+        # self.compute_local_dims(Parallel)
+        self.compute_coordinates()
+
         return
 
+
+
+    def compute_coordinates(self):
+        '''
+        Compute the dimensional (with units) of meters coordiantes. x_half, y_half and z_half are
+        the grid cell center and x,y,z are at the grid cell edges.
+        :return:
+        '''
+
+        self.x_half = np.empty((self.ny+2*self.gw),dtype=np.double,order='c')
+        self.x = np.empty((self.nx+2*self.gw),dtype=np.double,order='c')
+
+        self.y_half = np.empty((self.ny+2*self.gw),dtype=np.double,order='c')
+        self.y = np.empty((self.ny+2*self.gw),dtype=np.double,order='c')
+
+        self.z_half = np.empty((self.nz+2*self.gw),dtype=np.double,order='c')
+        self.z = np.empty((self.nz+2*self.gw),dtype=np.double,order='c')
+
+        count = 0
+        for i in xrange(-self.gw,self.nz+self.gw,1):
+            self.z[count] = (i + 1) * self.dz
+            self.z_half[count] = (i+0.5)*self.dz
+            count += 1
+
+        count = 0
+        for i in xrange(-self.gw,self.ny+self.gw,1):
+            self.y[count] = (i + 1) * self.dy
+            self.y_half[count] = (i+0.5)*self.dy
+            count += 1
+
+        count = 0
+        for i in xrange(-self.gw,self.nx+self.gw,1):
+            self.x[count] = (i + 1) * self.dx
+            self.x_half[count] = (i+0.5)*self.dx
+            count += 1
+
+
+        return
