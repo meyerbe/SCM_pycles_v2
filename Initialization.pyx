@@ -208,7 +208,7 @@ def InitSullivanPatton(namelist,Grid.Grid Gr,PrognosticVariables.PrognosticVaria
         double t
 
         #Generate initial perturbations (here we are generating more than we need)
-        cdef double [:] theta_pert = np.random.random_sample(Gr.dims.npg)
+        cdef double [:] theta_pert = np.random.random_sample(Gr.dims.nzg)
         cdef double theta_pert_
 
     for k in xrange(Gr.dims.nlg[2]):
@@ -277,8 +277,8 @@ def InitBomex(namelist,Grid.Grid Gr,PrognosticVariables.PrognosticVariables PV,
         double [:] u = np.empty((Gr.dims.nlg[2]),dtype=np.double,order='c')
         Py_ssize_t count
 
-        theta_pert = (np.random.random_sample(Gr.dims.npg )-0.5)*0.1
-        qt_pert = (np.random.random_sample(Gr.dims.npg )-0.5)*0.025/1000.0
+        theta_pert = (np.random.random_sample(Gr.dims.nzg )-0.5)*0.1
+        qt_pert = (np.random.random_sample(Gr.dims.nzg )-0.5)*0.025/1000.0
 
     for k in xrange(Gr.dims.nlg[2]):
 
@@ -379,7 +379,7 @@ def InitGabls(namelist,Grid.Grid Gr, PrognosticVariables.PrognosticVariables PV,
 
         #Generate initial perturbations (here we are generating more than we need)
 
-        cdef double [:] theta_pert = np.random.random_sample(Gr.dims.npg)
+        cdef double [:] theta_pert = np.random.random_sample(Gr.dims.nzg)
         cdef double theta_pert_
 
     for k in xrange(Gr.dims.nlg[2]):
@@ -529,7 +529,7 @@ def InitDYCOMS_RF01(namelist,Grid.Grid Gr,PrognosticVariables.PrognosticVariable
 
     #Generate initial perturbations (here we are generating more than we need)
     np.random.seed(Pa.rank)
-    cdef double [:] theta_pert = np.random.random_sample(Gr.dims.npg)
+    cdef double [:] theta_pert = np.random.random_sample(Gr.dims.nzg)
     cdef double theta_pert_
 
     for i in xrange(Gr.dims.nlg[0]):
@@ -657,7 +657,7 @@ def InitDYCOMS_RF02(namelist,Grid.Grid Gr,PrognosticVariables.PrognosticVariable
 
     #Generate initial perturbations (here we are generating more than we need)
     np.random.seed(Pa.rank)
-    cdef double [:] theta_pert = np.random.random_sample(Gr.dims.npg)
+    cdef double [:] theta_pert = np.random.random_sample(Gr.dims.nzg)
     cdef double theta_pert_
 
     for i in xrange(Gr.dims.nlg[0]):
@@ -722,7 +722,7 @@ def InitSmoke(namelist,Grid.Grid Gr,PrognosticVariables.PrognosticVariables PV,
         double t
 
         #Generate initial perturbations (here we are generating more than we need)
-        cdef double [:] theta_pert = np.random.random_sample(Gr.dims.npg)
+        cdef double [:] theta_pert = np.random.random_sample(Gr.dims.nzg)
         cdef double theta_pert_
 
     for k in xrange(Gr.dims.nlg[2]):
@@ -806,8 +806,8 @@ def InitRico(namelist,Grid.Grid Gr,PrognosticVariables.PrognosticVariables PV,
         double [:] v = np.empty((Gr.dims.nlg[2]),dtype=np.double,order='c')
         Py_ssize_t count
 
-        theta_pert = (np.random.random_sample(Gr.dims.npg )-0.5)*0.1
-        qt_pert = (np.random.random_sample(Gr.dims.npg )-0.5) * 2.5e-5
+        theta_pert = (np.random.random_sample(Gr.dims.nzg )-0.5)*0.1
+        qt_pert = (np.random.random_sample(Gr.dims.nzg )-0.5) * 2.5e-5
 
     for k in xrange(Gr.dims.nlg[2]):
 
@@ -1109,7 +1109,7 @@ def InitCGILS(namelist, Grid.Grid Gr,PrognosticVariables.PrognosticVariables PV,
 
     #Generate initial perturbations (here we are generating more than we need)
     np.random.seed(Pa.rank)
-    cdef double [:] theta_pert = np.random.random_sample(Gr.dims.npg)
+    cdef double [:] theta_pert = np.random.random_sample(Gr.dims.nzg)
     cdef double theta_pert_
 
     # Here we fill in the 3D arrays
@@ -1227,7 +1227,7 @@ def InitZGILS(namelist, Grid.Grid Gr,PrognosticVariables.PrognosticVariables PV,
 
     #Generate initial perturbations (here we are generating more than we need)
     np.random.seed(Pa.rank)
-    cdef double [:] theta_pert = np.random.random_sample(Gr.dims.npg)
+    cdef double [:] theta_pert = np.random.random_sample(Gr.dims.nzg)
     cdef double theta_pert_
 
     # Here we fill in the 3D arrays
@@ -1283,7 +1283,7 @@ def InitSoares(namelist, Grid.Grid Gr,PrognosticVariables.PrognosticVariables PV
         double temp
 
         #Generate initial perturbations (here we are generating more than we need)      ??? where amplitude of perturbations given?
-        cdef double [:] theta_pert = np.random.random_sample(Gr.dims.npg)
+        cdef double [:] theta_pert = np.random.random_sample(Gr.dims.nzg)
         cdef double theta_pert_
 
 
@@ -1366,8 +1366,8 @@ def InitSoares_moist(namelist, Grid.Grid Gr,PrognosticVariables.PrognosticVariab
         Py_ssize_t count
 
         #Generate initial perturbations (here we are generating more than we need)      ??? where amplitude of perturbations given?
-        theta_pert = (np.random.random_sample(Gr.dims.npg )-0.5)*0.1
-        qt_pert = (np.random.random_sample(Gr.dims.npg )-0.5)*0.025/1000.0
+        theta_pert = (np.random.random_sample(Gr.dims.nzg )-0.5)*0.1
+        qt_pert = (np.random.random_sample(Gr.dims.nzg )-0.5)*0.025/1000.0
 
     for k in xrange(Gr.dims.nlg[2]):
         # Initial theta profile (Soares)

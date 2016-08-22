@@ -14,15 +14,15 @@ def main():
     del file_namelist
 
     if namelist['grid']['dims'] == 3:
-        main3d(namelist)
+        main1d(namelist)
 
     return
 
 
-def main3d(namelist):
-    import Simulation3d
+def main1d(namelist):
+    import Simulation1d
 
-    Simulation = Simulation3d.Simulation3d(namelist)
+    Simulation = Simulation1d.Simulation1d(namelist)
     Simulation.initialize(namelist)
     Simulation.run()
 

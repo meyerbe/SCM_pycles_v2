@@ -4,15 +4,12 @@
 #cython: initializedcheck=False
 #cython: cdivision=True
 
-cimport mpi4py.libmpi as mpi
-#cimport mpi4py.mpi_c as mpi
-# cimport ParallelMPI
 cimport numpy as np
 import numpy as np
 import time
 
 
-class Grid:
+cdef class Grid:
     '''
     A class for storing information about the LES grid.
     '''
@@ -29,46 +26,21 @@ class Grid:
 
 
     def __init__(self,namelist):
-        print('init Grid')
-     #Global grid point nx, ny, nz
-        self.dims = namelist['grid']['dims']
-
-        self.nx = namelist['grid']['nx']
-        self.ny = namelist['grid']['ny']
-        self.nz = namelist['grid']['nz']
-
-        #Get grid spacing from the imput file
-        self.dx = namelist['grid']['dx']
-        self.dy = namelist['grid']['dy']
+        #Get the grid spacing
         self.dz = namelist['grid']['dz']
-        self.dxi = 1.0/self.dx
-        self.dyi = 1.0/self.dy
+
+        #Set the inverse grid spacing
+
         self.dzi = 1.0/self.dz
 
-        #Get the dimensions of the physical domain
-        self.lx = np.double(self.dx * self.nx)
-        self.ly = np.double(self.dy * self.ny)
-        self.lz = np.double(self.dz * self.nz)
-
-        #The number of ghost points
+        #Get the grid dimensions and ghost points
         self.gw = namelist['grid']['gw']
+        self.nz = namelist['grid']['nz']
+        self.nzg = self.nz + 2 * self.gw
 
-        #Compute the global dims
-        self.nxg = self.nx + 2*self.gw
-        self.nyg = self.ny + 2*self.gw
-        self.nzg = self.nz + 2*self.gw
-
-        self.npd = np.max([self.nx,1])*np.max([self.ny,1])*np.max([self.nz,1])
-        self.npg = self.nxg * self.nyg * self.nzg
-
-
-        #Compute the coordinates
-        # self.compute_global_dims()
-        # self.compute_local_dims(Parallel)
         self.compute_coordinates()
 
         return
-
 
 
     def compute_coordinates(self):
@@ -77,13 +49,6 @@ class Grid:
         the grid cell center and x,y,z are at the grid cell edges.
         :return:
         '''
-
-        self.x_half = np.empty((self.ny+2*self.gw),dtype=np.double,order='c')
-        self.x = np.empty((self.nx+2*self.gw),dtype=np.double,order='c')
-
-        self.y_half = np.empty((self.ny+2*self.gw),dtype=np.double,order='c')
-        self.y = np.empty((self.ny+2*self.gw),dtype=np.double,order='c')
-
         self.z_half = np.empty((self.nz+2*self.gw),dtype=np.double,order='c')
         self.z = np.empty((self.nz+2*self.gw),dtype=np.double,order='c')
 
@@ -93,17 +58,5 @@ class Grid:
             self.z_half[count] = (i+0.5)*self.dz
             count += 1
 
-        count = 0
-        for i in xrange(-self.gw,self.ny+self.gw,1):
-            self.y[count] = (i + 1) * self.dy
-            self.y_half[count] = (i+0.5)*self.dy
-            count += 1
-
-        count = 0
-        for i in xrange(-self.gw,self.nx+self.gw,1):
-            self.x[count] = (i + 1) * self.dx
-            self.x_half[count] = (i+0.5)*self.dx
-            count += 1
-
-
         return
+

@@ -1,4 +1,3 @@
-cimport ParallelMPI as ParallelMPI
 cimport PrognosticVariables as PrognosticVariables
 cimport DiagnosticVariables as DiagnosticVariables
 cimport Grid as Grid

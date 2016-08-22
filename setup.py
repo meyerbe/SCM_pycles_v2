@@ -45,7 +45,7 @@ else:
     print('Unknown system platform: ' + sys.platform  + 'or unknown system name: ' + platform.node())
     sys.exit()
 
-_ext = Extension('Simulation3d', ['Simulation3d.pyx'], include_dirs=include_path,
+_ext = Extension('Simulation1d', ['Simulation1d.pyx'], include_dirs=include_path,
                      extra_compile_args=extra_compile_args, libraries=libraries, library_dirs=library_dirs,
                      runtime_library_dirs=library_dirs)
 extensions.append(_ext)
@@ -65,36 +65,38 @@ _ext = Extension('PrognosticVariables', ['PrognosticVariables.pyx'], include_dir
                  runtime_library_dirs=library_dirs)
 extensions.append(_ext)
 
+_ext = Extension('Thermodynamics', ['Thermodynamics.pyx'], include_dirs=include_path,
+                 extra_compile_args=extra_compile_args, libraries=libraries, library_dirs=library_dirs,
+                 runtime_library_dirs=library_dirs)
+extensions.append(_ext)
+
+_ext = Extension('ThermodynamicsDry', ['ThermodynamicsDry.pyx'], include_dirs=include_path,
+                 extra_compile_args=extra_compile_args, libraries=libraries, library_dirs=library_dirs,
+                 runtime_library_dirs=library_dirs)
+extensions.append(_ext)
+
+_ext = Extension('ThermodynamicsSA', ['ThermodynamicsSA.pyx'], include_dirs=include_path,
+                 extra_compile_args=extra_compile_args, libraries=libraries, library_dirs=library_dirs,
+                 runtime_library_dirs=library_dirs)
+extensions.append(_ext)
+
+# _ext = Extension('Microphysics', ['Microphysics.pyx'], include_dirs=include_path,
+#                  extra_compile_args=extra_compile_args, libraries=libraries, library_dirs=library_dirs,
+#                  runtime_library_dirs=library_dirs)
+# extensions.append(_ext)
 
 # _ext = Extension('Initialization', ['Initialization.pyx'], include_dirs=include_path,
 #                  extra_compile_args=extra_compile_args, libraries=libraries, library_dirs=library_dirs,
 #                  runtime_library_dirs=library_dirs)
 # extensions.append(_ext)
 
-# _ext = Extension('Microphysics', ['Microphysics.pyx'], include_dirs=include_path,
-#                  extra_compile_args=extra_compile_args, libraries=libraries, library_dirs=library_dirs,
-#                  runtime_library_dirs=library_dirs)
-# extensions.append(_ext)
+
 #
 # _ext = Extension('thermodynamic_functions', ['thermodynamic_functions.pyx'], include_dirs=include_path,
 #                  extra_compile_args=extra_compile_args, libraries=libraries, library_dirs=library_dirs,
 #                  runtime_library_dirs=library_dirs)
 # extensions.append(_ext)
 #
-# _ext = Extension('Thermodynamics', ['Thermodynamics.pyx'], include_dirs=include_path,
-#                  extra_compile_args=extra_compile_args, libraries=libraries, library_dirs=library_dirs,
-#                  runtime_library_dirs=library_dirs)
-# extensions.append(_ext)
-#
-# _ext = Extension('ThermodynamicsDry', ['ThermodynamicsDry.pyx'], include_dirs=include_path,
-#                  extra_compile_args=extra_compile_args, libraries=libraries, library_dirs=library_dirs,
-#                  runtime_library_dirs=library_dirs)
-# extensions.append(_ext)
-#
-# _ext = Extension('ThermodynamicsSA', ['ThermodynamicsSA.pyx'], include_dirs=include_path,
-#                  extra_compile_args=extra_compile_args, libraries=libraries, library_dirs=library_dirs,
-#                  runtime_library_dirs=library_dirs)
-# extensions.append(_ext)
 
 # _ext = Extension('ReferenceState', ['ReferenceState.pyx'], include_dirs=include_path,
 #                  extra_compile_args=extra_compile_args, libraries=libraries, library_dirs=library_dirs,

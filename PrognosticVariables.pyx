@@ -11,8 +11,7 @@ cimport mpi4py.libmpi as mpi
 import sys
 from NetCDFIO cimport NetCDFIO_Stats
 
-# import Grid
-# cimport ParallelMPI
+cimport Grid
 # cimport ReferenceState
 # cimport Restart
 
@@ -26,8 +25,8 @@ cdef class PrognosticVariables:
         self.nv_velocities = 0
         self.bc_type = np.array([],dtype=np.double,order='c')
         self.var_type = np.array([],dtype=np.int,order='c')
-        self.velocity_directions = np.zeros((Gr.dims,),dtype=np.int,order='c')
-        self.velocity_names_directional = ["" for dim in range(Gr.dims)]
+        # self.velocity_directions = np.zeros((Gr.dims,),dtype=np.int,order='c')
+        # self.velocity_names_directional = ["" for dim in range(Gr.dims)]
         return
 
 
@@ -40,16 +39,6 @@ cdef class PrognosticVariables:
         self.units[name] = units
         self.nv = len(self.name_index.keys())
 
-        #Add bc type to array
-        if bc_type == "sym":
-            self.bc_type = np.append(self.bc_type,[1.0])
-        elif bc_type =="asym":
-            self.bc_type = np.append(self.bc_type,[-1.0])
-        else:
-            print("Not a valid bc_type. Killing simulation now!")
-            sys.exit()
-            # Pa.kill()
-
         #Set the type of the variable being added 0=velocity; 1=scalars
         if var_type == "velocity":
             self.var_type = np.append(self.var_type,0)
@@ -60,37 +49,20 @@ cdef class PrognosticVariables:
         else:
             print("Not a valid var_type. Killing simulation now!")
             sys.exit()
-    #         Pa.kill()
 
         return
 
 
 
-    cpdef set_velocity_direction(self,name,Py_ssize_t direction):
-        try:
-            self.velocity_directions[direction] = self.get_nv(name)
-        except:
-            print('problem setting velocity ' + name + ' to direction ' + str(direction))
-            print('Killing simulation now!')
-            sys.exit()
-            # Pa.kill()
-
-        self.velocity_names_directional[direction] = name
-        return
-
-
-
-    # cpdef initialize(self, Gr, NetCDFIO_Stats NS):
-    cpdef initialize(self, Gr):
-        self.values = np.zeros((self.nv*Gr.npg),dtype=np.double,order='c')
-        self.tendencies = np.zeros((self.nv*Gr.npg),dtype=np.double,order='c')
+    cpdef initialize(self, Grid.Grid Gr, NetCDFIO_Stats NS):
+        self.values = np.zeros((self.nv*Gr.nzg),dtype=np.double,order='c')
+        self.tendencies = np.zeros((self.nv*Gr.nzg),dtype=np.double,order='c')
 
         #Add prognostic variables to Statistics IO
         print('Setting up statistical output files for Prognostic Variables')
         for var_name in self.name_index.keys():
             #Add mean profile
-            pass
-    #         NS.add_profile(var_name+'_mean',Gr,Pa)
+            NS.add_profile(var_name+'_mean')
     #
     #         if var_name == 'u' or var_name == 'v':
     #             NS.add_profile(var_name+'_translational_mean',Gr,Pa)
@@ -99,10 +71,6 @@ cdef class PrognosticVariables:
     #         NS.add_profile(var_name+'_mean2',Gr,Pa)
     #         #Add mean of cubes profile
     #         NS.add_profile(var_name+'_mean3',Gr,Pa)
-    #         #Add max profile
-    #         NS.add_profile(var_name+'_max',Gr,Pa)
-    #         #Add min profile
-    #         NS.add_profile(var_name+'_min',Gr,Pa)
     #         #Add max ts
     #         NS.add_ts(var_name+'_max',Gr,Pa)
     #         #Add min ts
@@ -111,7 +79,19 @@ cdef class PrognosticVariables:
     #     if 'qt' in self.name_index.keys() and 's' in self.name_index.keys():
     #         NS.add_profile('qt_s_product_mean', Gr, Pa)
         return
-    #
+
+
+    cpdef update(self, Grid.Grid Gr):
+        cdef:
+            kmax = Gr.nzg
+        for var in self.name_index.keys():
+            var_shift = self.get_varshift(Gr, var)
+            for k in xrange(0,kmax):
+                self.values[var_shift + k] += self.tendencies[var_shift + k] # * TS.dt
+
+        return
+
+
     # cpdef stats_io(self, Grid.Grid Gr, ReferenceState.ReferenceState RS ,NetCDFIO_Stats NS):
     #     cdef:
     #         Py_ssize_t var_shift, var_shift2
@@ -122,24 +102,11 @@ cdef class PrognosticVariables:
     #
     #         var_shift = self.get_varshift(Gr,var_name)
     #
-    #
-    #         #Compute and write mean
-    #         tmp = Pa.HorizontalMean(Gr,&self.values[var_shift])
-    #         NS.write_profile(var_name + '_mean',tmp[Gr.dims.gw:-Gr.dims.gw],Pa)
-    #
     #         # Also output the velocities with the translational velocity included
     #         if var_name == 'u':
     #             NS.write_profile(var_name + '_translational_mean',np.array(tmp[Gr.dims.gw:-Gr.dims.gw]) + RS.u0,Pa)
     #         elif var_name == 'v':
     #             NS.write_profile(var_name + '_translational_mean',np.array(tmp[Gr.dims.gw:-Gr.dims.gw]) + RS.v0,Pa)
-    #
-    #
-    #         #Compute and write mean of squres
-    #         tmp = Pa.HorizontalMeanofSquares(Gr,&self.values[var_shift],&self.values[var_shift])
-    #         NS.write_profile(var_name + '_mean2',tmp[Gr.dims.gw:-Gr.dims.gw],Pa)
-    #         #Compute and write mean of cubes
-    #         tmp = Pa.HorizontalMeanofCubes(Gr,&self.values[var_shift],&self.values[var_shift],&self.values[var_shift])
-    #         NS.write_profile(var_name + '_mean3',tmp[Gr.dims.gw:-Gr.dims.gw],Pa)
     #
     #         #Compute and write maxes
     #         tmp = Pa.HorizontalMaximum(Gr,&self.values[var_shift])
@@ -159,36 +126,6 @@ cdef class PrognosticVariables:
     #
     #     return
     #
-    # cpdef debug(self, Grid.Grid Gr, ReferenceState.ReferenceState RS ,NetCDFIO_Stats NS):
-    #     '''
-    #
-    #     This function is for debugging purpuses. It prints the maximum and minimum of each variable and their
-    #     tendencies stored in the PrognosticVariables class.
-    #
-    #     :param Gr:
-    #     :param RS:
-    #     :param NS:
-    #     :param Pa:
-    #     :return:
-    #     '''
-    #
-    #     cdef:
-    #         Py_ssize_t var_shift
-    #
-    #     for var_name in self.name_index.keys():
-    #         var_shift = self.get_varshift(Gr,var_name)
-    #
-    #         v_max = np.amax(Pa.HorizontalMaximum(Gr,&self.values[var_shift])[Gr.dims.gw:-Gr.dims.gw])
-    #         v_min = np.amin(Pa.HorizontalMinimum(Gr,&self.values[var_shift])[Gr.dims.gw:-Gr.dims.gw])
-    #
-    #         t_max = np.amax(Pa.HorizontalMaximum(Gr,&self.tendencies[var_shift])[Gr.dims.gw:-Gr.dims.gw])
-    #         t_min = np.amin(Pa.HorizontalMinimum(Gr,&self.tendencies[var_shift])[Gr.dims.gw:-Gr.dims.gw])
-    #
-    #         message = var_name + ': ' + ' value min: ' + str(v_min) + ' value max: ' + str(v_max) + ' tend min: ' + str(t_min) + ' tend_max: ' + str(t_max)
-    #         Pa.root_print(message)
-    #
-    #
-    #     return
     #
     #
     #
@@ -220,7 +157,7 @@ cdef class PrognosticVariables:
     #
     #             for i in xrange(self.nv):
     #                 buffer_var_shift = Gr.dims.nbuffer[d] * i
-    #                 var_shift = i * Gr.dims.npg
+    #                 var_shift = i * Gr.dims.nzg
     #                 build_buffer(i, d, s,&Gr.dims,&self.values[0],&send_buffer[0])
     #
     #             #Compute the mpi shifts (lower and upper) in the world communicator for dimeniosn d
@@ -233,7 +170,7 @@ cdef class PrognosticVariables:
     #
     #             for i in xrange(self.nv):
     #                 buffer_var_shift = Gr.dims.nbuffer[d] * i
-    #                 var_shift = i * Gr.dims.npg
+    #                 var_shift = i * Gr.dims.nzg
     #                 if source_rank >= 0:
     #                     buffer_to_values(d, s,&Gr.dims,&self.values[var_shift],&recv_buffer[buffer_var_shift])
     #                 else:
