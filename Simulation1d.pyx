@@ -1,10 +1,22 @@
+
+# ??? Surface
+# ??? Boundary Conditions
+
+
 import time
 import numpy as np
 cimport numpy as np
 import os       # for self.outpath
 
-cimport Grid
+from Grid cimport Grid
+cimport TimeStepping
+cimport ReferenceState
+from Initialization import InitializationFactory
 cimport PrognosticVariables
+cimport MomentumAdvection
+cimport ScalarAdvection
+cimport MomentumDiffusion
+cimport ScalarDiffusion
 cimport NetCDFIO
 from Thermodynamics import ThermodynamicsFactory
 
@@ -12,31 +24,54 @@ from Thermodynamics import ThermodynamicsFactory
 
 class Simulation1d:
     def __init__(self, namelist):
-        self.Gr = Grid.Grid(namelist)
-        return
-
-    def initialize(self, namelist):
-        print(type(self.Gr))
-        # print('Gr.nz', self.Gr.dz)
+        self.Gr = Grid(namelist)
+        self.TS = TimeStepping.TimeStepping()
+        self.Ref = ReferenceState.ReferenceState(self.Gr)
+        self.Init = InitializationFactory(namelist)
 
         self.PV = PrognosticVariables.PrognosticVariables(self.Gr)
+        self.M1 = PrognosticVariables.MeanVariables(self.Gr)
+        self.M2 = PrognosticVariables.SecondOrderMomenta(self.Gr)
 
         self.Th = ThermodynamicsFactory(namelist)
 
+        self.MA = MomentumAdvection.MomentumAdvection(namelist)
+        self.SA = ScalarAdvection.ScalarAdvection(namelist)
+
+        self.MD = MomentumDiffusion.MomentumDiffusion()
+        self.SD = ScalarDiffusion.ScalarDiffusion(namelist)
+
         self.StatsIO = NetCDFIO.NetCDFIO_Stats()
-        self.CondStatsIO = NetCDFIO.NetCDFIO_CondStats()
+        return
+
+    def initialize(self, namelist):
+        # print(type(self.Gr))
+        # print('Gr.nz', self.Gr.dz)
 
         uuid = str(namelist['meta']['uuid'])
         self.outpath = str(os.path.join(namelist['output']['output_root'] + 'Output.' + namelist['meta']['simname'] + '.' + uuid[-5:]))
 
+        self.TS.initialize(namelist)
+        # self.Ref.initialize(self.Gr, self.Th, self.StatsIO)            # Reference State
+        self.Init.initialize_reference(self.Gr, self.Ref)
+        self.Init.initialize_profiles(self.Gr, self.Ref, self.M1, self.M2)
+
         # Add new prognostic variables
-        self.PV.add_variable('u', 'm/s', "sym", "velocity")
-        self.PV.add_variable('v', 'm/s', "sym", "velocity")
-        self.PV.add_variable('w', 'm/s', "asym", "velocity")
+        self.PV.add_variable('w', 'm/s', "sym", "velocity")
+        self.M1.add_variable('w', 'm/s', "velocity")
+        self.M2.add_variable('ww', '(m/s)^2', "velocity")
 
         # AuxillaryVariables(namelist, self.PV, self.DV, self.Pa)
-        self.StatsIO.initialize(namelist, self.Gr)
+        # self.StatsIO.initialize(namelist, self.Gr)
         self.PV.initialize(self.Gr, self.StatsIO)
+        self.M1.initialize(self.Gr, self.StatsIO)
+        self.M2.initialize(self.Gr, self.StatsIO)
+
+        self.Th.initialize(self.Gr, self.PV)
+        self.MA.initialize()
+        self.SA.initialize()
+        self.MD.initialize(self.Gr)
+        self.SD.initialize(self.Gr)
 
         print('Initialization completed!')
         return
@@ -45,16 +80,37 @@ class Simulation1d:
 
     def run(self):
         print('Sim: start run')
-        # cdef PrognosticVariables.PrognosticVariables PV_ = self.PV
-        # cdef DiagnosticVariables.DiagnosticVariables DV_ = self.DV
-        # PV_.Update_all_bcs(self.Gr, self.Pa)
-        # cdef LatentHeat LH_ = self.LH
-        # cdef Grid.Grid GR_ = self.Gr
-        cdef int rk_step
 
-        self.PV.update(self.Gr)
+        while(self.TS.t < self.TS.t_max):
+
+            # update PV tendencies
+            self.Th.update()
+            self.MA.update()
+            self.SA.update()
+            self.MD.update()
+            self.SD.update()
+
+            # update PV tendencies
+            self.PV.update(self.Gr, self.TS)
+            # print('PV.update')
+            self.M1.update(self.Gr, self.TS)
+            # print('M1.update')
+            self.M2.update(self.Gr, self.TS)
+            # print('M2.update')
+
+            # ??? update boundary conditions???
+            self.TS.update()
 
         return
+
+
+
+
+
+
+
+
+
 
     def io(self):
         print('calling io')
@@ -113,40 +169,6 @@ class Simulation1d:
                 self.Aux.stats_io(self.Gr, self.Ref, self.PV, self.DV, self.MA, self.MD, self.StatsIO, self.Pa)
                 self.StatsIO.close_files(self.Pa)
                 self.Pa.root_print('Finished Doing StatsIO')
-
-
-            # If time to ouput stats do output
-            if self.CondStatsIO.last_output_time + self.CondStatsIO.frequency == self.TS.t:
-            #if (1==1):
-                self.Pa.root_print('Doing CondStatsIO')
-                self.CondStatsIO.last_output_time = self.TS.t
-                self.CondStatsIO.write_condstat_time(self.TS.t, self.Pa)
-
-                self.CondStats.stats_io(self.Gr, self.Ref, self.PV, self.DV, self.CondStatsIO, self.Pa)
-                self.Pa.root_print('Finished Doing CondStatsIO')
-
-
-            if self.VO.last_vis_time + self.VO.frequency == self.TS.t:
-            #if (1==1):
-                self.Pa.root_print('Dumping Visualisation File!')
-                self.VO.last_vis_time = self.TS.t
-                self.VO.write(self.Gr, self.Ref, self.PV, self.DV, self.Pa)
-
-
-            if self.Restart.last_restart_time + self.Restart.frequency == self.TS.t:
-                self.Pa.root_print('Dumping Restart Files!')
-                self.Restart.last_restart_time = self.TS.t
-                self.Restart.restart_data['last_stats_output'] = self.StatsIO.last_output_time
-                self.Restart.restart_data['last_condstats_output'] = self.CondStatsIO.last_output_time
-                self.Restart.restart_data['last_vis_time'] = self.VO.last_vis_time
-                self.Gr.restart(self.Restart)
-                self.Sur.restart(self.Restart)
-                self.Ref.restart(self.Gr, self.Restart)
-                self.PV.restart(self.Gr, self.Restart)
-                self.TS.restart(self.Restart)
-
-                self.Restart.write(self.Pa)
-                self.Pa.root_print('Finished Dumping Restart Files!')
 
         return
 

@@ -55,12 +55,22 @@ _ext = Extension('Grid', ['Grid.pyx'], include_dirs=include_path,
                  runtime_library_dirs=library_dirs)
 extensions.append(_ext)
 
+_ext = Extension('TimeStepping', ['TimeStepping.pyx'], include_dirs=include_path,
+                 extra_compile_args=extra_compile_args, libraries=libraries, library_dirs=library_dirs,
+                 runtime_library_dirs=library_dirs)
+extensions.append(_ext)
+
 _ext = Extension('NetCDFIO', ['NetCDFIO.pyx'], include_dirs=include_path,
                  extra_compile_args=extra_compile_args, libraries=libraries, library_dirs=library_dirs,
                  runtime_library_dirs=library_dirs)
 extensions.append(_ext)
 
 _ext = Extension('PrognosticVariables', ['PrognosticVariables.pyx'], include_dirs=include_path,
+                 extra_compile_args=extra_compile_args, libraries=libraries, library_dirs=library_dirs,
+                 runtime_library_dirs=library_dirs)
+extensions.append(_ext)
+
+_ext = Extension('Initialization', ['Initialization.pyx'], include_dirs=include_path,
                  extra_compile_args=extra_compile_args, libraries=libraries, library_dirs=library_dirs,
                  runtime_library_dirs=library_dirs)
 extensions.append(_ext)
@@ -85,23 +95,20 @@ extensions.append(_ext)
 #                  runtime_library_dirs=library_dirs)
 # extensions.append(_ext)
 
-# _ext = Extension('Initialization', ['Initialization.pyx'], include_dirs=include_path,
-#                  extra_compile_args=extra_compile_args, libraries=libraries, library_dirs=library_dirs,
-#                  runtime_library_dirs=library_dirs)
-# extensions.append(_ext)
 
 
-#
-# _ext = Extension('thermodynamic_functions', ['thermodynamic_functions.pyx'], include_dirs=include_path,
-#                  extra_compile_args=extra_compile_args, libraries=libraries, library_dirs=library_dirs,
-#                  runtime_library_dirs=library_dirs)
-# extensions.append(_ext)
-#
 
-# _ext = Extension('ReferenceState', ['ReferenceState.pyx'], include_dirs=include_path,
-#                  extra_compile_args=extra_compile_args, libraries=libraries, library_dirs=library_dirs,
-#                  runtime_library_dirs=library_dirs)
-# extensions.append(_ext)
+
+_ext = Extension('thermodynamic_functions', ['thermodynamic_functions.pyx'], include_dirs=include_path,
+                 extra_compile_args=extra_compile_args, libraries=libraries, library_dirs=library_dirs,
+                 runtime_library_dirs=library_dirs)
+extensions.append(_ext)
+
+
+_ext = Extension('ReferenceState', ['ReferenceState.pyx'], include_dirs=include_path,
+                 extra_compile_args=extra_compile_args, libraries=libraries, library_dirs=library_dirs,
+                 runtime_library_dirs=library_dirs)
+extensions.append(_ext)
 
 # _ext = Extension('ParallelMPI', ['ParallelMPI.pyx'], include_dirs=include_path,
 #                  extra_compile_args=extra_compile_args, libraries=libraries, library_dirs=library_dirs,
@@ -115,25 +122,28 @@ extensions.append(_ext)
 #                  runtime_library_dirs=library_dirs)
 # extensions.append(_ext)
 #
-# _ext = Extension('ScalarAdvection', ['ScalarAdvection.pyx'], include_dirs=include_path,
-#                  extra_compile_args=extra_compile_args, libraries=libraries, library_dirs=library_dirs,
-#                  runtime_library_dirs=library_dirs)
-# extensions.append(_ext)
+
+_ext = Extension('MomentumAdvection', ['MomentumAdvection.pyx'], include_dirs=include_path,
+                 extra_compile_args=extra_compile_args, libraries=libraries, library_dirs=library_dirs,
+                 runtime_library_dirs=library_dirs)
+extensions.append(_ext)
+
+_ext = Extension('ScalarAdvection', ['ScalarAdvection.pyx'], include_dirs=include_path,
+                 extra_compile_args=extra_compile_args, libraries=libraries, library_dirs=library_dirs,
+                 runtime_library_dirs=library_dirs)
+extensions.append(_ext)
+
+_ext = Extension('MomentumDiffusion', ['MomentumDiffusion.pyx'], include_dirs=include_path,
+                 extra_compile_args=extra_compile_args, libraries=libraries, library_dirs=library_dirs,
+                 runtime_library_dirs=library_dirs)
+extensions.append(_ext)
+
+_ext = Extension('ScalarDiffusion', ['ScalarDiffusion.pyx'], include_dirs=include_path,
+                 extra_compile_args=extra_compile_args, libraries=libraries, library_dirs=library_dirs,
+                 runtime_library_dirs=library_dirs)
+extensions.append(_ext)
 #
-# _ext = Extension('MomentumAdvection', ['MomentumAdvection.pyx'], include_dirs=include_path,
-#                  extra_compile_args=extra_compile_args, libraries=libraries, library_dirs=library_dirs,
-#                  runtime_library_dirs=library_dirs)
-# extensions.append(_ext)
-#
-# _ext = Extension('ScalarDiffusion', ['ScalarDiffusion.pyx'], include_dirs=include_path,
-#                  extra_compile_args=extra_compile_args, libraries=libraries, library_dirs=library_dirs,
-#                  runtime_library_dirs=library_dirs)
-# extensions.append(_ext)
-#
-# _ext = Extension('MomentumDiffusion', ['MomentumDiffusion.pyx'], include_dirs=include_path,
-#                  extra_compile_args=extra_compile_args, libraries=libraries, library_dirs=library_dirs,
-#                  runtime_library_dirs=library_dirs)
-# extensions.append(_ext)
+
 #
 # _ext = Extension('FluxDivergence', ['FluxDivergence.pyx'], include_dirs=include_path,
 #                  extra_compile_args=extra_compile_args, libraries=libraries, library_dirs=library_dirs,
@@ -165,10 +175,7 @@ extensions.append(_ext)
 #                  runtime_library_dirs=library_dirs)
 # extensions.append(_ext)
 #
-# _ext = Extension('TimeStepping', ['TimeStepping.pyx'], include_dirs=include_path,
-#                  extra_compile_args=extra_compile_args, libraries=libraries, library_dirs=library_dirs,
-#                  runtime_library_dirs=library_dirs)
-# extensions.append(_ext)
+
 #
 # _ext = Extension('Kinematics', ['Kinematics.pyx'], include_dirs=include_path,
 #                  extra_compile_args=extra_compile_args, libraries=libraries, library_dirs=library_dirs,
