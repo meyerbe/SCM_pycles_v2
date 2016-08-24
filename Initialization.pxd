@@ -16,15 +16,20 @@ from libc.math cimport sqrt, fmin, cos, exp, fabs
 include 'parameters.pxi'
 
 cdef class InitializationBase:
+    cdef:
+        double pert_min
+        double pert_max
     cpdef initialize_reference(self, Grid Gr, ReferenceState Ref, NetCDFIO_Stats NS)
-    cpdef initialize_profiles(self, Grid Gr, ReferenceState Ref, MeanVariables M1, SecondOrderMomenta M2)
+    cpdef initialize_profiles(self, Grid Gr, ReferenceState Ref, MeanVariables M1, SecondOrderMomenta M2, NetCDFIO_Stats NS)
     cpdef initialize_surface(self, Grid Gr, ReferenceState Ref )
     cpdef initialize_io(self, NetCDFIO_Stats Stats)
     cpdef update_surface(self, MeanVariables MV)
+    # cpdef initialize_entropy(self, double [:] theta, Grid Gr, ReferenceState Ref, MeanVariables MV)
+
 
 cdef class InitSoares(InitializationBase):
     cpdef initialize_reference(self, Grid Gr, ReferenceState Ref, NetCDFIO_Stats NS)
-    cpdef initialize_profiles(self, Grid Gr, ReferenceState Ref, MeanVariables M1, SecondOrderMomenta M2)
+    cpdef initialize_profiles(self, Grid Gr, ReferenceState Ref, MeanVariables M1, SecondOrderMomenta M2, NetCDFIO_Stats NS)
     # cpdef initialize_surface(self, Grid Gr, ReferenceState Ref )
     # cpdef initialize_io(self, NetCDFIO_Stats Stats)
     # cpdef update_surface(self, MeanVariables MV)

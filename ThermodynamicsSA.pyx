@@ -6,6 +6,7 @@
 
 cimport numpy as np
 import numpy as np
+
 # cimport Grid
 # cimport PrognosticVariables
 import cython
@@ -22,7 +23,7 @@ cdef extern from "entropies.h":
 
 
 cdef class ThermodynamicsSA:
-    def __init__(self, dict namelist):
+    def __init__(self, namelist):
     # def __init__(self, dict namelist, LatentHeat LH):
         '''
         Init method saturation adjsutment thermodynamics.
@@ -50,7 +51,7 @@ cdef class ThermodynamicsSA:
 
         # PV.add_variable('s','m/s',"sym","scalar")
         M1.add_variable('s','m/s',"scalar")
-        M1.add_variable('qt','m/s,"scalar")
+        M1.add_variable('qt','g/kg',"scalar")
 
         return
 

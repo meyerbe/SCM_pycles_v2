@@ -90,14 +90,6 @@ _ext = Extension('ThermodynamicsSA', ['ThermodynamicsSA.pyx'], include_dirs=incl
                  runtime_library_dirs=library_dirs)
 extensions.append(_ext)
 
-# _ext = Extension('Microphysics', ['Microphysics.pyx'], include_dirs=include_path,
-#                  extra_compile_args=extra_compile_args, libraries=libraries, library_dirs=library_dirs,
-#                  runtime_library_dirs=library_dirs)
-# extensions.append(_ext)
-
-
-
-
 
 _ext = Extension('thermodynamic_functions', ['thermodynamic_functions.pyx'], include_dirs=include_path,
                  extra_compile_args=extra_compile_args, libraries=libraries, library_dirs=library_dirs,
@@ -109,19 +101,6 @@ _ext = Extension('ReferenceState', ['ReferenceState.pyx'], include_dirs=include_
                  extra_compile_args=extra_compile_args, libraries=libraries, library_dirs=library_dirs,
                  runtime_library_dirs=library_dirs)
 extensions.append(_ext)
-
-# _ext = Extension('ParallelMPI', ['ParallelMPI.pyx'], include_dirs=include_path,
-#                  extra_compile_args=extra_compile_args, libraries=libraries, library_dirs=library_dirs,
-#                  runtime_library_dirs=library_dirs)
-# extensions.append(_ext)
-#
-
-#
-# _ext = Extension('DiagnosticVariables', ['DiagnosticVariables.pyx'], include_dirs=include_path,
-#                  extra_compile_args=extra_compile_args, libraries=libraries, library_dirs=library_dirs,
-#                  runtime_library_dirs=library_dirs)
-# extensions.append(_ext)
-#
 
 _ext = Extension('MomentumAdvection', ['MomentumAdvection.pyx'], include_dirs=include_path,
                  extra_compile_args=extra_compile_args, libraries=libraries, library_dirs=library_dirs,
@@ -144,6 +123,35 @@ _ext = Extension('ScalarDiffusion', ['ScalarDiffusion.pyx'], include_dirs=includ
 extensions.append(_ext)
 #
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#
+# _ext = Extension('DiagnosticVariables', ['DiagnosticVariables.pyx'], include_dirs=include_path,
+#                  extra_compile_args=extra_compile_args, libraries=libraries, library_dirs=library_dirs,
+#                  runtime_library_dirs=library_dirs)
+# extensions.append(_ext)
+
+
+# _ext = Extension('Microphysics', ['Microphysics.pyx'], include_dirs=include_path,
+#                  extra_compile_args=extra_compile_args, libraries=libraries, library_dirs=library_dirs,
+#                  runtime_library_dirs=library_dirs)
+# extensions.append(_ext)
 #
 # _ext = Extension('FluxDivergence', ['FluxDivergence.pyx'], include_dirs=include_path,
 #                  extra_compile_args=extra_compile_args, libraries=libraries, library_dirs=library_dirs,
