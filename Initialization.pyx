@@ -63,7 +63,7 @@ def InitializationFactory(namelist):
 cdef class InitializationBase:
     def __init__(self):
         return
-    cpdef initialize_reference(self, Grid Gr, ReferenceState Ref):
+    cpdef initialize_reference(self, Grid Gr, ReferenceState Ref, NetCDFIO_Stats NS):
         return
     cpdef initialize_profiles(self, Grid Gr, ReferenceState Ref, MeanVariables M1, SecondOrderMomenta M2):
         return
@@ -90,7 +90,7 @@ cdef class InitSoares(InitializationBase):
         print('Initializing DCBL Soares')
         return
 
-    cpdef initialize_reference(self, Grid Gr, ReferenceState Ref):
+    cpdef initialize_reference(self, Grid Gr, ReferenceState Ref, NetCDFIO_Stats NS):
         #Generate the reference profiles
         Ref.Pg = 1.0e5      # Pressure at ground (Soares)
         Ref.Tg = 300.0      # Temperature at ground (Soares)
@@ -99,7 +99,7 @@ cdef class InitSoares(InitializationBase):
         Ref.v0 = 0.0        # (Soares: v = 0.0 m/s)
 
         # Ref.initialize(Gr, Th, NS, Pa)       # initialize reference state; done for every case
-        Ref.initialize(Gr)
+        Ref.initialize(Gr, NS)
 
         return
 

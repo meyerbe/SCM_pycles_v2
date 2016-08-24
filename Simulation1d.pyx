@@ -1,6 +1,7 @@
 
 # ??? Surface
 # ??? Boundary Conditions
+# Statistical Output: make different grouops of variables for Mean Var and Second Order Momenta
 
 
 import time
@@ -50,14 +51,17 @@ class Simulation1d:
 
         uuid = str(namelist['meta']['uuid'])
         self.outpath = str(os.path.join(namelist['output']['output_root'] + 'Output.' + namelist['meta']['simname'] + '.' + uuid[-5:]))
+        self.StatsIO.initialize(namelist, self.Gr)
+            # cpdef initialize(self, dict namelist, Grid.Grid Gr):
+
 
         self.TS.initialize(namelist)
         # self.Ref.initialize(self.Gr, self.Th, self.StatsIO)            # Reference State
-        self.Init.initialize_reference(self.Gr, self.Ref)
+        self.Init.initialize_reference(self.Gr, self.Ref, self.StatsIO)
         self.Init.initialize_profiles(self.Gr, self.Ref, self.M1, self.M2)
 
         # Add new prognostic variables
-        self.PV.add_variable('w', 'm/s', "sym", "velocity")
+        self.PV.add_variable('phi', 'm/s', "sym", "velocity")
         self.M1.add_variable('w', 'm/s', "velocity")
         self.M2.add_variable('ww', '(m/s)^2', "velocity")
 
@@ -83,22 +87,24 @@ class Simulation1d:
 
         while(self.TS.t < self.TS.t_max):
 
+            # pass
+
             # update PV tendencies
             self.Th.update()
             self.MA.update()
             self.SA.update()
             self.MD.update()
             self.SD.update()
-
-            # update PV tendencies
-            self.PV.update(self.Gr, self.TS)
-            # print('PV.update')
+            #
+            # # update PV tendencies
+            # self.PV.update(self.Gr, self.TS) # !!! causes error !!!
+            # # print('PV.update')
             self.M1.update(self.Gr, self.TS)
-            # print('M1.update')
+            # # print('M1.update')
             self.M2.update(self.Gr, self.TS)
-            # print('M2.update')
-
-            # ??? update boundary conditions???
+            # # print('M2.update')
+            #
+            # # ??? update boundary conditions???
             self.TS.update()
 
         return
