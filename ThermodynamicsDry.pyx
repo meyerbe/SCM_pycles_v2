@@ -7,9 +7,9 @@
 cimport numpy as np
 import numpy as np
 
-cimport Grid
+from Grid cimport Grid
 cimport PrognosticVariables
-cimport Thermodynamics
+# cimport Thermodynamics
 from thermodynamic_functions cimport thetas_c
 import cython
 
@@ -28,24 +28,29 @@ cdef class ThermodynamicsDry:
         return
 
     # cpdef initialize(self,Grid.Grid Gr,PrognosticVariables.PrognosticVariables PV, DiagnosticVariables.DiagnosticVariables DV, NetCDFIO_Stats NS):
-    cpdef initialize(self, Grid.Grid Gr, PrognosticVariables.MeanVariables M1, PrognosticVariables.SecondOrderMomenta M2):
+    cpdef initialize(self, Grid Gr, PrognosticVariables.MeanVariables M1, PrognosticVariables.SecondOrderMomenta M2):
         # PV.add_variable('s','m/s',"sym","scalar")
         M1.add_variable('s','m/s',"scalar")
+        M2.add_variable('us', '(m/s)^2', "velocity")
+        M2.add_variable('vs', '(m/s)^2', "velocity")
+        M2.add_variable('ws', '(m/s)^2', "velocity")
 
         return
 
 
 
-    # cpdef update(self, Grid.Grid Gr, ReferenceState.ReferenceState RS,
+    # cpdef update(self, Grid Gr, ReferenceState.ReferenceState RS,
     #                  PrognosticVariables.PrognosticVariables PV, DiagnosticVariables.DiagnosticVariables DV):
     cpdef update(self):
-
+        # eos update: compute T from eos_c(pd,s); compute alpha(pd,T)
+        # buoyancy update: compute buoyancy_c(alpha0, alpha); compute wt (w-tendency)
+        # bvf_dry: compute theta(p0,T); compute Brunt Vaisalla Frequency (bvf=g/theta*partialz theta)
         return
 
 
 
-# cpdef stats_io(self, Grid.Grid Gr, ReferenceState.ReferenceState RS, PrognosticVariables.PrognosticVariables PV,
+# cpdef stats_io(self, Grid Gr, ReferenceState.ReferenceState RS, PrognosticVariables.PrognosticVariables PV,
 #                    DiagnosticVariables.DiagnosticVariables DV, NetCDFIO_Stats NS):
     cpdef stats_io(self):
-
+        # only output of thetas profiles
         return

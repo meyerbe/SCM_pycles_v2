@@ -79,7 +79,7 @@ class Simulation1d:
         self.Init.initialize_profiles(self.Gr, self.Ref, self.M1, self.M2, self.StatsIO)
 
         self.MA.initialize(self.Gr, self.M1)
-        self.SA.initialize()
+        self.SA.initialize(self.Gr, self.M1)
         self.MD.initialize(self.Gr)
         self.SD.initialize(self.Gr)
 
@@ -98,7 +98,7 @@ class Simulation1d:
             # update PV tendencies
             self.Th.update()
             self.MA.update(self.Gr, self.Ref, self.M1)
-            self.SA.update()
+            self.SA.update(self.Gr, self.Ref, self.M1)
             self.MD.update()
             self.SD.update()
 
