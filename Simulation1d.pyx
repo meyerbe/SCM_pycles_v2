@@ -46,33 +46,39 @@ class Simulation1d:
         return
 
     def initialize(self, namelist):
-        # print(type(self.Gr))
-        # print('Gr.nz', self.Gr.dz)
 
         uuid = str(namelist['meta']['uuid'])
         self.outpath = str(os.path.join(namelist['output']['output_root'] + 'Output.' + namelist['meta']['simname'] + '.' + uuid[-5:]))
         self.StatsIO.initialize(namelist, self.Gr)
-            # cpdef initialize(self, dict namelist, Grid.Grid Gr):
-
 
         self.TS.initialize(namelist)
-        # self.Ref.initialize(self.Gr, self.Th, self.StatsIO)            # Reference State
-        self.Init.initialize_reference(self.Gr, self.Ref, self.StatsIO)
-        self.Init.initialize_profiles(self.Gr, self.Ref, self.M1, self.M2)
 
         # Add new prognostic variables
-        self.PV.add_variable('phi', 'm/s', "sym", "velocity")
+        self.PV.add_variable('phi', 'm/s', "velocity")      # self.PV.add_variable('phi', 'm/s', "sym", "velocity")
+        # cdef:
+        #     PV_ = self.PV
+        # print(PV_.nv)     #not accessible (also not as # print(self.PV.nv))
+        self.M1.add_variable('u', 'm/s', "velocity")
+        self.M1.add_variable('v', 'm/s', "velocity")
         self.M1.add_variable('w', 'm/s', "velocity")
+        self.M2.add_variable('uu', '(m/s)^2', "velocity")
+        self.M2.add_variable('vv', '(m/s)^2', "velocity")
         self.M2.add_variable('ww', '(m/s)^2', "velocity")
+        self.M2.add_variable('uv', '(m/s)^2', "velocity")
+        self.M2.add_variable('uw', '(m/s)^2', "velocity")
+        self.M2.add_variable('vw', '(m/s)^2', "velocity")
+
 
         # AuxillaryVariables(namelist, self.PV, self.DV, self.Pa)
-        # self.StatsIO.initialize(namelist, self.Gr)
+        self.Th.initialize(self.Gr, self.M1, self.M2)        # adding prognostic thermodynamic variables
         self.PV.initialize(self.Gr, self.StatsIO)
         self.M1.initialize(self.Gr, self.StatsIO)
         self.M2.initialize(self.Gr, self.StatsIO)
 
-        self.Th.initialize(self.Gr, self.PV)
-        self.MA.initialize()
+        self.Init.initialize_reference(self.Gr, self.Ref, self.StatsIO)
+        self.Init.initialize_profiles(self.Gr, self.Ref, self.M1, self.M2, self.StatsIO)
+
+        self.MA.initialize(self.Gr, self.M1)
         self.SA.initialize()
         self.MD.initialize(self.Gr)
         self.SD.initialize(self.Gr)
@@ -87,16 +93,15 @@ class Simulation1d:
 
         while(self.TS.t < self.TS.t_max):
 
-            # pass
+        #     # pass
 
             # update PV tendencies
             self.Th.update()
-            self.MA.update()
+            self.MA.update(self.Gr, self.Ref, self.M1)
             self.SA.update()
             self.MD.update()
             self.SD.update()
-            #
-            # # update PV tendencies
+
             # self.PV.update(self.Gr, self.TS) # !!! causes error !!!
             # # print('PV.update')
             self.M1.update(self.Gr, self.TS)

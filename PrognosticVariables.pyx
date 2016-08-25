@@ -11,24 +11,36 @@ cimport mpi4py.libmpi as mpi
 import sys
 from NetCDFIO cimport NetCDFIO_Stats
 
-cimport Grid
+from Grid cimport Grid
 cimport TimeStepping
 # cimport ReferenceState
 # cimport Restart
 
+'''
+self.name_index[str name]:      returns index of variable of given name
+self.index_name[int i]:         returns name of given index
+self.units[str name]:           returns unit of variable of given name
+self.nv:                        number of variables
+self.nv_scalars:                number of scalars
+self.nv_velocities:             number of velocities
+self.var_type[int i]:           type of variable (velocity==0, scalar==1)
+self.velocity_directions[int dir]:   returns index of velocity of given direction dir (important to change from 3d to 2d or 1d dynamics
+'''
+
 cdef class PrognosticVariables:
-    def __init__(self, Gr):
+    def __init__(self, Grid Gr):
         self.name_index = {}
         self.index_name = []
         self.units = {}
         self.nv = 0
         self.nv_scalars = 0
         self.nv_velocities = 0
-        self.bc_type = np.array([],dtype=np.double,order='c')
         self.var_type = np.array([],dtype=np.int,order='c')
+        self.velocity_directions = np.zeros(Gr.dims, dtype=np.int, order='c')#,dtype=np.int,order='c')      # ValueError: Buffer dtype mismatch, expected 'double' but got 'long'
+        # self.bc_type = np.array([],dtype=np.double,order='c')
         return
 
-    cpdef add_variable(self,name,units,bc_type,var_type):
+    cpdef add_variable(self,name,units,var_type):       # cpdef add_variable(self,name,units,bc_type,var_type):
         #Store names and units
         self.name_index[name] = self.nv
         self.index_name.append(name)
@@ -44,10 +56,32 @@ cdef class PrognosticVariables:
         else:
             print("Not a valid var_type. Killing simulation now!")
             sys.exit()
+        print('adding Variable ', name, self.nv)
+        # try:
+        #     print(self.get_nv('u'))
+        #     # self.velocity_directions[0] = self.get_nv('u')
+        #     # self.velocity_directions[1] = self.get_nv('v')
+        #     # self.velocity_directions[2] = self.get_nv('w')
+        # except:
+        #     print('problem setting velocity')
+        #     print('Killing simulation now!')
+        #     sys.exit()
 
         return
 
-    cpdef initialize(self, Grid.Grid Gr, NetCDFIO_Stats NS):
+    # cpdef set_velocity_direction(self,name,Py_ssize_t direction):
+    #     try:
+    #         self.velocity_directions[direction] = self.get_nv(name)
+    #     except:
+    #         print('problem setting velocity '+ name +' to direction '+ str(direction))
+    #         print('Killing simulation now!')
+    #         sys.exit()
+    #
+    #     self.velocity_names_directional[direction] = name
+    #     return
+
+
+    cpdef initialize(self, Grid Gr, NetCDFIO_Stats NS):
         self.values = np.zeros((self.nv*Gr.nzg),dtype=np.double,order='c')
         self.tendencies = np.zeros((self.nv*Gr.nzg),dtype=np.double,order='c')
         #Add prognostic variables to Statistics IO
@@ -73,7 +107,7 @@ cdef class PrognosticVariables:
         return
 
 
-    cpdef update(self, Grid.Grid Gr, TimeStepping.TimeStepping TS):
+    cpdef update(self, Grid Gr, TimeStepping.TimeStepping TS):
         cdef:
             kmax = Gr.nzg
         for var in self.name_index.keys():
@@ -84,7 +118,7 @@ cdef class PrognosticVariables:
         return
 
 
-    # cpdef stats_io(self, Grid.Grid Gr, ReferenceState.ReferenceState RS ,NetCDFIO_Stats NS):
+    # cpdef stats_io(self, Grid Gr, ReferenceState.ReferenceState RS ,NetCDFIO_Stats NS):
     #     cdef:
     #         Py_ssize_t var_shift, var_shift2
     #         double [:] tmp
@@ -121,7 +155,7 @@ cdef class PrognosticVariables:
     #
     #
     #
-    # cdef void update_all_bcs(self,Grid.Grid Gr):
+    # cdef void update_all_bcs(self,Grid Gr):
     #
     #     cdef double* send_buffer
     #     cdef double* recv_buffer
@@ -212,18 +246,27 @@ cdef class PrognosticVariables:
 
 
 
-cdef class MeanVariables:
-    def __init__(self, Gr):
+cdef class MeanVariables(PrognosticVariables):
+    def __init__(self, Grid Gr):
         self.name_index = {}
         self.index_name = []
         self.units = {}
         self.nv = 0
         self.nv_scalars = 0
         self.nv_velocities = 0
-        # self.bc_type = np.array([],dtype=np.double,order='c')
         self.var_type = np.array([],dtype=np.int,order='c')
+        self.velocity_directions = np.zeros((Gr.dims,),dtype=np.int64)#,order='c')      # ValueError: Buffer dtype mismatch, expected 'double' but got 'long',dtype=np.int32,order='c')
         return
-    cpdef initialize(self, Grid.Grid Gr, NetCDFIO_Stats NS):
+
+    cpdef initialize(self, Grid Gr, NetCDFIO_Stats NS):
+        try:
+            self.velocity_directions[0] = self.get_nv('u')      # Causes Problems!!!
+            self.velocity_directions[1] = self.get_nv('v')
+            self.velocity_directions[2] = self.get_nv('w')
+        except:
+            print('problem setting velocity directions')
+            print('Killing simulation now!')
+            sys.exit()
         self.values = np.zeros((self.nv*Gr.nzg),dtype=np.double,order='c')
         self.tendencies = np.zeros((self.nv*Gr.nzg),dtype=np.double,order='c')
         #Add prognostic variables to Statistics IO
@@ -232,24 +275,8 @@ cdef class MeanVariables:
             #Add mean profile
             NS.add_profile(var_name+'_mean')
         return
-    cpdef add_variable(self,name,units,var_type):
-        #Store names and units
-        self.name_index[name] = self.nv
-        self.index_name.append(name)
-        self.units[name] = units
-        self.nv = len(self.name_index.keys())
-        #Set the type of the variable being added 0=velocity; 1=scalars
-        if var_type == "velocity":
-            self.var_type = np.append(self.var_type,0)
-            self.nv_velocities += 1
-        elif var_type == "scalar":
-            self.var_type = np.append(self.var_type,1)
-            self.nv_scalars += 1
-        else:
-            print("Not a valid var_type. Killing simulation now!")
-            sys.exit()
-        return
-    cpdef update(self, Grid.Grid Gr, TimeStepping.TimeStepping TS):
+
+    cpdef update(self, Grid Gr, TimeStepping.TimeStepping TS):
         cdef:
             kmax = Gr.nzg
         for var in self.name_index.keys():
@@ -259,44 +286,40 @@ cdef class MeanVariables:
         return
 
 
-cdef class SecondOrderMomenta:
+
+
+cdef class SecondOrderMomenta(PrognosticVariables):
     def __init__(self, Gr):
+        #  necessary to initialize the following variable and arrays
         self.name_index = {}
         self.index_name = []
         self.units = {}
         self.nv = 0
-        # self.nv_scalars = 0
-        # self.nv_velocities = 0
-        # self.bc_type = np.array([],dtype=np.double,order='c')
-        # self.var_type = np.array([],dtype=np.int,order='c')
+        self.nv_scalars = 0
+        self.nv_velocities = 0
+        self.var_type = np.array([],dtype=np.int,order='c')
         return
-    cpdef initialize(self, Grid.Grid Gr, NetCDFIO_Stats NS):
+
+    cpdef initialize(self, Grid Gr, NetCDFIO_Stats NS):
         self.values = np.zeros((self.nv*Gr.nzg),dtype=np.double,order='c')
         self.tendencies = np.zeros((self.nv*Gr.nzg),dtype=np.double,order='c')
+        # try:
+        #     self.velocity_directions[0] = self.get_nv('u')      # Causes Problems!!!
+        #     self.velocity_directions[1] = self.get_nv('v')
+        #     self.velocity_directions[2] = self.get_nv('w')
+        # except:
+        #     print('problem setting velocity directions')
+        #     print('Killing simulation now!')
+        #     sys.exit()
+
         #Add prognostic variables to Statistics IO
         print('Setting up statistical output files PV.M2')
         for var_name in self.name_index.keys():
             #Add mean profile
             NS.add_profile(var_name+'_mean')
         return
-    cpdef add_variable(self,name,units,var_type):
-        #Store names and units
-        self.name_index[name] = self.nv
-        self.index_name.append(name)
-        self.units[name] = units
-        self.nv = len(self.name_index.keys())
-        #Set the type of the variable being added 0=velocity; 1=scalars
-        # if var_type == "velocity":
-        #     self.var_type = np.append(self.var_type,0)
-        #     self.nv_velocities += 1
-        # elif var_type == "scalar":
-        #     self.var_type = np.append(self.var_type,1)
-        #     self.nv_scalars += 1
-        # else:
-        #     print("Not a valid var_type. Killing simulation now!")
-        #     sys.exit()
-        return
-    cpdef update(self, Grid.Grid Gr, TimeStepping.TimeStepping TS):
+
+    cpdef update(self, Grid Gr, TimeStepping.TimeStepping TS):
         cdef:
             kmax = Gr.nzg
         for var in self.name_index.keys():

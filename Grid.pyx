@@ -27,6 +27,8 @@ cdef class Grid:
 
     def __init__(self,namelist):
         #Get the grid spacing
+        self.dims = namelist['grid']['dims']
+
         self.dz = namelist['grid']['dz']
 
         #Set the inverse grid spacing

@@ -7,6 +7,7 @@
 
 cdef class Grid:
     cdef:
+        Py_ssize_t dims
         double dz
         double dzi
         Py_ssize_t gw

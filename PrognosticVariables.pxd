@@ -1,5 +1,5 @@
 from NetCDFIO cimport NetCDFIO_Stats
-cimport Grid
+from Grid cimport Grid
 cimport TimeStepping
 # cimport ReferenceState
 # cimport Restart
@@ -24,14 +24,16 @@ cdef class PrognosticVariables:
         Py_ssize_t nv
         Py_ssize_t nv_scalars
         Py_ssize_t nv_velocities
-        cdef double [:] bc_type
+        # cdef double [:] bc_type
         cdef long [:] var_type
         cdef double [:] values
         cdef double [:] tendencies
+        cdef Py_ssize_t [:] velocity_directions
 
-    cpdef add_variable(self,name,units,bc_type,var_type)
-    cpdef initialize(self, Grid.Grid Gr, NetCDFIO_Stats NS)
-    cpdef update(self, Grid.Grid Gr, TimeStepping.TimeStepping TS)
+
+    cpdef add_variable(self,name,units,var_type)        # cpdef add_variable(self,name,units,bc_type,var_type)
+    cpdef initialize(self, Grid Gr, NetCDFIO_Stats NS)
+    cpdef update(self, Grid Gr, TimeStepping.TimeStepping TS)
     # cdef:
     #     void update_all_bcs(self, Grid.Grid Gr)
     # cpdef Update_all_bcs(self,Grid.Grid Gr)
@@ -39,7 +41,7 @@ cdef class PrognosticVariables:
     # cpdef set_velocity_direction(self,name,Py_ssize_t direction)
     cdef inline Py_ssize_t get_nv(self, str variable_name):
         return self.name_index[variable_name]
-    cdef inline Py_ssize_t get_varshift(self, Grid.Grid Gr, str variable_name):
+    cdef inline Py_ssize_t get_varshift(self, Grid Gr, str variable_name):
         return self.name_index[variable_name] * Gr.nzg
     # cpdef get_variable_array(self,name,Grid.Grid Gr)
     # cpdef get_tendency_array(self,name,Grid.Grid Gr)
@@ -51,38 +53,22 @@ cdef class PrognosticVariables:
     # cpdef init_from_restart(self, Grid.Grid Gr, Restart.Restart Re)
 
 
-cdef class MeanVariables:
-    cdef:
-        dict name_index
-        dict units
-        list index_name
-        Py_ssize_t nv
-        Py_ssize_t nv_scalars
-        Py_ssize_t nv_velocities
-        # cdef double [:] bc_type
-        cdef long [:] var_type
-        cdef double [:] values
-        cdef double [:] tendencies
-    cpdef initialize(self, Grid.Grid Gr, NetCDFIO_Stats NS)
-    cpdef add_variable(self,name,units,var_type)
-    cpdef update(self, Grid.Grid Gr, TimeStepping.TimeStepping TS)
-    cdef inline Py_ssize_t get_varshift(self, Grid.Grid Gr, str variable_name):
-        return self.name_index[variable_name] * Gr.nzg
+cdef class MeanVariables(PrognosticVariables):
+    # cdef:
+    #     cdef double [:] values
+    #     cdef double [:] tendencies
+    #     cdef int [:] velocity_directions
+    cpdef initialize(self, Grid Gr, NetCDFIO_Stats NS)
+    cpdef update(self, Grid Gr, TimeStepping.TimeStepping TS)
+    # cdef inline Py_ssize_t get_varshift(self, Grid.Grid Gr, str variable_name):
+    #     return self.name_index[variable_name] * Gr.nzg
 
-cdef class SecondOrderMomenta:
-    cdef:
-        dict name_index
-        dict units
-        list index_name
-        Py_ssize_t nv
-        # Py_ssize_t nv_scalars
-        # Py_ssize_t nv_velocities
-        # cdef double [:] bc_type
-        # cdef long [:] var_type
-        cdef double [:] values
-        cdef double [:] tendencies
-    cpdef initialize(self, Grid.Grid Gr, NetCDFIO_Stats NS)
-    cpdef add_variable(self,name,units,var_type)
-    cpdef update(self, Grid.Grid Gr, TimeStepping.TimeStepping TS)
-    cdef inline Py_ssize_t get_varshift(self, Grid.Grid Gr, str variable_name):
-        return self.name_index[variable_name] * Gr.nzg
+cdef class SecondOrderMomenta(PrognosticVariables):
+    # cdef:
+    #     cdef double [:] values
+    #     cdef double [:] tendencies
+    #     cdef int [:] velocity_directions
+    cpdef initialize(self, Grid Gr, NetCDFIO_Stats NS)
+    cpdef update(self, Grid Gr, TimeStepping.TimeStepping TS)
+    # cdef inline Py_ssize_t get_varshift(self, Grid.Grid Gr, str variable_name):
+    #     return self.name_index[variable_name] * Gr.nzg

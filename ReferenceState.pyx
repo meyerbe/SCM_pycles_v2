@@ -4,7 +4,7 @@
 # cython: initializedcheck=False
 # cython: cdivision=True
 
-cimport Grid
+from Grid cimport Grid
 # cimport Restart
 cimport numpy as np
 import numpy as np
@@ -28,7 +28,7 @@ Idea:
 '''
 
 cdef class ReferenceState:
-    def __init__(self, Grid.Grid Gr ):
+    def __init__(self, Grid Gr ):
 
         self.p0 = np.zeros(Gr.nzg, dtype=np.double, order='c')
         self.p0_half = np.zeros(Gr.nzg, dtype=np.double, order='c')
@@ -39,8 +39,8 @@ cdef class ReferenceState:
 
         return
 
-    # def initialize(self, Grid.Grid Gr, Thermodynamics, NetCDFIO_Stats NS):
-    def initialize(self, Grid.Grid Gr, NetCDFIO_Stats NS):
+    # def initialize(self, Grid Gr, Thermodynamics, NetCDFIO_Stats NS):
+    def initialize(self, Grid Gr, NetCDFIO_Stats NS):
         '''
         Initilize the reference profiles. The function is typically called from the case specific initialization
         fucntion defined in Initialization.pyx
@@ -175,7 +175,7 @@ cdef class ReferenceState:
 
 
 
-    # cpdef restart(self, Grid.Grid Gr, Restart.Restart Re):
+    # cpdef restart(self, Grid Gr, Restart.Restart Re):
     #     Re.restart_data['Ref'] = {}
     #
     #     Re.restart_data['Ref']['p0'] = np.array(self.p0)
