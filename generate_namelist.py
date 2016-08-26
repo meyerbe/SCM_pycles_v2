@@ -1323,7 +1323,6 @@ def DCBLSoares_moist():
 
     namelist['microphysics'] = {}
     namelist['microphysics']['scheme'] = 'None_SA'     # DCBL: 'None_Dry', Bomex: 'None_SA'; options: 'None_Dry' (no qt as Progn. Var.), 'None_SA', 'SB_Liquid'
-    namelist['microphysics']['phase_partitioning'] = 'liquid_only'  # seems to be this in all cases???
 
     namelist['sgs'] = {}
     namelist['sgs']['scheme'] = 'Smagorinsky'
@@ -1436,11 +1435,14 @@ def Test():
     namelist['stats_io']['frequency'] = 10.0
 
     namelist['meta'] = {}
-    namelist['meta']['simname'] = 'DCBLSoares'
-    namelist['meta']['casename'] = 'DCBLSoares'
+    namelist['meta']['simname'] = 'Test'
+    namelist['meta']['casename'] = 'Test'
 
     namelist['visualization'] = {}
     namelist['visualization']['frequency'] = 1800.0
+
+    namelist['microphysics'] = {}
+    namelist['microphysics']['scheme'] = 'None_Dry'
 
     return namelist
 

@@ -21,13 +21,22 @@ cdef class InitializationBase:
         double pert_max
     cpdef initialize_reference(self, Grid Gr, ReferenceState Ref, NetCDFIO_Stats NS)
     cpdef initialize_profiles(self, Grid Gr, ReferenceState Ref, MeanVariables M1, SecondOrderMomenta M2, NetCDFIO_Stats NS)
-    cpdef initialize_surface(self, Grid Gr, ReferenceState Ref )
+    #cpdef initialize_surface(self, Grid Gr, ReferenceState Ref, NetCDFIO_Stats NS)
+    cpdef initialize_surface(self, Grid Gr, ReferenceState Ref)
     cpdef initialize_io(self, NetCDFIO_Stats Stats)
     cpdef update_surface(self, MeanVariables MV)
     # cpdef initialize_entropy(self, double [:] theta, Grid Gr, ReferenceState Ref, MeanVariables MV)
 
 
 cdef class InitSoares(InitializationBase):
+    cpdef initialize_reference(self, Grid Gr, ReferenceState Ref, NetCDFIO_Stats NS)
+    cpdef initialize_profiles(self, Grid Gr, ReferenceState Ref, MeanVariables M1, SecondOrderMomenta M2, NetCDFIO_Stats NS)
+    # cpdef initialize_surface(self, Grid Gr, ReferenceState Ref )
+    # cpdef initialize_io(self, NetCDFIO_Stats Stats)
+    # cpdef update_surface(self, MeanVariables MV)
+
+
+cdef class InitTest(InitializationBase):
     cpdef initialize_reference(self, Grid Gr, ReferenceState Ref, NetCDFIO_Stats NS)
     cpdef initialize_profiles(self, Grid Gr, ReferenceState Ref, MeanVariables M1, SecondOrderMomenta M2, NetCDFIO_Stats NS)
     # cpdef initialize_surface(self, Grid Gr, ReferenceState Ref )
