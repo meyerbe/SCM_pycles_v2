@@ -1,6 +1,6 @@
 from NetCDFIO cimport NetCDFIO_Stats
 from Grid cimport Grid
-cimport TimeStepping
+from TimeStepping cimport TimeStepping
 # cimport ReferenceState
 # cimport Restart
 
@@ -33,7 +33,7 @@ cdef class PrognosticVariables:
 
     cpdef add_variable(self,name,units,var_type)        # cpdef add_variable(self,name,units,bc_type,var_type)
     cpdef initialize(self, Grid Gr, NetCDFIO_Stats NS)
-    cpdef update(self, Grid Gr, TimeStepping.TimeStepping TS)
+    cpdef update(self, Grid Gr, TimeStepping TS)
     # cdef:
     #     void update_all_bcs(self, Grid.Grid Gr)
     # cpdef Update_all_bcs(self,Grid.Grid Gr)
@@ -54,21 +54,14 @@ cdef class PrognosticVariables:
 
 
 cdef class MeanVariables(PrognosticVariables):
-    # cdef:
-    #     cdef double [:] values
-    #     cdef double [:] tendencies
-    #     cdef int [:] velocity_directions
     cpdef initialize(self, Grid Gr, NetCDFIO_Stats NS)
-    cpdef update(self, Grid Gr, TimeStepping.TimeStepping TS)
+    cpdef update(self, Grid Gr, TimeStepping TS)
     # cdef inline Py_ssize_t get_varshift(self, Grid.Grid Gr, str variable_name):
     #     return self.name_index[variable_name] * Gr.nzg
+    cpdef plot(self, str message, Grid Gr, TimeStepping TS)
 
 cdef class SecondOrderMomenta(PrognosticVariables):
-    # cdef:
-    #     cdef double [:] values
-    #     cdef double [:] tendencies
-    #     cdef int [:] velocity_directions
     cpdef initialize(self, Grid Gr, NetCDFIO_Stats NS)
-    cpdef update(self, Grid Gr, TimeStepping.TimeStepping TS)
+    cpdef update(self, Grid Gr, TimeStepping TS)
     # cdef inline Py_ssize_t get_varshift(self, Grid.Grid Gr, str variable_name):
     #     return self.name_index[variable_name] * Gr.nzg

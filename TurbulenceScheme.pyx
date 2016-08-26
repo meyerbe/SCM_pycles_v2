@@ -39,16 +39,20 @@ cdef class TurbulenceNone:
     # cpdef update(self, Grid Gr,  DiagnosticVariables.DiagnosticVariables DV,
     #              PrognosticVariables.PrognosticVariables PV, Kinematics.Kinematics Ke, Surface.SurfaceBase Sur):
     cpdef update(self):
+        # (1) Advection: MA.update_M2, SA.update_M2
+        # (2) Diffusion: SD.update_M2, MD.update_M2
+        # (3) Pressure: ?
+
         # cdef:
             # Py_ssize_t diff_shift = DV.get_varshift(Gr,'diffusivity')
             # Py_ssize_t visc_shift = DV.get_varshift(Gr,'viscosity')
             # Py_ssize_t i
         # with nogil:
         #     if not self.is_init:
-        #         for i in xrange(Gr.dims.npg):
-        #             DV.values[diff_shift + i] = self.const_diffusivity
-        #             DV.values[visc_shift + i] = self.const_viscosity
-        #             self.is_init = True
+        #         pass
+
+
+
         return
 
 

@@ -9,10 +9,11 @@ import numpy as np
 cimport numpy as np
 cimport mpi4py.libmpi as mpi
 import sys
+import pylab as plt
 from NetCDFIO cimport NetCDFIO_Stats
 
 from Grid cimport Grid
-cimport TimeStepping
+from TimeStepping cimport TimeStepping
 # cimport ReferenceState
 # cimport Restart
 
@@ -85,7 +86,7 @@ cdef class PrognosticVariables:
         self.values = np.zeros((self.nv*Gr.nzg),dtype=np.double,order='c')
         self.tendencies = np.zeros((self.nv*Gr.nzg),dtype=np.double,order='c')
         #Add prognostic variables to Statistics IO
-        print('Setting up statistical output files for Prognostic Variables')
+        # print('Setting up statistical output files for Prognostic Variables')
         for var_name in self.name_index.keys():
             #Add mean profile
             NS.add_profile(var_name+'_mean')
@@ -107,7 +108,7 @@ cdef class PrognosticVariables:
         return
 
 
-    cpdef update(self, Grid Gr, TimeStepping.TimeStepping TS):
+    cpdef update(self, Grid Gr, TimeStepping TS):
         cdef:
             kmax = Gr.nzg
         for var in self.name_index.keys():
@@ -270,20 +271,102 @@ cdef class MeanVariables(PrognosticVariables):
         self.values = np.zeros((self.nv*Gr.nzg),dtype=np.double,order='c')
         self.tendencies = np.zeros((self.nv*Gr.nzg),dtype=np.double,order='c')
         #Add prognostic variables to Statistics IO
-        print('Setting up statistical output files for PV.M1')
+        # print('Setting up statistical output files for PV.M1')
         for var_name in self.name_index.keys():
             #Add mean profile
             NS.add_profile(var_name+'_mean')
         return
 
-    cpdef update(self, Grid Gr, TimeStepping.TimeStepping TS):
+    cpdef update(self, Grid Gr, TimeStepping TS):
         cdef:
             kmax = Gr.nzg
         for var in self.name_index.keys():
             var_shift = self.get_varshift(Gr, var)
             for k in xrange(0,kmax):
                 self.values[var_shift + k] += self.tendencies[var_shift + k] * TS.dt
+                self.tendencies[var_shift + k] = 0.0
+
+
+        print('M1: M1_tendencies[u,k=10]: ', self.tendencies[10], np.amax(self.tendencies))
+        s_varshift = self.get_varshift(Gr, 's')
+        print('M1: M1_tendencies[phi=s,k=10]: ', self.tendencies[s_varshift+10], np.amax(self.tendencies))
+
         return
+
+
+    cpdef plot(self, str message, Grid Gr, TimeStepping TS):
+        cdef:
+            double [:] values = self.values
+            double [:] tendencies = self.tendencies
+            Py_ssize_t s_varshift = self.get_varshift(Gr,'s')
+            Py_ssize_t w_varshift = self.get_varshift(Gr,'w')
+            Py_ssize_t v_varshift = self.get_varshift(Gr,'v')
+            Py_ssize_t u_varshift = self.get_varshift(Gr,'u')
+
+        plt.figure(1,figsize=(15,7))
+        # plt.plot(values[s_varshift+Gr.gw:s_varshift+Gr.nzg-Gr.gw], Gr.z)
+        plt.subplot(1,4,1)
+        plt.plot(values[s_varshift:s_varshift+Gr.nzg], Gr.z)
+        plt.title('s')
+        plt.subplot(1,4,2)
+        plt.plot(values[w_varshift:w_varshift+Gr.nzg], Gr.z)
+        plt.title('w')
+        plt.subplot(1,4,3)
+        plt.plot(values[v_varshift:v_varshift+Gr.nzg], Gr.z)
+        plt.title('v')
+        plt.subplot(1,4,4)
+        plt.plot(values[u_varshift:u_varshift+Gr.nzg], Gr.z)
+        plt.title('u')
+        # plt.show()
+        plt.savefig('./figs/profiles_' + message + '_' + np.str(TS.t) + '.png')
+        plt.close()
+
+        plt.figure(2,figsize=(15,7))
+        # plt.plot(values[s_varshift+Gr.gw:s_varshift+Gr.nzg-Gr.gw], Gr.z)
+        plt.subplot(1,4,1)
+        plt.plot(tendencies[s_varshift:s_varshift+Gr.nzg], Gr.z)
+        plt.title('s tend')
+        plt.subplot(1,4,2)
+        plt.plot(tendencies[w_varshift:w_varshift+Gr.nzg], Gr.z)
+        plt.title('w tend')
+        plt.subplot(1,4,3)
+        plt.plot(tendencies[v_varshift:v_varshift+Gr.nzg], Gr.z)
+        plt.title('v tend')
+        plt.subplot(1,4,4)
+        plt.plot(tendencies[u_varshift:u_varshift+Gr.nzg], Gr.z)
+        plt.title('u tend')
+        # plt.show()
+        plt.savefig('./figs/tendencies_' + message + '_' + np.str(TS.t) + '.png')
+        plt.close()
+        return
+
+    # cpdef plot_tendencies(self, Grid Gr, TimeStepping TS):
+    #     cdef:
+    #         double [:] values = self.values
+    #         double [:] tendencies = self.tendencies
+    #         Py_ssize_t s_varshift = self.get_varshift(Gr,'s')
+    #         Py_ssize_t w_varshift = self.get_varshift(Gr,'w')
+    #         Py_ssize_t v_varshift = self.get_varshift(Gr,'v')
+    #         Py_ssize_t u_varshift = self.get_varshift(Gr,'u')
+    #     plt.figure(1,figsize=(15,7))
+    #     # plt.plot(values[s_varshift+Gr.gw:s_varshift+Gr.nzg-Gr.gw], Gr.z)
+    #     plt.subplot(1,4,1)
+    #     plt.plot(values[s_varshift:s_varshift+Gr.nzg], Gr.z)
+    #     plt.title('s')
+    #     plt.subplot(1,4,2)
+    #     plt.plot(values[w_varshift:w_varshift+Gr.nzg], Gr.z)
+    #     plt.title('w')
+    #     plt.subplot(1,4,3)
+    #     plt.plot(values[v_varshift:v_varshift+Gr.nzg], Gr.z)
+    #     plt.title('v')
+    #     plt.subplot(1,4,4)
+    #     plt.plot(values[u_varshift:u_varshift+Gr.nzg], Gr.z)
+    #     plt.title('u')
+    #     plt.show()
+    #     plt.savefig('./figs/profiles_' + np.str(TS.t) + '.png')
+    #     plt.close()
+    #     return
+
 
 
 
@@ -313,19 +396,21 @@ cdef class SecondOrderMomenta(PrognosticVariables):
         #     sys.exit()
 
         #Add prognostic variables to Statistics IO
-        print('Setting up statistical output files PV.M2')
+        # print('Setting up statistical output files PV.M2')
         for var_name in self.name_index.keys():
             #Add mean profile
             NS.add_profile(var_name+'_mean')
         return
 
-    cpdef update(self, Grid Gr, TimeStepping.TimeStepping TS):
+    cpdef update(self, Grid Gr, TimeStepping TS):
         cdef:
             kmax = Gr.nzg
         for var in self.name_index.keys():
             var_shift = self.get_varshift(Gr, var)
             for k in xrange(0,kmax):
                 self.values[var_shift + k] += self.tendencies[var_shift + k] * TS.dt
+
+
         return
 
 

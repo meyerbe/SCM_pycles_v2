@@ -16,6 +16,7 @@ from Initialization import InitializationFactory
 cimport PrognosticVariables
 cimport MomentumAdvection
 cimport ScalarAdvection
+# from SGS_variante2 import SGSFactory
 from SGS import SGSFactory
 cimport MomentumDiffusion
 cimport ScalarDiffusion
@@ -82,10 +83,12 @@ class Simulation1d:
 
         self.MA.initialize(self.Gr, self.M1)
         self.SA.initialize(self.Gr, self.M1)
-        self.MD.initialize(self.Gr)
-        self.SD.initialize(self.Gr)
+        self.SGS.initialize(self.Gr, self.M1, self.M2)
+        self.MD.initialize(self.Gr, self.M1)
+        self.SD.initialize(self.Gr, self.M1)
 
         print('Initialization completed!')
+        # self.plot()
         return
 
 
@@ -95,21 +98,25 @@ class Simulation1d:
 
         while(self.TS.t < self.TS.t_max):
             # (0) update auxiliary fields
-            self.SGS.update()       # --> compute diffusivity / viscosity for M1 and M2 (being the same at the moment)
-
+            self.SGS.update(self.Gr)       # --> compute diffusivity / viscosity for M1 and M2 (being the same at the moment)
+            self.M1.plot('beginning of timestep', self.Gr, self.TS)
             # (1) update mean field (M1) tendencies
-            self.Th.update()
-            self.MA.update(self.Gr, self.Ref, self.M1)      # --> self.MA.update_M1_2nd()
-            self.SA.update(self.Gr, self.Ref, self.M1)      # --> self.SA.update_M1_2nd()
+            # self.Th.update()
+            # self.MA.update(self.Gr, self.Ref, self.M1)      # --> self.MA.update_M1_2nd()
+            # self.SA.update(self.Gr, self.Ref, self.M1)      # --> self.SA.update_M1_2nd()
 
-            self.MD.update()
-            self.SD.update()
+            self.MD.update(self.Gr, self.Ref, self.M1, self.SGS)
+            self.M1.plot('after MD update', self.Gr, self.TS)
+            self.SD.update(self.Gr, self.Ref, self.M1, self.SGS)
+            self.M1.plot('after SD update', self.Gr, self.TS)
+
             # self.Turb.update_M1()                         # --> add turbulent flux divergence to mean field tendencies: dz<w'phi'>
             # ??? surface fluxes ??? (--> in SGS or MD/SD scheme?)
             # ??? update boundary conditions ???
             # ??? pressure solver ???
 
             # self.PV.update(self.Gr, self.TS) # !!! causes error !!!
+            self.M1.plot('without tendency update', self.Gr, self.TS)
             self.M1.update(self.Gr, self.TS)        # --> updating values by adding tendencies
 
 
@@ -133,6 +140,14 @@ class Simulation1d:
 
 
 
+    # def plot(self):
+    #
+    #     plt.figure(1)
+    #     plt.plot()
+    #     plt.title(var + ', ' + message)
+    #     # plt.show()
+    #     plt.savefig(self.outpath + '/' + var + '_' + message + '.png')
+    #     plt.close()
 
 
 
