@@ -16,6 +16,7 @@ from Initialization import InitializationFactory
 cimport PrognosticVariables
 cimport MomentumAdvection
 cimport ScalarAdvection
+from SGS import SGSFactory
 cimport MomentumDiffusion
 cimport ScalarDiffusion
 cimport NetCDFIO
@@ -39,6 +40,7 @@ class Simulation1d:
         self.MA = MomentumAdvection.MomentumAdvection(namelist)
         self.SA = ScalarAdvection.ScalarAdvection(namelist)
 
+        self.SGS = SGSFactory(namelist)
         self.MD = MomentumDiffusion.MomentumDiffusion()
         self.SD = ScalarDiffusion.ScalarDiffusion(namelist)
 
@@ -92,24 +94,37 @@ class Simulation1d:
         print('Sim: start run')
 
         while(self.TS.t < self.TS.t_max):
+            # (0) update auxiliary fields
+            self.SGS.update()       # --> compute diffusivity / viscosity for M1 and M2 (being the same at the moment)
 
-        #     # pass
-
-            # update PV tendencies
+            # (1) update mean field (M1) tendencies
             self.Th.update()
-            self.MA.update(self.Gr, self.Ref, self.M1)
-            self.SA.update(self.Gr, self.Ref, self.M1)
+            self.MA.update(self.Gr, self.Ref, self.M1)      # --> self.MA.update_M1_2nd()
+            self.SA.update(self.Gr, self.Ref, self.M1)      # --> self.SA.update_M1_2nd()
+
             self.MD.update()
             self.SD.update()
+            # self.Turb.update_M1()                         # --> add turbulent flux divergence to mean field tendencies: dz<w'phi'>
+            # ??? surface fluxes ??? (--> in SGS or MD/SD scheme?)
+            # ??? update boundary conditions ???
+            # ??? pressure solver ???
 
             # self.PV.update(self.Gr, self.TS) # !!! causes error !!!
-            # # print('PV.update')
-            self.M1.update(self.Gr, self.TS)
-            # # print('M1.update')
-            self.M2.update(self.Gr, self.TS)
-            # # print('M2.update')
-            #
-            # # ??? update boundary conditions???
+            self.M1.update(self.Gr, self.TS)        # --> updating values by adding tendencies
+
+
+            # (2) update second order momenta (M2) tendencies
+            # self.MA.update                        # --> self.MA.update_M2(): advection of M2
+            # self.SA.update                        # --> self.SA.update_M2(): advection of M2
+            # self.MD.update()
+            # self.SD.update()
+            # self.Turb.update_M2()                 # update higher order terms in M2 tendencies
+            # ??? update boundary conditions???
+            # ??? pressure correlations ???
+            # ??? surface fluxes ??? (--> in SGS or MD/SD scheme?)
+            self.M2.update(self.Gr, self.TS)        # --> updating values by adding tendencies
+
+
             self.TS.update()
 
         return
