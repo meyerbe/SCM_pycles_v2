@@ -123,6 +123,7 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
 
 
     cpdef advect_M2_local(self, Grid Gr, PrognosticVariables.MeanVariables M1, PrognosticVariables.SecondOrderMomenta M2):
+        print('Turb update: advect M2 local')
         # implemented for staggered grid
         # w: on w-grid
         # u,v,{s,qt}: on phi-grid
@@ -141,6 +142,11 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
             Py_ssize_t ww_shift = M2.get_varshift(Gr, 'ww')
             Py_ssize_t ws_shift = M2.get_varshift(Gr, 'ws')
 
+            double [:] u = M1.values[u_varshift:u_varshift+Gr.nzg]
+            double [:] v = M1.values[v_varshift:v_varshift+Gr.nzg]
+            double [:] w = M1.values[w_varshift:w_varshift+Gr.nzg]
+            double [:] s = M1.values[s_varshift:s_varshift+Gr.nzg]
+
             double dzi = Gr.dzi
             Py_ssize_t k, var_shift
 
@@ -152,14 +158,33 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
             # w and M2.value both on w-grid --> compare to scalar advection for gradients
                 for k in xrange(Gr.nzg):
                     var_shift = M2.get_varshift(Gr, name)
-                    M2.tendencies[var_shift + k] -= 0.5*(M1.values[w_varshift+k]+M1.values[w_varshift+k+1])*(M2.values[var_shift+k]-M2.values[var_shift+k-1])*dzi
+                    M2.tendencies[var_shift + k] -= 0.5*(w[k]+w[k+1])*(M2.values[var_shift+k]-M2.values[var_shift+k-1])*dzi
             else:
-            # w on w-grid, M2.value both on phi-grid
+            # w on w-grid, M2.value on phi-grid --> compare to momentum advection for gradients
                 for k in xrange(Gr.nzg):
                     var_shift = M2.get_varshift(Gr, name)
-                    M2.tendencies[var_shift + k] -= M1.values[w_varshift + k]*(M2.values[var_shift+k]-M2.values[var_shift+k-1])*dzi
+                    M2.tendencies[var_shift + k] -= w[k]*(M2.values[var_shift+k]-M2.values[var_shift+k-1])*dzi
 
-        # (i) advection by M2
+        # (ii) advection by M2
+        # w: on w-grid
+        # u,v,{s,qt}: on phi-grid
+        # —> dz ws, dz wqt on phi-grid      —> ws, wqt on w-grid   -> compare to scalar advection for gradients
+        # —> dz wu, dz wv on phi-grid       —> wu, wv on w-grid    -> compare to scalar advection for gradients
+        # —> dz ww on w-grid                —> ww on phi-grid      -> compare to momentum advection for gradients
+
+        # wu on w-grid --> interpolate ww; u_mean ok;  wu ok; interpolate w_mean
+        # wv on w-grid --> interpolate ww; v_mean ok; wv ok; interpolate w_mean
+        # ww on phi-grid --> ww ok; w ok
+        # ws on w-grid --> interpolate ww; s_mean ok; ws ok; interpolate w_mean
+
+        for k in xrange(Gr.nzg):
+            M2.tendencies[wu_shift+k] -= 0.5*(M2.values[ww_shift+k]+M2.values[ww_shift+k+1])*(u[k]-u[k-1])*dzi \
+                                         - M2.values[wu_shift+k]*( 0.5*(w[k]+w[k+1]) - 0.5*(w[k-1]+w[k]) )*dzi
+            M2.tendencies[wv_shift+k] -= 0.5*(M2.values[ww_shift+k]+M2.values[ww_shift+k+1])*(v[k]-v[k-1])*dzi \
+                                         - M2.values[wv_shift+k]*( 0.5*(w[k]+w[k+1]) - 0.5*(w[k-1]+w[k]) )*dzi
+            M2.tendencies[ww_shift+k] -= M2.values[ww_shift+k]*(w[k]-w[k-1])*dzi
+            M2.tendencies[ws_shift+k] -= 0.5*(M2.values[ww_shift+k]+M2.values[ww_shift+k+1])*(s[k]-s[k-1])*dzi \
+                                         - M2.values[ws_shift+k]*( 0.5*(w[k]+w[k+1]) - 0.5*(w[k-1]+w[k]) )*dzi
 
         return
 
