@@ -22,6 +22,8 @@ cimport MomentumDiffusion
 cimport ScalarDiffusion
 cimport NetCDFIO
 from Thermodynamics import ThermodynamicsFactory
+from TurbulenceScheme import TurbulenceFactory
+# cimport TurbulenceScheme
 
 
 
@@ -40,6 +42,7 @@ class Simulation1d:
 
         self.MA = MomentumAdvection.MomentumAdvection(namelist)
         self.SA = ScalarAdvection.ScalarAdvection(namelist)
+        self.Turb = TurbulenceFactory(namelist)
 
         self.SGS = SGSFactory(namelist)
         self.MD = MomentumDiffusion.MomentumDiffusion()
@@ -64,12 +67,10 @@ class Simulation1d:
         self.M1.add_variable('u', 'm/s', "velocity")
         self.M1.add_variable('v', 'm/s', "velocity")
         self.M1.add_variable('w', 'm/s', "velocity")
-        self.M2.add_variable('uu', '(m/s)^2', "velocity")
-        self.M2.add_variable('vv', '(m/s)^2', "velocity")
+
+        self.M2.add_variable('wu', '(m/s)^2', "velocity")
+        self.M2.add_variable('wv', '(m/s)^2', "velocity")
         self.M2.add_variable('ww', '(m/s)^2', "velocity")
-        self.M2.add_variable('uv', '(m/s)^2', "velocity")
-        self.M2.add_variable('uw', '(m/s)^2', "velocity")
-        self.M2.add_variable('vw', '(m/s)^2', "velocity")
 
 
         # AuxillaryVariables(namelist, self.PV, self.DV, self.Pa)
@@ -106,11 +107,11 @@ class Simulation1d:
             # self.SA.update(self.Gr, self.Ref, self.M1)      # --> self.SA.update_M1_2nd()
 
             self.MD.update(self.Gr, self.Ref, self.M1, self.SGS)
-            self.M1.plot('after MD update', self.Gr, self.TS)
+            # self.M1.plot('after MD update', self.Gr, self.TS)
             self.SD.update(self.Gr, self.Ref, self.M1, self.SGS)
-            self.M1.plot('after SD update', self.Gr, self.TS)
+            # self.M1.plot('after SD update', self.Gr, self.TS)
 
-            # self.Turb.update_M1()                         # --> add turbulent flux divergence to mean field tendencies: dz<w'phi'>
+            self.Turb.update_M1(self.Gr, self.M1, self.M2)                         # --> add turbulent flux divergence to mean field tendencies: dz<w'phi'>
             # ??? surface fluxes ??? (--> in SGS or MD/SD scheme?)
             # ??? update boundary conditions ???
             # ??? pressure solver ???
@@ -126,6 +127,8 @@ class Simulation1d:
             # self.MD.update()
             # self.SD.update()
             # self.Turb.update_M2()                 # update higher order terms in M2 tendencies
+            print('Sim: Turb update')
+            self.Turb.update(self.Gr, self.M1, self.M2)
             # ??? update boundary conditions???
             # ??? pressure correlations ???
             # ??? surface fluxes ??? (--> in SGS or MD/SD scheme?)

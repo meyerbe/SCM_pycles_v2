@@ -5,17 +5,22 @@ cimport PrognosticVariables
 # cimport Surface
 # from NetCDFIO cimport NetCDFIO_Stats
 
+cdef class TurbulenceBase:
+    cpdef initialize(self)
+    cpdef update(self, Grid Gr, PrognosticVariables.MeanVariables M1, PrognosticVariables.SecondOrderMomenta M2)
+    cpdef update_M1(self,Grid Gr, PrognosticVariables.MeanVariables M1, PrognosticVariables.SecondOrderMomenta M2)
+    cpdef stats_io(self)
 
-cdef class TurbulenceNone:
+cdef class TurbulenceNone(TurbulenceBase):
+    cpdef initialize(self)
+    # cpdef update(self, Grid Gr, PrognosticVariables.MeanVariables M1, PrognosticVariables.SecondOrderMomenta M2)
+    # cpdef stats_io(self)
 
+
+cdef class Turbulence2ndOrder(TurbulenceBase):
     # cdef:
     #     double const_viscosity
-
-    # cpdef initialize(self, Grid Gr, PrognosticVariables.PrognosticVariables PV, NetCDFIO_Stats NS)
     cpdef initialize(self)
-    # cpdef update(self, Grid Gr,  DiagnosticVariables.DiagnosticVariables DV,
-    #              PrognosticVariables.PrognosticVariables PV, Kinematics.Kinematics Ke, Surface.SurfaceBase Sur)
-    cpdef update(self)
-    # cpdef stats_io(self, Grid Gr, DiagnosticVariables.DiagnosticVariables DV,
-    #                PrognosticVariables.PrognosticVariables PV, Kinematics.Kinematics Ke, NetCDFIO_Stats NS)
+    cpdef update(self, Grid Gr, PrognosticVariables.MeanVariables M1, PrognosticVariables.SecondOrderMomenta M2)
+    cpdef advect_M2_local(self, Grid Gr, PrognosticVariables.MeanVariables M1, PrognosticVariables.SecondOrderMomenta M2)
     cpdef stats_io(self)
