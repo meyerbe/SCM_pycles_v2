@@ -70,9 +70,9 @@ cdef class ScalarAdvection:
             Py_ssize_t scalar_count=0
             Py_ssize_t k
             Py_ssize_t w_varshift = M1.get_varshift(Gr,'w')
-            double dz = Gr.dz
+            double dzi = Gr.dzi
 
-            double [:] velocities = M1.values
+            double [:] M1_values = M1.values
             double [:] flux = self.flux
             double [:] tendency = self.tendencies
             double [:] tendency_M1 = M1.tendencies
@@ -94,11 +94,11 @@ cdef class ScalarAdvection:
                 # print('scalar shift', scalar_shift)
                 # print('flux_shift', flux_shift)
                 for k in xrange(1,Gr.nzg-1):
-                    scalar_int = 0.5*(velocities[scalar_shift+k]+velocities[scalar_shift+k+1])
-                    flux[flux_shift+k] = rho0[k]*velocities[w_varshift+k]*scalar_int
+                    scalar_int = 0.5*(M1_values[scalar_shift+k]+M1_values[scalar_shift+k+1])
+                    flux[flux_shift+k] = rho0[k]*M1_values[w_varshift+k]*scalar_int
                     # pass
                     # flux[ijk] = interp_2(scalar[ijk],scalar[ijk+sp1]) * velocity[ijk]*rho0[k]
-                    tendency[flux_shift+k] = - alpha0_half[k]*(flux[k]-flux[k-1])*dz
+                    tendency[flux_shift+k] = - alpha0_half[k]*(flux[k]-flux[k-1])*dzi
                 scalar_count += 1
         # print(tendency.shape, tendency.size, scalar_shift, k)
 

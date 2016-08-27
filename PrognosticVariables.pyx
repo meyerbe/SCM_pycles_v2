@@ -372,6 +372,13 @@ cdef class MeanVariables(PrognosticVariables):
 
 
 cdef class SecondOrderMomenta(PrognosticVariables):
+    # implementation for staggered grid
+        # w: on w-grid
+        # u,v,{s,qt}: on phi-grid
+        # —> dz ws, dz wqt on phi-grid      —> ws, wqt on w-grid   -> compare to scalar advection for gradients
+        # —> dz wu, dz wv on phi-grid       —> wu, wv on w-grid    -> compare to scalar advection for gradients
+        # —> dz ww on w-grid                —> ww on phi-grid      -> compare to momentum advection for gradients
+
     def __init__(self, Gr):
         #  necessary to initialize the following variable and arrays
         self.name_index = {}

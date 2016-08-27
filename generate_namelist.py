@@ -1390,17 +1390,14 @@ def DCBLSoares_moist():
 
 
 def Test():
-    # adopted from: "An eddy-diffusivity/mass-flux parametrization for dry and shallow cumulus convection",
-    # By P. M. M. SOARES, P. M. A. MIRANDA, A. P. SIEBESMA and J. TEIXEIRA, Q. J. R. Meteorol. Soc. (2004)
-    # modifications: qt initial profile and flux set to zero, since no dry thermodynamics without condensation given
-
+    # constant initial profiles for mean prognostic variables
     namelist = {}
 
     namelist['grid'] = {}
     namelist['grid']['dims'] = 3
-    namelist['grid']['nz'] = 20    # IOP
-    namelist['grid']['gw'] = 3      # for 2nd order
-    namelist['grid']['dz'] = 25.0   # IOP
+    namelist['grid']['nz'] = 20
+    namelist['grid']['gw'] = 3
+    namelist['grid']['dz'] = 25.0
 
     namelist['mpi'] = {}
     namelist['mpi']['nprocz'] = 1
@@ -1409,7 +1406,7 @@ def Test():
     namelist['time_stepping']['ts_type'] = 3    # seems to be 3 in all cases???
     namelist['time_stepping']['cfl_limit'] = 0.3    # default: 0.7; IOP: 0.3
     namelist['time_stepping']['dt_initial'] = 10.0
-    namelist['time_stepping']['dt_max'] = 10.0
+    namelist['time_stepping']['dt_max'] = 600.0
     namelist['time_stepping']['t_max'] = 30.0
 
     namelist['sgs'] = {}
@@ -1424,6 +1421,9 @@ def Test():
     namelist['momentum_transport']['order'] = 2
     namelist['scalar_transport'] = {}
     namelist['scalar_transport']['order'] = 2
+
+    namelist['turbulence'] = {}
+    namelist['turbulence']['scheme'] = '2nd_order'
 
     namelist['output'] = {}
     namelist['output']['output_root'] = './'

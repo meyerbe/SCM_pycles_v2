@@ -26,14 +26,14 @@ cdef class Grid:
 
 
     def __init__(self,namelist):
-        #Get the grid spacing
+        # dimensions = #velocity direction
         self.dims = namelist['grid']['dims']
-
+        # grid spacing
         self.dz = namelist['grid']['dz']
-
-        #Set the inverse grid spacing
-
+        # inverse grid spacing
         self.dzi = 1.0/self.dz
+        # dimensions of the physical domain
+        self.lz = np.double(self.dz * self.nz)
 
         #Get the grid dimensions and ghost points
         self.gw = namelist['grid']['gw']

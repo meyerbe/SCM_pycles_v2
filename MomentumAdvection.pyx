@@ -6,6 +6,7 @@
 
 from Grid cimport Grid
 from PrognosticVariables cimport MeanVariables
+from PrognosticVariables cimport SecondOrderMomenta
 from ReferenceState cimport ReferenceState
 # from NetCDFIO cimport NetCDFIO_Stats
 
@@ -39,21 +40,20 @@ cdef class MomentumAdvection:
         #       - only vertical advection
         if self.order == 2:
             self.update_M1_2nd(Gr, Ref, M1)
-            self.update_M2_2nd(Gr, Ref, M1)
         else:
             print('momentum advection scheme not implemented')
             sys.exit()
         # dt U = ... - alpha0 dz (rho0 <w'u'>)
         # dt V = ... - alpha0 dz (rho0 <w'v'>)
         # dt W = ... - alpha0 dz (rho0 <w'w'>)
-        M1.tendencies += M2.values
+        # M1.tendencies += M2.values
 
         # (2) update tendencies for 2nd Order Momenta
-        if self.order == 2:
-            self.update_M2_2nd(Gr, Ref, M1)
-        else:
-            print('momentum advection scheme not implemented')
-            sys.exit()
+        # if self.order == 2:
+        #     self.update_M2_2nd(Gr, Ref, M2)
+        # else:
+        #     print('momentum advection scheme not implemented')
+        #     sys.exit()
         return
 
 
@@ -75,7 +75,7 @@ cdef class MomentumAdvection:
             Py_ssize_t k
             Py_ssize_t kmax = Gr.nzg-Gr.gw
             Py_ssize_t gw = Gr.gw
-            double dz = Gr.dz
+            double dzi = Gr.dzi
 
             # Py_ssize_t stencil[3] = {istride,jstride,1}
             Py_ssize_t sp1_ed = 1
@@ -120,12 +120,12 @@ cdef class MomentumAdvection:
                 for k in xrange(gw,kmax):
                     # pass
                     tendency[shift_advected+k] = \
-                        alpha0[k]*(flux[shift_advected+k] - flux[shift_advected+k+sm1_ed])*dz
+                        alpha0[k]*(flux[shift_advected+k] - flux[shift_advected+k+sm1_ed])*dzi
             else:
                 for k in xrange(gw,kmax):
                     # pass
                     tendency[shift_advected+k] = \
-                        alpha0_half[k]*(flux[shift_advected+k]-flux[shift_advected+k+sm1_ed])*dz
+                        alpha0_half[k]*(flux[shift_advected+k]-flux[shift_advected+k+sm1_ed])*dzi
 
             for k in xrange(Gr.nzg):
                 tendency_M1[shift_advected+k] += tendency[shift_advected+k]
@@ -133,7 +133,7 @@ cdef class MomentumAdvection:
         return
 
 
-    cpdef update_M2_2nd(self, Grid Gr, ReferenceState Ref, MeanVariables M2):
+    cpdef update_M2_2nd(self, Grid Gr, ReferenceState Ref, SecondOrderMomenta M2):
         return
 
 
