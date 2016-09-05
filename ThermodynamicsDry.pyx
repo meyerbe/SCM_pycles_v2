@@ -30,10 +30,11 @@ cdef class ThermodynamicsDry:
     # cpdef initialize(self,Grid.Grid Gr,PrognosticVariables.PrognosticVariables PV, DiagnosticVariables.DiagnosticVariables DV, NetCDFIO_Stats NS):
     cpdef initialize(self, Grid Gr, PrognosticVariables.MeanVariables M1, PrognosticVariables.SecondOrderMomenta M2):
         # PV.add_variable('s','m/s',"sym","scalar")
-        M1.add_variable('s','m/s',"scalar")
-        M2.add_variable('us', '(m/s)^2', "velocity")
-        M2.add_variable('vs', '(m/s)^2', "velocity")
-        M2.add_variable('ws', '(m/s)^2', "velocity")
+        # M1.add_variable('s','m/s',"scalar")
+        M1.add_variable('th','K',"scalar")
+        M2.add_variable('uth', '(m/s)^2', "velocity")
+        M2.add_variable('vth', '(m/s)^2', "velocity")
+        M2.add_variable('wth', '(m/s)^2', "velocity")
 
         return
 

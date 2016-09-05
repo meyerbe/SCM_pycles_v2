@@ -70,12 +70,12 @@ cdef class TurbulenceBase:
             Py_ssize_t u_varshift = M1.get_varshift(Gr, 'u')
             Py_ssize_t v_varshift = M1.get_varshift(Gr, 'v')
             Py_ssize_t w_varshift = M1.get_varshift(Gr, 'w')
-            Py_ssize_t s_varshift = M1.get_varshift(Gr, 's')
+            Py_ssize_t th_varshift = M1.get_varshift(Gr, 'th')
 
             Py_ssize_t wu_shift = M2.get_varshift(Gr, 'wu')
             Py_ssize_t wv_shift = M2.get_varshift(Gr, 'wv')
             Py_ssize_t ww_shift = M2.get_varshift(Gr, 'ww')
-            Py_ssize_t ws_shift = M2.get_varshift(Gr, 'ws')
+            Py_ssize_t wth_shift = M2.get_varshift(Gr, 'wth')
 
         if 'qt' in M1.name_index:
             qt_varshift = M1.get_varshift(Gr, 'qt')
@@ -87,7 +87,7 @@ cdef class TurbulenceBase:
             M1.tendencies[u_varshift + k] -=  M2.values[wu_shift + k]
             M1.tendencies[v_varshift + k] -=  M2.values[wv_shift+ k]
             M1.tendencies[w_varshift+ k] -=  M2.values[ww_shift + k]
-            M1.tendencies[s_varshift + k] -=  M2.values[ws_shift + k]
+            M1.tendencies[th_varshift + k] -=  M2.values[wth_shift + k]
         return
 
     cpdef stats_io(self):
@@ -135,17 +135,17 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
             Py_ssize_t u_varshift = M1.get_varshift(Gr, 'u')
             Py_ssize_t v_varshift = M1.get_varshift(Gr, 'v')
             Py_ssize_t w_varshift = M1.get_varshift(Gr, 'w')
-            Py_ssize_t s_varshift = M1.get_varshift(Gr, 's')
+            Py_ssize_t th_varshift = M1.get_varshift(Gr, 'th')
 
             Py_ssize_t wu_shift = M2.get_varshift(Gr, 'wu')
             Py_ssize_t wv_shift = M2.get_varshift(Gr, 'wv')
             Py_ssize_t ww_shift = M2.get_varshift(Gr, 'ww')
-            Py_ssize_t ws_shift = M2.get_varshift(Gr, 'ws')
+            Py_ssize_t wth_shift = M2.get_varshift(Gr, 'wth')
 
             double [:] u = M1.values[u_varshift:u_varshift+Gr.nzg]
             double [:] v = M1.values[v_varshift:v_varshift+Gr.nzg]
             double [:] w = M1.values[w_varshift:w_varshift+Gr.nzg]
-            double [:] s = M1.values[s_varshift:s_varshift+Gr.nzg]
+            double [:] s = M1.values[th_varshift:th_varshift+Gr.nzg]
 
             double dzi = Gr.dzi
             Py_ssize_t k, var_shift
@@ -183,10 +183,55 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
             M2.tendencies[wv_shift+k] -= 0.5*(M2.values[ww_shift+k]+M2.values[ww_shift+k+1])*(v[k]-v[k-1])*dzi \
                                          - M2.values[wv_shift+k]*( 0.5*(w[k]+w[k+1]) - 0.5*(w[k-1]+w[k]) )*dzi
             M2.tendencies[ww_shift+k] -= M2.values[ww_shift+k]*(w[k]-w[k-1])*dzi
-            M2.tendencies[ws_shift+k] -= 0.5*(M2.values[ww_shift+k]+M2.values[ww_shift+k+1])*(s[k]-s[k-1])*dzi \
-                                         - M2.values[ws_shift+k]*( 0.5*(w[k]+w[k+1]) - 0.5*(w[k-1]+w[k]) )*dzi
+            M2.tendencies[wth_shift+k] -= 0.5*(M2.values[ww_shift+k]+M2.values[ww_shift+k+1])*(s[k]-s[k-1])*dzi \
+                                         - M2.values[wth_shift+k]*( 0.5*(w[k]+w[k+1]) - 0.5*(w[k-1]+w[k]) )*dzi
+
+        # (iii) buoyancy terms
+        # --> how to compute buoyancy b'???
+        # wu --> g*
+        return
+
+    cpdef pressure_correlations_Rotta(self, Grid Gr, PrognosticVariables.MeanVariables M1, PrognosticVariables.SecondOrderMomenta M2):
+        cdef:
+            Py_ssize_t wu_shift = M2.get_varshift(Gr, 'wu')
+            Py_ssize_t wv_shift = M2.get_varshift(Gr, 'wv')
+            Py_ssize_t ww_shift = M2.get_varshift(Gr, 'ww')
+            Py_ssize_t pu_shift = M2.get_varshift(Gr, 'pu')
+            Py_ssize_t pv_shift = M2.get_varshift(Gr, 'pv')
+            Py_ssize_t pw_shift = M2.get_varshift(Gr, 'pw')
+            Py_ssize_t uth_shift = M2.get_varshift(Gr, 'uth')
+            Py_ssize_t vth_shift = M2.get_varshift(Gr, 'vth')
+            Py_ssize_t wth_shift = M2.get_varshift(Gr, 'wth')
+
+            Py_ssize_t k
+
+        for k in xrange(Gr.nzl):
+            M2.tendencies[wu_shift+k] += 0
+            M2.tendencies[wu_shift+k] += 0
+            M2.tendencies[wu_shift+k] += 0
+            M2.tendencies[wu_shift+k] += 0
+            M2.tendencies[wu_shift+k] += 0
+            M2.tendencies[wu_shift+k] += 0
+
+        '''
+        Anelastic 2nd order equation: pressure terms (Rotta '51; Andre '78; Golaz '02a)
+        \partialt \mean{u_i u_j} = \dots + A + B
+        A = \frac{1}{\rhon}\mean{p(\partialj u_i + \partiali u_j)}
+        B = - \sum_{k=1}^3\partialk \mean{(\delta_{jk}u_i + \delta_{ik}u_j)\frac{p}{\rhon} }
+        \partialt \mean{u_i u_j} = \dots + \frac{1}{\rhon}\mean{p(\partialj u_i + \partiali u_j)} - \sum_{k=1}^3\partialk \mean{(\delta_{jk}u_i + \delta_{ik}u_j)\frac{p}{\rhon} }
+
+        TERM A:
+        constant rho:
+        \frac{1}{\rho}\mean{p(\partialj u_i + \partiali u_j)} - \sum_{k=1}^3\mean{(\delta_{jk}u_i + \delta_{ik}u_j)\frac{p}{\rho} }
+        Anelastic: \rhon(z)
+        \frac{1}{\rhon}\mean{p\left(\partialj u_i + \partiali u_j \right)} = -k_p \frac{\sqrt{E}}{L}\left(\mean{u_iu_j}-\frac23\delta_{ij}e\right)
+
+        TERM B: ????
+         \partialk \mean{(\delta_{jk}u_i + \delta_{ik}u_j)\frac{p}{\rhon}} = ???
+        '''
 
         return
+
 
     # cpdef stats_io(self, Grid Gr,  DiagnosticVariables.DiagnosticVariables DV,
     #              PrognosticVariables.PrognosticVariables PV, Kinematics.Kinematics Ke, NetCDFIO_Stats NS):

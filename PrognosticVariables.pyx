@@ -110,7 +110,8 @@ cdef class PrognosticVariables:
 
     cpdef update(self, Grid Gr, TimeStepping TS):
         cdef:
-            kmax = Gr.nzg
+            Py_ssize_t kmax = Gr.nzg
+            Py_ssize_t k
         for var in self.name_index.keys():
             var_shift = self.get_varshift(Gr, var)
             for k in xrange(0,kmax):
@@ -288,8 +289,8 @@ cdef class MeanVariables(PrognosticVariables):
 
 
         print('M1: M1_tendencies[u,k=10]: ', self.tendencies[10], np.amax(self.tendencies))
-        s_varshift = self.get_varshift(Gr, 's')
-        print('M1: M1_tendencies[phi=s,k=10]: ', self.tendencies[s_varshift+10], np.amax(self.tendencies))
+        th_varshift = self.get_varshift(Gr, 'th')
+        print('M1: M1_tendencies[phi=th,k=10]: ', self.tendencies[th_varshift+10], np.amax(self.tendencies))
 
         return
 
@@ -298,7 +299,7 @@ cdef class MeanVariables(PrognosticVariables):
         cdef:
             double [:] values = self.values
             double [:] tendencies = self.tendencies
-            Py_ssize_t s_varshift = self.get_varshift(Gr,'s')
+            Py_ssize_t th_varshift = self.get_varshift(Gr,'th')
             Py_ssize_t w_varshift = self.get_varshift(Gr,'w')
             Py_ssize_t v_varshift = self.get_varshift(Gr,'v')
             Py_ssize_t u_varshift = self.get_varshift(Gr,'u')
@@ -306,8 +307,8 @@ cdef class MeanVariables(PrognosticVariables):
         plt.figure(1,figsize=(15,7))
         # plt.plot(values[s_varshift+Gr.gw:s_varshift+Gr.nzg-Gr.gw], Gr.z)
         plt.subplot(1,4,1)
-        plt.plot(values[s_varshift:s_varshift+Gr.nzg], Gr.z)
-        plt.title('s')
+        plt.plot(values[th_varshift:th_varshift+Gr.nzg], Gr.z)
+        plt.title('th')
         plt.subplot(1,4,2)
         plt.plot(values[w_varshift:w_varshift+Gr.nzg], Gr.z)
         plt.title('w')
@@ -324,7 +325,7 @@ cdef class MeanVariables(PrognosticVariables):
         plt.figure(2,figsize=(15,7))
         # plt.plot(values[s_varshift+Gr.gw:s_varshift+Gr.nzg-Gr.gw], Gr.z)
         plt.subplot(1,4,1)
-        plt.plot(tendencies[s_varshift:s_varshift+Gr.nzg], Gr.z)
+        plt.plot(tendencies[th_varshift:th_varshift+Gr.nzg], Gr.z)
         plt.title('s tend')
         plt.subplot(1,4,2)
         plt.plot(tendencies[w_varshift:w_varshift+Gr.nzg], Gr.z)

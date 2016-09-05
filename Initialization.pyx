@@ -159,7 +159,7 @@ cdef class InitSoares(InitializationBase):
             Py_ssize_t u_varshift = M1.get_varshift(Gr,'u')
             Py_ssize_t v_varshift = M1.get_varshift(Gr,'v')
             Py_ssize_t w_varshift = M1.get_varshift(Gr,'w')
-            Py_ssize_t s_varshift = M1.get_varshift(Gr,'s')
+            Py_ssize_t th_varshift = M1.get_varshift(Gr,'th')
             Py_ssize_t k
             # Py_ssize_t e_varshift
             double [:] theta = np.empty((Gr.nzg),dtype=np.double,order='c')
@@ -188,7 +188,7 @@ cdef class InitSoares(InitializationBase):
             else:
                 theta_pert_ = 0.0
             temp = (theta[k] + theta_pert_)*exner_c(Ref.p0_half[k])
-            M1.values[s_varshift + k] = entropy_from_tp(Ref.p0_half[k],temp,qt,ql,qi)               # s = Thermodynamics.entropy(p_half[k],temperature_half[k],self.qtg,ql_half[k],qi_half[k])
+            M1.values[th_varshift + k] = entropy_from_tp(Ref.p0_half[k],temp,qt,ql,qi)               # s = Thermodynamics.entropy(p_half[k],temperature_half[k],self.qtg,ql_half[k],qi_half[k])
             M1.values[u_varshift + k] = 0.0
             M1.values[v_varshift + k] = 0.0
             M1.values[w_varshift + k] = 0.0
@@ -267,7 +267,7 @@ cdef class InitTest(InitializationBase):
             Py_ssize_t u_varshift = M1.get_varshift(Gr,'u')
             Py_ssize_t v_varshift = M1.get_varshift(Gr,'v')
             Py_ssize_t w_varshift = M1.get_varshift(Gr,'w')
-            Py_ssize_t s_varshift = M1.get_varshift(Gr,'s')
+            Py_ssize_t th_varshift = M1.get_varshift(Gr,'th')
             Py_ssize_t k
             Py_ssize_t nv_vel = M1.nv_velocities
 
@@ -277,7 +277,7 @@ cdef class InitTest(InitializationBase):
 
         # (i) Theta (potential temperature) profile (Soares) incl. perturbations
         for k in xrange(Gr.nzg):
-            M1.values[s_varshift+k] = 6000.0
+            M1.values[th_varshift+k] = 6000.0
             M1.values[u_varshift+k] = 0.0
             M1.values[v_varshift+k] = 0.0
             M1.values[w_varshift+k] = 0.0
