@@ -12,18 +12,18 @@ import os       # for self.outpath
 from Grid cimport Grid
 cimport TimeStepping
 cimport ReferenceState
-from Initialization import InitializationFactory
+# from Initialization import InitializationFactory
 cimport PrognosticVariables
-cimport MomentumAdvection
-cimport ScalarAdvection
-# from SGS_variante2 import SGSFactory
-from SGS import SGSFactory
-cimport MomentumDiffusion
-cimport ScalarDiffusion
+# cimport MomentumAdvection
+# cimport ScalarAdvection
+# # from SGS_variante2 import SGSFactory
+# from SGS import SGSFactory
+# cimport MomentumDiffusion
+# cimport ScalarDiffusion
 cimport NetCDFIO
-from Thermodynamics import ThermodynamicsFactory
-from TurbulenceScheme import TurbulenceFactory
-# cimport TurbulenceScheme
+# from Thermodynamics import ThermodynamicsFactory
+# from TurbulenceScheme import TurbulenceFactory
+# # cimport TurbulenceScheme
 
 
 
@@ -32,21 +32,21 @@ class Simulation1d:
         self.Gr = Grid(namelist)
         self.TS = TimeStepping.TimeStepping()
         self.Ref = ReferenceState.ReferenceState(self.Gr)
-        self.Init = InitializationFactory(namelist)
+        # self.Init = InitializationFactory(namelist)
 
         self.PV = PrognosticVariables.PrognosticVariables(self.Gr)
         self.M1 = PrognosticVariables.MeanVariables(self.Gr)
         self.M2 = PrognosticVariables.SecondOrderMomenta(self.Gr)
 
-        self.Th = ThermodynamicsFactory(namelist)
-
-        self.MA = MomentumAdvection.MomentumAdvection(namelist)
-        self.SA = ScalarAdvection.ScalarAdvection(namelist)
-        self.Turb = TurbulenceFactory(namelist)
-
-        self.SGS = SGSFactory(namelist)
-        self.MD = MomentumDiffusion.MomentumDiffusion()
-        self.SD = ScalarDiffusion.ScalarDiffusion(namelist)
+        # self.Th = ThermodynamicsFactory(namelist)
+        #
+        # self.MA = MomentumAdvection.MomentumAdvection(namelist)
+        # self.SA = ScalarAdvection.ScalarAdvection(namelist)
+        # self.Turb = TurbulenceFactory(namelist)
+        #
+        # self.SGS = SGSFactory(namelist)
+        # self.MD = MomentumDiffusion.MomentumDiffusion()
+        # self.SD = ScalarDiffusion.ScalarDiffusion(namelist)
 
         self.StatsIO = NetCDFIO.NetCDFIO_Stats()
         return
@@ -68,27 +68,32 @@ class Simulation1d:
         self.M1.add_variable('v', 'm/s', "velocity")
         self.M1.add_variable('w', 'm/s', "velocity")
 
+        self.M2.add_variable('uu', '(m/s)^2', "velocity")
+        self.M2.add_variable('vv', '(m/s)^2', "velocity")
         self.M2.add_variable('wu', '(m/s)^2', "velocity")
         self.M2.add_variable('wv', '(m/s)^2', "velocity")
         self.M2.add_variable('ww', '(m/s)^2', "velocity")
+        self.M2.add_variable('pu', '(m/s)^2', "velocity")
+        self.M2.add_variable('pv', '(m/s)^2', "velocity")
+        self.M2.add_variable('pw', '(m/s)^2', "velocity")
 
 
         # AuxillaryVariables(namelist, self.PV, self.DV, self.Pa)
-        self.Th.initialize(self.Gr, self.M1, self.M2)        # adding prognostic thermodynamic variables
+        # self.Th.initialize(self.Gr, self.M1, self.M2)        # adding prognostic thermodynamic variables
         self.PV.initialize(self.Gr, self.StatsIO)
         self.M1.initialize(self.Gr, self.StatsIO)
         self.M2.initialize(self.Gr, self.StatsIO)
 
-        self.Init.initialize_reference(self.Gr, self.Ref, self.StatsIO)
-        self.Init.initialize_profiles(self.Gr, self.Ref, self.M1, self.M2, self.StatsIO)
-
-        self.MA.initialize(self.Gr, self.M1)
-        self.SA.initialize(self.Gr, self.M1)
-        self.SGS.initialize(self.Gr, self.M1, self.M2)
-        self.MD.initialize(self.Gr, self.M1)
-        self.SD.initialize(self.Gr, self.M1)
-
-        print('Initialization completed!')
+        # self.Init.initialize_reference(self.Gr, self.Ref, self.StatsIO)
+        # self.Init.initialize_profiles(self.Gr, self.Ref, self.M1, self.M2, self.StatsIO)
+        #
+        # self.MA.initialize(self.Gr, self.M1)
+        # self.SA.initialize(self.Gr, self.M1)
+        # self.SGS.initialize(self.Gr, self.M1, self.M2)
+        # self.MD.initialize(self.Gr, self.M1)
+        # self.SD.initialize(self.Gr, self.M1)
+        #
+        # print('Initialization completed!')
         # self.plot()
         return
 
@@ -96,45 +101,47 @@ class Simulation1d:
 
     def run(self):
         print('Sim: start run')
+        print(self.TS.t, self.TS.t_max)
 
         while(self.TS.t < self.TS.t_max):
+            print('time:', self.TS.t)
+            # pass
             # (0) update auxiliary fields
-            self.SGS.update(self.Gr)       # --> compute diffusivity / viscosity for M1 and M2 (being the same at the moment)
-            self.M1.plot('beginning of timestep', self.Gr, self.TS)
-            # (1) update mean field (M1) tendencies
-            # self.Th.update()
-            # self.MA.update(self.Gr, self.Ref, self.M1)      # --> self.MA.update_M1_2nd()
-            # self.SA.update(self.Gr, self.Ref, self.M1)      # --> self.SA.update_M1_2nd()
+            # self.SGS.update(self.Gr)       # --> compute diffusivity / viscosity for M1 and M2 (being the same at the moment)
+            # self.M1.plot('beginning of timestep', self.Gr, self.TS)
+            # # (1) update mean field (M1) tendencies
+            # # self.Th.update()
+            # self.MA.update_M1_2nd(self.Gr, self.Ref, self.M1)       # self.MA.update(self.Gr, self.Ref, self.M1)
+            # self.SA.update_M1_2nd(self.Gr, self.Ref, self.M1)       # self.SA.update(self.Gr, self.Ref, self.M1)
+            #
+            # self.MD.update(self.Gr, self.Ref, self.M1, self.SGS)
+            # self.SD.update(self.Gr, self.Ref, self.M1, self.SGS)
+            # # self.M1.plot('after SD update', self.Gr, self.TS)
+            #
+            # self.Turb.update_M1(self.Gr, self.M1, self.M2)                         # --> add turbulent flux divergence to mean field tendencies: dz<w'phi'>
+            # # ??? surface fluxes ??? (--> in SGS or MD/SD scheme?)
+            # # ??? update boundary conditions ???
+            # # ??? pressure solver ???
+            #
+            # self.M1.plot('without tendency update', self.Gr, self.TS)
+            #
+            #
+            # # (2) update second order momenta (M2) tendencies
+            # # self.MA.update                        # --> self.MA.update_M2(): advection of M2
+            # # self.SA.update                        # --> self.SA.update_M2(): advection of M2
+            # # self.MD.update()
+            # # self.SD.update()
+            # # self.Turb.update_M2()                 # update higher order terms in M2 tendencies
+            # print('Sim: Turb update')
+            # self.Turb.update(self.Gr, self.M1, self.M2)
+            #     # Turb.advect_M2_local(Gr, M1, M2)
+            # # ??? update boundary conditions???
+            # # ??? pressure correlations ???
+            # # ??? surface fluxes ??? (--> in SGS or MD/SD scheme?)
 
-            self.MD.update(self.Gr, self.Ref, self.M1, self.SGS)
-            # self.M1.plot('after MD update', self.Gr, self.TS)
-            self.SD.update(self.Gr, self.Ref, self.M1, self.SGS)
-            # self.M1.plot('after SD update', self.Gr, self.TS)
 
-            self.Turb.update_M1(self.Gr, self.M1, self.M2)                         # --> add turbulent flux divergence to mean field tendencies: dz<w'phi'>
-            # ??? surface fluxes ??? (--> in SGS or MD/SD scheme?)
-            # ??? update boundary conditions ???
-            # ??? pressure solver ???
-
-            # self.PV.update(self.Gr, self.TS) # !!! causes error !!!
-            self.M1.plot('without tendency update', self.Gr, self.TS)
             self.M1.update(self.Gr, self.TS)        # --> updating values by adding tendencies
-
-
-            # (2) update second order momenta (M2) tendencies
-            # self.MA.update                        # --> self.MA.update_M2(): advection of M2
-            # self.SA.update                        # --> self.SA.update_M2(): advection of M2
-            # self.MD.update()
-            # self.SD.update()
-            # self.Turb.update_M2()                 # update higher order terms in M2 tendencies
-            print('Sim: Turb update')
-            self.Turb.update(self.Gr, self.M1, self.M2)
-            # ??? update boundary conditions???
-            # ??? pressure correlations ???
-            # ??? surface fluxes ??? (--> in SGS or MD/SD scheme?)
             self.M2.update(self.Gr, self.TS)        # --> updating values by adding tendencies
-
-
             self.TS.update()
 
         return

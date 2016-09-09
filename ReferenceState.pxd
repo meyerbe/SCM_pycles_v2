@@ -1,5 +1,4 @@
 cimport Grid
-# cimport Restart
 cdef class ReferenceState:
     cdef:
         public double [:] p0

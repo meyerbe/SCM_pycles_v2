@@ -11,7 +11,7 @@ import shutil
 # cimport TimeStepping
 cimport PrognosticVariables
 # cimport DiagnosticVariables
-cimport Grid
+from Grid cimport Grid
 import numpy as np
 cimport numpy as np
 import cython
@@ -24,7 +24,7 @@ cdef class NetCDFIO_Stats:
         return
 
     @cython.wraparound(True)
-    cpdef initialize(self, dict namelist, Grid.Grid Gr):
+    cpdef initialize(self, dict namelist, Grid Gr):
         print('StatsIO.initialize', Gr.nz)
     # cpdef initialize(self, dict namelist, Gr):
         self.last_output_time = 0.0
@@ -80,7 +80,7 @@ cdef class NetCDFIO_Stats:
         self.root_grp.close()
         return
 
-    cpdef setup_stats_file(self, Grid.Grid Gr):
+    cpdef setup_stats_file(self, Grid Gr):
         print('NetCDFIO_Stats: setup_stats_file')
 
         root_grp = nc.Dataset(self.path_plus_file, 'w', format='NETCDF4')
@@ -117,7 +117,7 @@ cdef class NetCDFIO_Stats:
 
 
     '''adding and writing data'''
-    cpdef add_profile(self, var_name):
+    cpdef add_profile(self, var_name, Grid Gr):
         root_grp = nc.Dataset(self.path_plus_file, 'r+', format='NETCDF4')
         profile_grp = root_grp.groups['profiles']
         new_var = profile_grp.createVariable(var_name, 'f8', ('t', 'z'))
@@ -125,7 +125,7 @@ cdef class NetCDFIO_Stats:
         root_grp.close()
         return
 
-    cpdef add_reference_profile(self, var_name, Grid.Grid Gr):
+    cpdef add_reference_profile(self, var_name, Grid Gr):
         '''
         Adds a profile to the reference group NetCDF Stats file.
         :param var_name: name of variable
@@ -139,7 +139,7 @@ cdef class NetCDFIO_Stats:
         root_grp.close()
         return
 
-    cpdef add_ts(self, var_name, Grid.Grid Gr):
+    cpdef add_ts(self, var_name, Grid Gr):
         root_grp = nc.Dataset(self.path_plus_file, 'r+', format='NETCDF4')
         ts_grp = root_grp.groups['timeseries']
         new_var = ts_grp.createVariable(var_name, 'f8', ('t',))
@@ -205,7 +205,7 @@ cdef class NetCDFIO_CondStats:
         return
 #
 #     @cython.wraparound(True)
-#     cpdef initialize(self, dict namelist, Grid.Grid Gr, ParallelMPI.ParallelMPI Pa):
+#     cpdef initialize(self, dict namelist, Grid Gr, ParallelMPI.ParallelMPI Pa):
 #
 #         self.last_output_time = 0.0
 #         self.uuid = str(namelist['meta']['uuid'])
@@ -258,7 +258,7 @@ cdef class NetCDFIO_CondStats:
 #                 os.path.join( outpath, namelist['meta']['simname'] + '.in'))
 #         return
 #
-#     cpdef create_condstats_group(self, str groupname, str dimname, double [:] dimval, Grid.Grid Gr, ParallelMPI.ParallelMPI Pa):
+#     cpdef create_condstats_group(self, str groupname, str dimname, double [:] dimval, Grid Gr, ParallelMPI.ParallelMPI Pa):
 #
 #         if Pa.rank == 0:
 #             root_grp = nc.Dataset(self.path_plus_file, 'w', format='NETCDF4')
@@ -276,7 +276,7 @@ cdef class NetCDFIO_CondStats:
 #             root_grp.close()
 #         return
 #
-#     cpdef add_condstat(self, str varname, str groupname, str dimname, Grid.Grid Gr, ParallelMPI.ParallelMPI Pa):
+#     cpdef add_condstat(self, str varname, str groupname, str dimname, Grid Gr, ParallelMPI.ParallelMPI Pa):
 #
 #         if Pa.rank == 0:
 #             root_grp = nc.Dataset(self.path_plus_file, 'r+', format='NETCDF4')

@@ -2,7 +2,7 @@
 # cimport TimeStepping
 cimport PrognosticVariables
 # cimport DiagnosticVariables
-cimport Grid
+from Grid cimport Grid
 cdef class NetCDFIO_Stats:
     cdef:
         object root_grp
@@ -19,11 +19,11 @@ cdef class NetCDFIO_Stats:
         public double frequency
         public bint do_output
 
-    cpdef initialize(self, dict namelist, Grid.Grid Gr)
-    cpdef setup_stats_file(self, Grid.Grid Gr)
-    cpdef add_profile(self, var_name)
-    cpdef add_reference_profile(self, var_name, Grid.Grid Gr)
-    cpdef add_ts(self, var_name, Grid.Grid Gr)
+    cpdef initialize(self, dict namelist, Grid Gr)
+    cpdef setup_stats_file(self, Grid Gr)
+    cpdef add_profile(self, var_name, Grid Gr)
+    cpdef add_reference_profile(self, var_name, Grid Gr)
+    cpdef add_ts(self, var_name, Grid Gr)
     cpdef open_files(self)
     cpdef close_files(self)
     cpdef write_profile(self, var_name, double[:] data)

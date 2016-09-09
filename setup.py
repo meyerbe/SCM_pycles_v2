@@ -75,26 +75,26 @@ _ext = Extension('Initialization', ['Initialization.pyx'], include_dirs=include_
                  runtime_library_dirs=library_dirs)
 extensions.append(_ext)
 
-_ext = Extension('Thermodynamics', ['Thermodynamics.pyx'], include_dirs=include_path,
-                 extra_compile_args=extra_compile_args, libraries=libraries, library_dirs=library_dirs,
-                 runtime_library_dirs=library_dirs)
-extensions.append(_ext)
-
-_ext = Extension('ThermodynamicsDry', ['ThermodynamicsDry.pyx'], include_dirs=include_path,
-                 extra_compile_args=extra_compile_args, libraries=libraries, library_dirs=library_dirs,
-                 runtime_library_dirs=library_dirs)
-extensions.append(_ext)
-
-_ext = Extension('ThermodynamicsSA', ['ThermodynamicsSA.pyx'], include_dirs=include_path,
-                 extra_compile_args=extra_compile_args, libraries=libraries, library_dirs=library_dirs,
-                 runtime_library_dirs=library_dirs)
-extensions.append(_ext)
-
-
-_ext = Extension('thermodynamic_functions', ['thermodynamic_functions.pyx'], include_dirs=include_path,
-                 extra_compile_args=extra_compile_args, libraries=libraries, library_dirs=library_dirs,
-                 runtime_library_dirs=library_dirs)
-extensions.append(_ext)
+# _ext = Extension('Thermodynamics', ['Thermodynamics.pyx'], include_dirs=include_path,
+#                  extra_compile_args=extra_compile_args, libraries=libraries, library_dirs=library_dirs,
+#                  runtime_library_dirs=library_dirs)
+# extensions.append(_ext)
+#
+# _ext = Extension('ThermodynamicsDry', ['ThermodynamicsDry.pyx'], include_dirs=include_path,
+#                  extra_compile_args=extra_compile_args, libraries=libraries, library_dirs=library_dirs,
+#                  runtime_library_dirs=library_dirs)
+# extensions.append(_ext)
+#
+# _ext = Extension('ThermodynamicsSA', ['ThermodynamicsSA.pyx'], include_dirs=include_path,
+#                  extra_compile_args=extra_compile_args, libraries=libraries, library_dirs=library_dirs,
+#                  runtime_library_dirs=library_dirs)
+# extensions.append(_ext)
+#
+#
+# _ext = Extension('thermodynamic_functions', ['thermodynamic_functions.pyx'], include_dirs=include_path,
+#                  extra_compile_args=extra_compile_args, libraries=libraries, library_dirs=library_dirs,
+#                  runtime_library_dirs=library_dirs)
+# extensions.append(_ext)
 
 
 _ext = Extension('ReferenceState', ['ReferenceState.pyx'], include_dirs=include_path,
@@ -102,35 +102,35 @@ _ext = Extension('ReferenceState', ['ReferenceState.pyx'], include_dirs=include_
                  runtime_library_dirs=library_dirs)
 extensions.append(_ext)
 
-_ext = Extension('MomentumAdvection', ['MomentumAdvection.pyx'], include_dirs=include_path,
-                 extra_compile_args=extra_compile_args, libraries=libraries, library_dirs=library_dirs,
-                 runtime_library_dirs=library_dirs)
-extensions.append(_ext)
-
-_ext = Extension('ScalarAdvection', ['ScalarAdvection.pyx'], include_dirs=include_path,
-                 extra_compile_args=extra_compile_args, libraries=libraries, library_dirs=library_dirs,
-                 runtime_library_dirs=library_dirs)
-extensions.append(_ext)
-
-_ext = Extension('MomentumDiffusion', ['MomentumDiffusion.pyx'], include_dirs=include_path,
-                 extra_compile_args=extra_compile_args, libraries=libraries, library_dirs=library_dirs,
-                 runtime_library_dirs=library_dirs)
-extensions.append(_ext)
-
-_ext = Extension('ScalarDiffusion', ['ScalarDiffusion.pyx'], include_dirs=include_path,
-                 extra_compile_args=extra_compile_args, libraries=libraries, library_dirs=library_dirs,
-                 runtime_library_dirs=library_dirs)
-extensions.append(_ext)
-
-_ext = Extension('SGS', ['SGS.pyx'], include_dirs=include_path,
-                 extra_compile_args=extra_compile_args, libraries=libraries, library_dirs=library_dirs,
-                 runtime_library_dirs=library_dirs)
-extensions.append(_ext)
-
-_ext = Extension('TurbulenceScheme', ['TurbulenceScheme.pyx'], include_dirs=include_path,
-                 extra_compile_args=extra_compile_args, libraries=libraries, library_dirs=library_dirs,
-                 runtime_library_dirs=library_dirs)
-extensions.append(_ext)
+# _ext = Extension('MomentumAdvection', ['MomentumAdvection.pyx'], include_dirs=include_path,
+#                  extra_compile_args=extra_compile_args, libraries=libraries, library_dirs=library_dirs,
+#                  runtime_library_dirs=library_dirs)
+# extensions.append(_ext)
+#
+# _ext = Extension('ScalarAdvection', ['ScalarAdvection.pyx'], include_dirs=include_path,
+#                  extra_compile_args=extra_compile_args, libraries=libraries, library_dirs=library_dirs,
+#                  runtime_library_dirs=library_dirs)
+# extensions.append(_ext)
+#
+# _ext = Extension('MomentumDiffusion', ['MomentumDiffusion.pyx'], include_dirs=include_path,
+#                  extra_compile_args=extra_compile_args, libraries=libraries, library_dirs=library_dirs,
+#                  runtime_library_dirs=library_dirs)
+# extensions.append(_ext)
+#
+# _ext = Extension('ScalarDiffusion', ['ScalarDiffusion.pyx'], include_dirs=include_path,
+#                  extra_compile_args=extra_compile_args, libraries=libraries, library_dirs=library_dirs,
+#                  runtime_library_dirs=library_dirs)
+# extensions.append(_ext)
+#
+# _ext = Extension('SGS', ['SGS.pyx'], include_dirs=include_path,
+#                  extra_compile_args=extra_compile_args, libraries=libraries, library_dirs=library_dirs,
+#                  runtime_library_dirs=library_dirs)
+# extensions.append(_ext)
+#
+# _ext = Extension('TurbulenceScheme', ['TurbulenceScheme.pyx'], include_dirs=include_path,
+#                  extra_compile_args=extra_compile_args, libraries=libraries, library_dirs=library_dirs,
+#                  runtime_library_dirs=library_dirs)
+# extensions.append(_ext)
 
 
 

@@ -5,12 +5,11 @@
 # cython: cdivision=True
 
 from Grid cimport Grid
-# cimport Restart
 cimport numpy as np
 import numpy as np
 import sys
 
-from NetCDFIO cimport NetCDFIO_Stats
+# from NetCDFIO cimport NetCDFIO_Stats
 from scipy.integrate import odeint
 from thermodynamic_functions import entropy_from_tp, eos, alpha_from_tp
 include 'parameters.pxi'
@@ -40,7 +39,8 @@ cdef class ReferenceState:
         return
 
     # def initialize(self, Grid Gr, Thermodynamics, NetCDFIO_Stats NS):
-    def initialize(self, Grid Gr, NetCDFIO_Stats NS):
+    # def initialize(self, Grid Gr, NetCDFIO_Stats NS):
+    def initialize(self, Grid Gr):
         '''
         Initilize the reference profiles. The function is typically called from the case specific initialization
         fucntion defined in Initialization.pyx
@@ -145,21 +145,21 @@ cdef class ReferenceState:
         self.rho0 = 1.0 / np.array(self.alpha0)
         self.rho0_half = 1.0 / np.array(self.alpha0_half)
 
-        # Write reference profiles to StatsIO
-        NS.add_reference_profile('alpha0', Gr)
-        NS.write_reference_profile('alpha0', alpha_half[Gr.gw:-Gr.gw])
-        NS.add_reference_profile('p0', Gr)
-        NS.write_reference_profile('p0', p_half[Gr.gw:-Gr.gw])
-        NS.add_reference_profile('rho0', Gr)
-        NS.write_reference_profile('rho0', 1.0 / np.array(alpha_half[Gr.gw:-Gr.gw]))
-        NS.add_reference_profile('temperature0', Gr)
-        NS.write_reference_profile('temperature0', temperature_half[Gr.gw:-Gr.gw])
-        NS.add_reference_profile('ql0', Gr)
-        NS.write_reference_profile('ql0', ql_half[Gr.gw:-Gr.gw])
-        NS.add_reference_profile('qv0', Gr)
-        NS.write_reference_profile('qv0', qv_half[Gr.gw:-Gr.gw])
-        NS.add_reference_profile('qi0', Gr)
-        NS.write_reference_profile('qi0', qi_half[Gr.gw:-Gr.gw])
+        # # Write reference profiles to StatsIO
+        # NS.add_reference_profile('alpha0', Gr)
+        # NS.write_reference_profile('alpha0', alpha_half[Gr.gw:-Gr.gw])
+        # NS.add_reference_profile('p0', Gr)
+        # NS.write_reference_profile('p0', p_half[Gr.gw:-Gr.gw])
+        # NS.add_reference_profile('rho0', Gr)
+        # NS.write_reference_profile('rho0', 1.0 / np.array(alpha_half[Gr.gw:-Gr.gw]))
+        # NS.add_reference_profile('temperature0', Gr)
+        # NS.write_reference_profile('temperature0', temperature_half[Gr.gw:-Gr.gw])
+        # NS.add_reference_profile('ql0', Gr)
+        # NS.write_reference_profile('ql0', ql_half[Gr.gw:-Gr.gw])
+        # NS.add_reference_profile('qv0', Gr)
+        # NS.write_reference_profile('qv0', qv_half[Gr.gw:-Gr.gw])
+        # NS.add_reference_profile('qi0', Gr)
+        # NS.write_reference_profile('qi0', qi_half[Gr.gw:-Gr.gw])
 
         return
 
