@@ -78,7 +78,7 @@ class Simulation1d:
 
         self.MA.initialize(self.Gr, self.M1)
         self.SA.initialize(self.Gr, self.M1)
-        self.Turb.initialize()
+        self.Turb.initialize(self.Gr, self.M1)
         self.SGS.initialize(self.Gr, self.M1, self.M2)
         self.MD.initialize(self.Gr, self.M1)
         self.SD.initialize(self.Gr, self.M1)
@@ -123,7 +123,7 @@ class Simulation1d:
             # self.SD.update()
             # self.Turb.update_M2()                 # update higher order terms in M2 tendencies
             # print('Sim: Turb update')
-            # self.Turb.update(self.Gr, self.M1, self.M2)
+            self.Turb.update(self.Gr, self.Ref, self.M1, self.M2)
             #     # Turb.advect_M2_local(Gr, M1, M2)
             # # ??? update boundary conditions???
             # # ??? pressure correlations ???

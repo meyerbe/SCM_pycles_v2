@@ -44,7 +44,7 @@ def TurbulenceFactory(namelist):
 cdef class TurbulenceNone(TurbulenceBase):
     def __init__(self,namelist):
         return
-    cpdef initialize(self):
+    cpdef initialize(self, Grid Gr, PrognosticVariables.MeanVariables M1):
         return
     # cpdef update(self, Grid Gr, PrognosticVariables.MeanVariables M1, PrognosticVariables.SecondOrderMomenta M2):
     #     print('Turb None: update')
@@ -55,82 +55,55 @@ cdef class TurbulenceNone(TurbulenceBase):
 
 cdef class TurbulenceBase:
     def __init__(self,namelist):
+        print('initializing Turbulence Base')
         return
 
-    cpdef initialize(self):
+    cpdef initialize(self, Grid Gr, PrognosticVariables.MeanVariables M1):
         return
 
-    cpdef update(self, Grid Gr, PrognosticVariables.MeanVariables M1, PrognosticVariables.SecondOrderMomenta M2):
+    cpdef update(self, Grid Gr, ReferenceState Ref, PrognosticVariables.MeanVariables M1, PrognosticVariables.SecondOrderMomenta M2):
         print('Turbulence Base: update')
         return
 
     cpdef update_M1(self,Grid Gr, ReferenceState Ref, PrognosticVariables.MeanVariables M1, PrognosticVariables.SecondOrderMomenta M2):
-        print('Turb: update M1')
-        cdef:
-            Py_ssize_t k, m, n
-            double [:] th0 = Ref.th0       # !!! right interfaces ???
-            double [:] p0 = Ref.p0       # !!! right interfaces ???
-            double [:] p = p0               # !!! need actual pressure !!!
-            double [:] wql = np.zeros((Gr.nzg),dtype=np.double,order='c')       # !!!! how to get <w'ql'>????
-            double [:,:] buoyancy = np.zeros((M1.nv,Gr.nzg),dtype=np.double,order='c')
-
-        n = M1.name_index['w']
-        # (1) vertical eddy fluxes
-        for var in M1.name_index.keys():
-            turb = var + 'w'
-            m = M1.name_index[var]
-            for k in xrange(Gr.nzg):
-                M1.tendencies[m,k] -= M2.values[m,n,k]
-
-        # (2) Buoyancy Flux
-        if 'qt' in M1.name_index.keys():
-            nth = M1.name_index['th']
-            nqt = M1.name_index['qt']
-            # nql = M1.name_index['qt'] --> !!
-            # buoyancy[m,k] = <var'th_v'> + (1-ep)/ep*th_0*
-            for var in M1.name_index.keys():
-                m = M1.name_index[var]
-                for k in xrange(Gr.nzg):
-                    L = latent_heat(293.0)
-                    buoyancy[m,k] = M2.values[m,nth,k] + (1-eps_v)/eps_v*th0[k]*M2.values[m,nqt,k] \
-                                    + ((L/cpd)*exner(p0[k]/p[k])**(Rd/cpd) - eps_vi*th0[k])*wql[k]
-                    # ???? cpd correct in both cases ???
-        else:
-            nth = M1.name_index['th']
-            for var in M1.name_index.keys():
-                m = M1.name_index[var]
-                for k in xrange(Gr.nzg):
-                    buoyancy[m,k] = M2.values[m,nth,k]
-
-        for n in xrange(M1.nv):
-            for k in xrange(Gr.nzg):
-                M1.tendencies[n,k] -= g/th0[k]*buoyancy[n,k]
-
-        # (3) Pressure Correlations
         '''
         uw      --> up
         vw      --> vp
         ww      --> wp, wth
         wth      --> thp, thth
         wqt      --> qtp
-
-        pu
-        pv
-        pw
-        pth
-        pqt
-
-        uu  (for TKE)
-        vv
-
-
+        pu, pv, pw, pth, pqt (pressure correlations)
+        uu,vv  (for TKE)
         '''
+        print('Turb: update M1')
+        cdef:
+            Py_ssize_t k, m, n
+            double [:] th0 = Ref.th0       # !!! right interfaces ???
 
+        n = M1.name_index['w']
+        # (1) vertical eddy fluxes: in all prognostic variables
+        for var in M1.name_index.keys():
+            turb = var + 'w'
+            m = M1.name_index[var]
+            for k in xrange(Gr.nzg):
+                M1.tendencies[m,k] -= M2.values[m,n,k]
 
+        # (2) Buoyancy Flux: in w
+        for n in xrange(M1.nv):
+            for k in xrange(Gr.nzg):
+                M1.tendencies[n,k] -= g/th0[k]*self.buoyancy[n,k]
+
+        # (3) Pressure Correlations
+        '''w'''
+        n = M1.name_index['w']
+        # for k in xrange(Gr.nzg):
+        #     M1.tendencies[n,k] -= M1.tendencies[]
         return
 
     cpdef stats_io(self):
         return
+
+
 
 
 
@@ -140,28 +113,67 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
     # (3) Pressure: ?
     # (4) Third and higher order terms (first guess set to zero)
     def __init__(self,namelist):
-        print('initializing Turbulence 2nd')
+        self.buoyancy = None
         return
 
     # cpdef initialize(self, Grid Gr, PrognosticVariables.PrognosticVariables PV, NetCDFIO_Stats NS):
-    cpdef initialize(self):
-
+    cpdef initialize(self, Grid Gr, PrognosticVariables.MeanVariables M1):
+        print('Initializing Turbulence 2nd')
+        self.buoyancy = np.zeros((M1.nv,Gr.nzg),dtype=np.double,order='c')
         return
 
 
-    cpdef update(self, Grid Gr, PrognosticVariables.MeanVariables M1, PrognosticVariables.SecondOrderMomenta M2):
+    cpdef update(self, Grid Gr, ReferenceState Ref, PrognosticVariables.MeanVariables M1, PrognosticVariables.SecondOrderMomenta M2):
         print('Turbulence 2nd order: update')
         # (1) Advection: MA.update_M2, SA.update_M2
         # (2) Diffusion: SD.update_M2, MD.update_M2
         # (3) Pressure: ?
         # (4) Third and higher order terms (first guess set to zero)
+        # self.update_M1(Gr, Ref, M1, M2)
         self.advect_M2_local(Gr, M1, M2)
         self.pressure_correlations_Mironov(Gr, M1, M2)
         self.pressure_correlations_Andre(Gr, M1, M2)
+        self.buoyancy_update(Gr, Ref, M1, M2)
 
         return
 
 
+
+    cpdef buoyancy_update(self, Grid Gr, ReferenceState Ref, PrognosticVariables.MeanVariables M1, PrognosticVariables.SecondOrderMomenta M2):
+        cdef:
+            double [:] th0 = Ref.th0       # !!! right interfaces ???
+            double [:] p0 = Ref.p0       # !!! right interfaces ???
+            double [:] p = p0               # !!! need actual pressure !!!
+            double [:] wql = np.zeros((Gr.nzg),dtype=np.double,order='c')       # !!!! how to get <w'ql'>????
+            double [:,:] M2_b = np.zeros((M1.nv,Gr.nzg),dtype=np.double,order='c')
+
+            int nth, nqt, m, k
+            double L
+            str var
+
+        # (2) Buoyancy Flux: in w
+        if 'qt' in M1.name_index.keys():
+            nth = M1.name_index['th']
+            nqt = M1.name_index['qt']
+            # nql = M1.name_index['qt'] --> !!
+            # buoyancy[m,k] = <var'th_v'> + (1-ep)/ep*th_0*
+            for var in M1.name_index.keys():
+                m = M1.name_index[var]
+                for k in xrange(Gr.nzg):
+                    L = latent_heat(293.0)
+                    M2_b[m,k] = M2.values[m,nth,k] + (1-eps_v)/eps_v*th0[k]*M2.values[m,nqt,k] \
+                                    + ((L/cpd)*exner(p0[k]/p[k])**(Rd/cpd) - eps_vi*th0[k])*wql[k]
+                    # ???? cpd correct in both cases ???
+        else:
+            nth = M1.name_index['th']
+            for var in M1.name_index.keys():
+                m = M1.name_index[var]
+                for k in xrange(Gr.nzg):
+                    M2_b[m,k] = M2.values[m,nth,k]
+
+        self.buoyancy = M2_b
+
+        return
 
     cpdef advect_M2_local(self, Grid Gr, PrognosticVariables.MeanVariables M1, PrognosticVariables.SecondOrderMomenta M2):
         # print('Turb update: advect M2 local')
