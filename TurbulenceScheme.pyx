@@ -200,15 +200,13 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
             double [:] th = M1.values[th_index,:]
 
             double dzi = Gr.dzi
-            Py_ssize_t k, var_shift
+            Py_ssize_t m, n, k, var_shift
 
-        # print('M2: name index', M2.name_index)
 
         # (i) advection by mean vertical velocity
-        cdef n, m
         for m in xrange(M1.nv):
-            for n in xrange(m,M2.nv):
-                if m==w_index and n==w_index:
+            for n in xrange(m,M1.nv):
+                if m==w_index and n==w_index:   # if name != 'ww':
                 # w on w-grid, M2.value on phi-grid --> compare to momentum advection for gradients
                     for k in xrange(1,Gr.nzg-1):
                         M2.tendencies[m,n,k] -= w[k]*(M2.values[m,n,k]-M2.values[m,n,k-1])*dzi
@@ -217,17 +215,6 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
                     for k in xrange(Gr.nzg):
                         M2.tendencies[m,n,k] -= 0.5*(w[k]+w[k+1])*(M2.values[m,n,k]-M2.values[m,n,k-1])*dzi
 
-        # for name in M2.name_index:
-        #     if name != 'ww':
-        #     # w and M2.value both on w-grid --> compare to scalar advection for gradients
-        #         for k in xrange(Gr.nzg):
-        #             var_shift = M2.get_varshift(Gr, name)
-        #             M2.tendencies[var_shift,k] -= 0.5*(w[k]+w[k+1])*(M2.values[var_shift,k]-M2.values[var_shift,k-1])*dzi
-        #     else:
-        #     # w on w-grid, M2.value on phi-grid --> compare to momentum advection for gradients
-        #         for k in xrange(Gr.nzg):
-        #             var_shift = M2.get_varshift(Gr, name)
-        #             M2.tendencies[var_shift,k] -= w[k]*(M2.values[var_shift,k]-M2.values[var_shift,k-1])*dzi
 
         # (ii) advection by M2
         # w: on w-grid
@@ -240,7 +227,6 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
         # wv on w-grid --> interpolate ww; v_mean ok; wv ok; interpolate w_mean
         # ww on phi-grid --> ww ok; w ok
         # ws on w-grid --> interpolate ww; s_mean ok; ws ok; interpolate w_mean
-
         for k in xrange(Gr.nzg):
             M2.tendencies[u_index,w_index,k] -= 0.5*(M2.values[w_index,w_index,k]+M2.values[w_index,w_index,k+1])*(u[k]-u[k-1])*dzi \
                                          - M2.values[u_index,w_index,k]*( 0.5*(w[k]+w[k+1]) - 0.5*(w[k-1]+w[k]) )*dzi
