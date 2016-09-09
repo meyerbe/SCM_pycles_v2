@@ -39,36 +39,29 @@ class UniformViscosity():
         return
 
 
-    # cpdef initialize(self, Grid Gr, PrognosticVariables.PrognosticVariables PV, NetCDFIO_Stats NS):
     def initialize(self, Grid Gr, PrognosticVariables.MeanVariables M1, PrognosticVariables.SecondOrderMomenta M2):
         print('initializing UniformViscosity')
         self.is_init = False
-        self.viscosity_M1 = np.zeros((M1.nv_velocities*Gr.nzg),dtype=np.double,order='c')
-        self.diffusivity_M1 = np.zeros((M1.nv_scalars*Gr.nzg),dtype=np.double,order='c')
-        self.viscosity_M2 = np.zeros((M2.nv_velocities*Gr.nzg),dtype=np.double,order='c')
-        self.diffusivity_M2 = np.zeros((M2.nv_scalars*Gr.nzg),dtype=np.double,order='c')
+        self.viscosity_M1 = np.zeros((M1.nv_velocities,Gr.nzg),dtype=np.double,order='c')
+        self.diffusivity_M1 = np.zeros((M1.nv_scalars,Gr.nzg),dtype=np.double,order='c')
+        self.viscosity_M2 = np.zeros((M2.nv_velocities,Gr.nzg),dtype=np.double,order='c')
+        self.diffusivity_M2 = np.zeros((M2.nv_scalars,Gr.nzg),dtype=np.double,order='c')
         return
 
 
-    # cpdef update(self, Grid Gr,  DiagnosticVariables.DiagnosticVariables DV,
-    #              PrognosticVariables.PrognosticVariables PV, Kinematics.Kinematics Ke, Surface.SurfaceBase Sur):
     def update(self, Grid Gr):
-        # Py_ssize_t k
-        size_visc_M1 = self.viscosity_M1.size
-        size_diff_M1 = self.diffusivity_M1.size
-        size_visc_M2 = self.viscosity_M2.size
-        size_diff_M2 = self.diffusivity_M2.size
+        cdef Py_ssize_t k
 
         if not self.is_init:
             self.is_init = True
-            for k in xrange(size_visc_M1):
-                self.viscosity_M1[k] = self.const_viscosity
-            for k in xrange(size_visc_M2):
-                self.viscosity_M2[k] = self.const_viscosity
-            for k in xrange(size_diff_M1):
-                self.diffusivity_M1[k] = self.const_diffusivity
-            for k in xrange(size_diff_M2):
-                self.diffusivity_M2[k] = self.const_diffusivity
+            for k in xrange(Gr.nzg):
+                self.viscosity_M1[:,k] = self.const_viscosity
+            for k in xrange(Gr.nzg):
+                self.viscosity_M2[:,k] = self.const_viscosity
+            for k in xrange(Gr.nzg):
+                self.diffusivity_M1[:,k] = self.const_diffusivity
+            for k in xrange(Gr.nzg):
+                self.diffusivity_M2[:,k] = self.const_diffusivity
         return
 
 
