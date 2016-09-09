@@ -9,7 +9,7 @@ from ReferenceState cimport ReferenceState
 from PrognosticVariables cimport MeanVariables
 from PrognosticVariables cimport SecondOrderMomenta
 
-from thermodynamic_functions cimport exner_c, entropy_from_thetas_c, thetas_t_c, qv_star_c, thetas_c
+from thermodynamic_functions cimport exner, entropy_from_thetas_c, thetas_t_c, qv_star_c, thetas_c
 cimport ReferenceState
 
 from libc.math cimport sqrt, fmin, cos, exp, fabs

@@ -12,7 +12,7 @@ import sys
 
 # from NetCDFIO cimport NetCDFIO_Stats
 from scipy.integrate import odeint
-from thermodynamic_functions import entropy_from_tp, eos, alpha_from_tp
+from thermodynamic_functions import entropy_from_tp, eos, alpha_from_tp, thetali
 include 'parameters.pxi'
 
 
@@ -36,6 +36,8 @@ cdef class ReferenceState:
         self.alpha0_half = np.zeros(Gr.nzg, dtype=np.double, order='c')
         self.rho0 = np.zeros(Gr.nzg, dtype=np.double, order='c')
         self.rho0_half = np.zeros(Gr.nzg, dtype=np.double, order='c')
+        self.th0 = np.zeros(Gr.nzg, dtype=np.double, order='c')
+        self.th0_half = np.zeros(Gr.nzg, dtype=np.double, order='c')
 
         return
 
@@ -56,6 +58,7 @@ cdef class ReferenceState:
         qlg = 0.0
         qig = 0.0
         self.sg = entropy_from_tp(self.Pg, self.Tg, self.qtg, qlg, qig)
+        self.thg = thetali(self.Pg, self.Tg, self.qtg, qlg, qig)
 
         # ((2)) Pressure Profile (Hydrostatic)
         # (2a) Construct arrays for integration points
@@ -101,6 +104,8 @@ cdef class ReferenceState:
         # cdef double[:] p_half_ = np.exp(p_half)
         cdef double[:] temperature = np.zeros(Gr.nzg, dtype=np.double, order='c')
         cdef double[:] temperature_half = np.zeros(Gr.nzg, dtype=np.double, order='c')
+        cdef double[:] th = np.zeros(Gr.nzg, dtype=np.double, order='c')
+        cdef double[:] th_half = np.zeros(Gr.nzg, dtype=np.double, order='c')
         cdef double[:] alpha = np.zeros(Gr.nzg, dtype=np.double, order='c')
         cdef double[:] alpha_half = np.zeros(Gr.nzg, dtype=np.double, order='c')
 
@@ -120,6 +125,7 @@ cdef class ReferenceState:
             qi[k] = 0.0
             qv[k] = self.qtg - (ql[k] + qi[k])
             alpha[k] = alpha_from_tp(p_[k], temperature[k], self.qtg, qv[k])        # alpha[k] = Thermodynamics.alpha(p_[k], temperature[k], self.qtg, qv[k])
+            th[k] = thetali(p_[k], temperature[k], self.qtg, ql[k], qi[k])
 
             a = eos(p_half_[k], self.qtg, self.sg)      # temperature_half[k], ql_half[k], qi_half[k] = Thermodynamics.eos(p_half_[k], self.sg, self.qtg)
             temperature_half[k] = a['T']
@@ -127,6 +133,7 @@ cdef class ReferenceState:
             qi_half[k] = 0.0
             qv_half[k] = self.qtg - (ql_half[k] + qi_half[k])
             alpha_half[k] = alpha_from_tp(p_half_[k], temperature_half[k], self.qtg, qv_half[k])        # alpha_half[k] = Thermodynamics.alpha(p_half_[k], temperature_half[k], self.qtg, qv_half[k])
+            th_half[k] = thetali(p_half_[k], temperature_half[k], self.qtg, ql_half[k], qi_half[k])
 
 
         # ((4)) Sanity check to make sure that the Reference State entropy profile is uniform following saturation adjustment
@@ -145,22 +152,26 @@ cdef class ReferenceState:
         self.p0_half = p_half
         self.rho0 = 1.0 / np.array(self.alpha0)
         self.rho0_half = 1.0 / np.array(self.alpha0_half)
+        self.th0 = th
+        self.th0_half = th_half
 
-        # # Write reference profiles to StatsIO
-        # NS.add_reference_profile('alpha0', Gr)
-        # NS.write_reference_profile('alpha0', alpha_half[Gr.gw:-Gr.gw])
-        # NS.add_reference_profile('p0', Gr)
-        # NS.write_reference_profile('p0', p_half[Gr.gw:-Gr.gw])
-        # NS.add_reference_profile('rho0', Gr)
-        # NS.write_reference_profile('rho0', 1.0 / np.array(alpha_half[Gr.gw:-Gr.gw]))
-        # NS.add_reference_profile('temperature0', Gr)
-        # NS.write_reference_profile('temperature0', temperature_half[Gr.gw:-Gr.gw])
-        # NS.add_reference_profile('ql0', Gr)
-        # NS.write_reference_profile('ql0', ql_half[Gr.gw:-Gr.gw])
-        # NS.add_reference_profile('qv0', Gr)
-        # NS.write_reference_profile('qv0', qv_half[Gr.gw:-Gr.gw])
-        # NS.add_reference_profile('qi0', Gr)
-        # NS.write_reference_profile('qi0', qi_half[Gr.gw:-Gr.gw])
+        # Write reference profiles to StatsIO
+        NS.add_reference_profile('alpha0', Gr)
+        NS.write_reference_profile('alpha0', alpha_half[Gr.gw:-Gr.gw])
+        NS.add_reference_profile('p0', Gr)
+        NS.write_reference_profile('p0', p_half[Gr.gw:-Gr.gw])
+        NS.add_reference_profile('rho0', Gr)
+        NS.write_reference_profile('rho0', 1.0 / np.array(alpha_half[Gr.gw:-Gr.gw]))
+        NS.add_reference_profile('temperature0', Gr)
+        NS.write_reference_profile('temperature0', temperature_half[Gr.gw:-Gr.gw])
+        NS.add_reference_profile('ql0', Gr)
+        NS.write_reference_profile('ql0', ql_half[Gr.gw:-Gr.gw])
+        NS.add_reference_profile('qv0', Gr)
+        NS.write_reference_profile('qv0', qv_half[Gr.gw:-Gr.gw])
+        NS.add_reference_profile('qi0', Gr)
+        NS.write_reference_profile('qi0', qi_half[Gr.gw:-Gr.gw])
+        NS.add_reference_profile('th0', Gr)
+        NS.write_reference_profile('th0', qi_half[Gr.gw:-Gr.gw])
 
         return
 

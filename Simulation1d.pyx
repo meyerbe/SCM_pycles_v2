@@ -21,7 +21,7 @@ cimport MomentumDiffusion
 cimport ScalarDiffusion
 cimport NetCDFIO
 from Thermodynamics import ThermodynamicsFactory
-# from TurbulenceScheme import TurbulenceFactory
+from TurbulenceScheme import TurbulenceFactory
 # # cimport TurbulenceScheme
 
 
@@ -41,7 +41,7 @@ class Simulation1d:
 
         self.MA = MomentumAdvection.MomentumAdvection(namelist)
         self.SA = ScalarAdvection.ScalarAdvection(namelist)
-        # self.Turb = TurbulenceFactory(namelist)
+        self.Turb = TurbulenceFactory(namelist)
 
         self.SGS = SGSFactory(namelist)
         self.MD = MomentumDiffusion.MomentumDiffusion()
@@ -78,6 +78,7 @@ class Simulation1d:
 
         self.MA.initialize(self.Gr, self.M1)
         self.SA.initialize(self.Gr, self.M1)
+        self.Turb.initialize()
         self.SGS.initialize(self.Gr, self.M1, self.M2)
         self.MD.initialize(self.Gr, self.M1)
         self.SD.initialize(self.Gr, self.M1)
@@ -99,18 +100,18 @@ class Simulation1d:
             self.SGS.update(self.Gr)       # --> compute diffusivity / viscosity for M1 and M2 (being the same at the moment)
             # self.M1.plot('beginning of timestep', self.Gr, self.TS)
             # (1) update mean field (M1) tendencies
-            # self.Th.update()
+            self.Th.update()
             self.MA.update_M1_2nd(self.Gr, self.Ref, self.M1)       # self.MA.update(self.Gr, self.Ref, self.M1)
             self.SA.update_M1_2nd(self.Gr, self.Ref, self.M1)       # self.SA.update(self.Gr, self.Ref, self.M1)
 
             self.MD.update(self.Gr, self.Ref, self.M1, self.SGS)
             self.SD.update(self.Gr, self.Ref, self.M1, self.SGS)
-            # # self.M1.plot('after SD update', self.Gr, self.TS)
-            #
-            # self.Turb.update_M1(self.Gr, self.M1, self.M2)                         # --> add turbulent flux divergence to mean field tendencies: dz<w'phi'>
-            # # ??? surface fluxes ??? (--> in SGS or MD/SD scheme?)
-            # # ??? update boundary conditions ???
-            # # ??? pressure solver ???
+            # self.M1.plot('after SD update', self.Gr, self.TS)
+
+            self.Turb.update_M1(self.Gr, self.Ref, self.M1, self.M2)                         # --> add turbulent flux divergence to mean field tendencies: dz<w'phi'>
+            # ??? surface fluxes ??? (--> in SGS or MD/SD scheme?)
+            # ??? update boundary conditions ???
+            # ??? pressure solver ???
 
             # self.M1.plot('without tendency update', self.Gr, self.TS)
 

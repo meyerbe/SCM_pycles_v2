@@ -3,11 +3,34 @@ import numpy as np
 cimport numpy as np
 from libc.math cimport sqrt, log, fabs,atan, exp, fmax, pow
 
-'''Pressure'''
-cpdef double pv_c(double p0, double qt, double qv):
-    a = p0 * eps_vi * qv /(1.0 - qt + eps_vi * qv)
-    # print('pv_c: ', p0, qt, qv, a)
-    return p0 * eps_vi * qv /(1.0 - qt + eps_vi * qv)
+
+
+
+# - th_l(T, p, qt) ok
+# - ql, T = f(th_l, qt, p)
+# - T(th_l, p, qt)
+
+
+'''Potential Temperature'''
+cpdef double exner(const double p):
+    return pow((p/p_tilde),kappa)
+
+# // Dry potential temperature
+cpdef double theta(const double p, const double T):
+    return T / exner(p)
+
+# // Liquid ice potential temperature consistent with Triopoli and Cotton (1981)
+cpdef double thetali(const double p, const double T, const double qt, const double ql, const double qi):
+    L = latent_heat(T)
+    return theta(p, T) * exp(-L*(ql/(1.0 - qt) + qi/(1.0 -qt))/(T*cpd))
+
+# // Virtual potential temperature
+cpdef double thetav(const double p, const double T, const double qt):
+    return theta(p,T) * (1 + (Rv/Rd - 1)*qt)
+
+
+
+
 
 
 '''entropies'''
@@ -38,6 +61,11 @@ cpdef double entropy_from_tp(double p0, double T, double qt, double ql, double q
         ret = sd_c(pd, T) * (1.0 - qt) + sv_c(pv, T) * qt + sc_c(L, T) * (ql + qi)
     return ret
 
+
+
+
+
+
 '''Density'''
 cpdef double alpha_from_tp(double p0, double T, double  qt, double qv):
     return (Rd * T)/p0 * (1.0 - qt + eps_vi * qv)
@@ -45,13 +73,17 @@ cpdef double alpha_from_tp(double p0, double T, double  qt, double qv):
 #     return alpha_c(p0, T, qt, qv)
 
 
+'''Pressure'''
+cpdef double pv_c(double p0, double qt, double qv):
+    a = p0 * eps_vi * qv /(1.0 - qt + eps_vi * qv)
+    # print('pv_c: ', p0, qt, qv, a)
+    return p0 * eps_vi * qv /(1.0 - qt + eps_vi * qv)
 
 
 '''Clausius Clapeyron: Latent Heat, Saturation Pressure'''
 cpdef double latent_heat(double T):
     cdef double TC = T - 273.15
-    return (2500.8 - 2.36 * TC + 0.0016 * TC *
-            TC - 0.00006 * TC * TC * TC) * 1000.0
+    return (2500.8 - 2.36 * TC + 0.0016 * TC * TC - 0.00006 * TC * TC * TC) * 1000.0
 
 cpdef double pv_star(double T)   :
     #    Magnus formula
@@ -60,15 +92,10 @@ cpdef double pv_star(double T)   :
 
 
 
-
-
-
-
-
 '''Saturation Adjustment'''
 cpdef double eos_first_guess_thetal(double s, double pd, double pv, double qt)   :
     cdef double p0 = pd + pv
-    return s * exner_c(p0)
+    return s * exner(p0)
 
 cpdef double eos_first_guess_entropy(double s, double pd, double pv, double qt )   :
     ## PROBLEM: nan in a, b=inf
@@ -159,14 +186,7 @@ cpdef eos_struct eos(double p0, double qt, double prog):
 
 
 
-cpdef inline double theta(const double p0, const double T) nogil:
-    return theta_c(p0, T)
 
-cpdef inline double thetali(const double p0, const double T, const double qt, const double ql, const double qi, const double L) nogil:
-    return thetali_c(p0, T, qt, ql, qi, L)
-
-cpdef inline double exner(const double p0) nogil:
-    return exner_c(p0)
 
 cpdef inline double pd(const double p0, const double qt, const double qv) nogil:
     return pd_c(p0, qt, qv)

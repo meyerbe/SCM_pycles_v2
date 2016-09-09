@@ -89,7 +89,7 @@ cdef class PrognosticVariables:
     cpdef update(self, Grid Gr, TimeStepping TS):
         cdef:
             Py_ssize_t kmax = Gr.nzg
-            Py_ssize_t k
+            Py_ssize_t k, var_shift
         for var in self.name_index.keys():
             var_shift = self.get_varshift(Gr, var)
             for k in xrange(0,kmax):
@@ -303,21 +303,23 @@ cdef class SecondOrderMomenta:
 
         '''Local Covariances'''
 
-        '''Momentum Covariances'''
+        '''Momentum (Co)Variances: uu, uv, uw, vv, vw, ww'''
         for n in xrange(M1.nv_velocities):
             var1 = M1.index_name[n]
             for m in xrange(n,M1.nv_velocities):
                 var2 = M1.index_name[m]
-                print('!!!', var1,n,var2,m)
+                # print('!!!', var1,n,var2,m)
                 self.add_variable(var1+var2,'(m/s)^2',"velocity",n,m)
+            '''Scalar Fluxes: wth, wqt'''
             for m in xrange(M1.nv_scalars):
                 var2 = M1.index_name[M1.nv_velocities + m]
                 unit = '(m/1)'+ M1.units[var2]
                 self.add_variable(var1+var2,unit,"scalar",n,m)
+            '''Pressure Correlation'''
             m = M1.nv
             self.add_variable(var1+'p','(m/s)(N/m)',"pressure",n,m)
 
-        '''Scalar Fluxes and Covariances'''
+        '''Scalar Variances and Covariances: thth, thqt, qtqt'''
         for n in xrange(M1.nv_scalars):
             var1 = M1.index_name[M1.nv_velocities + n]
             for m in xrange(n,M1.nv_scalars):

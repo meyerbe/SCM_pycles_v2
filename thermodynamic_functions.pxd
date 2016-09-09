@@ -3,10 +3,14 @@ cdef struct eos_struct:
     double T
     double ql
 
+cpdef double exner(const double p)# nogil
+cpdef double theta(const double p, const double T)
+cpdef double thetali(const double p, const double T, const double qt, const double ql, const double qi)
+cpdef double thetav(const double p, const double T, const double qt)
+
+
+
 cdef extern from "thermodynamic_functions.h":
-    inline double theta_c(const double p0, const double T) nogil
-    inline double thetali_c(const double p0, const double T, const double qt, const double ql, const double qi, const double L) nogil
-    inline double exner_c(const double p0) nogil
     inline double pd_c(const double p0, const double qt, const double qv) nogil
     # inline double pv_c(const double p0, const double qt, const double qv) nogil
     inline double density_temperature_c(const double T, const double qt, const double qv) nogil

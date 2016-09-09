@@ -1,5 +1,6 @@
 from Grid cimport Grid
 cimport PrognosticVariables
+from ReferenceState cimport ReferenceState
 # cimport DiagnosticVariables
 # cimport Kinematics
 # cimport Surface
@@ -8,7 +9,7 @@ cimport PrognosticVariables
 cdef class TurbulenceBase:
     cpdef initialize(self)
     cpdef update(self, Grid Gr, PrognosticVariables.MeanVariables M1, PrognosticVariables.SecondOrderMomenta M2)
-    cpdef update_M1(self,Grid Gr, PrognosticVariables.MeanVariables M1, PrognosticVariables.SecondOrderMomenta M2)
+    cpdef update_M1(self,Grid Gr, ReferenceState Ref, PrognosticVariables.MeanVariables M1, PrognosticVariables.SecondOrderMomenta M2)
     cpdef stats_io(self)
 
 cdef class TurbulenceNone(TurbulenceBase):

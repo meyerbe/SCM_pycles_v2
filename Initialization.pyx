@@ -18,7 +18,7 @@ from PrognosticVariables cimport SecondOrderMomenta
 # cimport DiagnosticVariables
 
 from thermodynamic_functions import entropy_from_tp
-from thermodynamic_functions cimport exner_c, entropy_from_thetas_c, thetas_t_c, qv_star_c, thetas_c
+from thermodynamic_functions cimport exner, entropy_from_thetas_c, thetas_t_c, qv_star_c, thetas_c
 
 from libc.math cimport sqrt, fmin, cos, exp, fabs
 include 'parameters.pxi'
@@ -116,7 +116,7 @@ cdef class InitializationBase:
     #             theta_pert_ = (theta_pert[k] - 0.5)* 0.1
     #         else:
     #             theta_pert_ = 0.0
-    #             temp = (theta[k] + theta_pert_)*exner_c(Ref.p0_half[k])
+    #             temp = (theta[k] + theta_pert_)*exner(Ref.p0_half[k])
     #         M1.values[s_varshift + k] = entropy_from_tp(Ref.p0_half[k],temp,0.0,0.0,0.0)
     #     return
 
@@ -187,7 +187,7 @@ cdef class InitSoares(InitializationBase):
                 theta_pert_ = (theta_pert[k] - 0.5)* 0.1
             else:
                 theta_pert_ = 0.0
-            temp = (theta[k] + theta_pert_)*exner_c(Ref.p0_half[k])
+            temp = (theta[k] + theta_pert_)*exner(Ref.p0_half[k])
             M1.values[th_varshift,k] = entropy_from_tp(Ref.p0_half[k],temp,qt,ql,qi)               # s = Thermodynamics.entropy(p_half[k],temperature_half[k],self.qtg,ql_half[k],qi_half[k])
             M1.values[u_varshift,k] = 0.0
             M1.values[v_varshift,k] = 0.0
