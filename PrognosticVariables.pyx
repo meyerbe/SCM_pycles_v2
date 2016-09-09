@@ -93,7 +93,7 @@ cdef class PrognosticVariables:
         for var in self.name_index.keys():
             var_shift = self.get_varshift(Gr, var)
             for k in xrange(0,kmax):
-                self.values[var_shift + k] += self.tendencies[var_shift + k] * TS.dt
+                self.values[var_shift+k] += self.tendencies[var_shift+k] * TS.dt
 
         return
 

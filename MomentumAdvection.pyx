@@ -29,8 +29,8 @@ cdef class MomentumAdvection:
     # cpdef initialize(self, Grid.Grid Gr, PrognosticVariables.PrognosticVariables PV, NetCDFIO_Stats NS):
     cpdef initialize(self, Grid Gr, MeanVariables M1):
         # initialize scheme for Mean Variables & Second Order Momenta
-        self.flux = np.zeros((M1.nv_velocities*Gr.nzg),dtype=np.double,order='c')
-        self.tendencies = np.zeros((M1.nv_velocities*Gr.nzg),dtype=np.double,order='c')
+        self.flux = np.zeros((M1.nv_velocities,Gr.nzg),dtype=np.double,order='c')
+        self.tendencies = np.zeros((M1.nv_velocities,Gr.nzg),dtype=np.double,order='c')
 
         return
 
@@ -59,8 +59,6 @@ cdef class MomentumAdvection:
 
 
 
-
-    # cpdef update(self, Grid.Grid Gr, ReferenceState.ReferenceState Rs, PrognosticVariables.PrognosticVariables PV):
     cpdef update_M1_2nd(self, Grid Gr, ReferenceState Ref, MeanVariables M1):
         print('Momentum Advection M1: update 2nd')
         # (1) update tendencies for Mean Variables
@@ -69,8 +67,7 @@ cdef class MomentumAdvection:
         # (1b) turbulent advection: 1/rho0*\partialz(<rho0 w'u'_i>)
         cdef:
             Py_ssize_t d_advected       # Direction of advected momentum component
-            Py_ssize_t shift_advected
-            Py_ssize_t w_varshift = M1.get_varshift(Gr,'w')
+            Py_ssize_t w_index = M1.name_index['w']
 
             Py_ssize_t k
             Py_ssize_t kmax = Gr.nzg-Gr.gw
@@ -79,17 +76,16 @@ cdef class MomentumAdvection:
 
             # Py_ssize_t stencil[3] = {istride,jstride,1}
             Py_ssize_t sp1_ed = 1
-            Py_ssize_t sp2_ed = 2 * sp1_ed
             Py_ssize_t sm1_ed = -sp1_ed
 
-            # double [:] vel_advecting = M1.values[w_varshift:(w_varshift+kmax)]
-            # double [:] vel_advected = M1.values[w_varshift:(w_varshift+kmax)]
-            double [:] velocities = M1.values
+            # double [:] vel_advecting = M1.values[w_index,:]
+            # double [:] vel_advected = M1.values[w_index,:]
+            double [:,:] velocities = M1.values
             double vel_advected_ing
             double vel_advecting_int
-            double [:] flux = self.flux
-            double [:] tendency = self.tendencies
-            double [:] tendency_M1 = M1.tendencies
+            double [:,:] flux = self.flux
+            double [:,:] tendency = self.tendencies
+            double [:,:] tendency_M1 = M1.tendencies
 
             double [:] rho0 = Ref.rho0
             double [:] rho0_half = Ref.rho0_half
@@ -99,36 +95,32 @@ cdef class MomentumAdvection:
         # print('MomentumAdvection: ', vel_advecting.shape, vel_advecting.size, Gr.nzg)
 
         for d_advected in xrange(Gr.dims):
-            shift_advected = M1.velocity_directions[d_advected] * Gr.nzg
-
             if(d_advected == 2):
-                for k in xrange(Gr.nzg):
+                for k in xrange(Gr.nzg-1):
                     # vel_advecting_int = 0.5*(vel_advecting[k]+vel_advecting[k+1])
-                    vel_advecting_int = 0.5*(velocities[w_varshift+k]+velocities[w_varshift+k+1])
-                    vel_advected_int = 0.5*(velocities[shift_advected+k]+velocities[shift_advected+k+1])
-                    flux[shift_advected+k] = rho0_half[k+1]*vel_advecting_int*vel_advected_int
+                    vel_advecting_int = 0.5*(velocities[w_index,k]+velocities[w_index,k+1])
+                    vel_advected_int = 0.5*(velocities[d_advected,k]+velocities[d_advected,k+1])
+                    flux[d_advected,k] = rho0_half[k+1]*vel_advecting_int*vel_advected_int
                     # print('d_advected:', d_advected, 'M1 Momentum flux:', flux[k])
             else:
-                for k in xrange(Gr.nzg):
-                    vel_advecting_int = 0.5*(velocities[w_varshift+k]+velocities[w_varshift+k+1])
-                    vel_advected_int = 0.5*(velocities[shift_advected+k]+velocities[shift_advected+k+1])
-                    flux[shift_advected+k] = rho0[k]*vel_advecting_int*vel_advected_int
+                for k in xrange(Gr.nzg-1):
+                    vel_advecting_int = 0.5*(velocities[w_index,k]+velocities[w_index,k+1])
+                    vel_advected_int = 0.5*(velocities[d_advected,k]+velocities[d_advected,k+1])
+                    flux[d_advected,k] = rho0[k]*vel_advecting_int*vel_advected_int
                     # print('d_advected:', d_advected, 'M1 Momentum flux:', flux[k])
             # print(d_advected, shift_advected, shift_advected+k, Gr.nzg)
 
             if(d_advected == 2):
                 for k in xrange(gw,kmax):
                     # pass
-                    tendency[shift_advected+k] = \
-                        alpha0[k]*(flux[shift_advected+k] - flux[shift_advected+k+sm1_ed])*dzi
+                    tendency[d_advected,k] = alpha0[k]*(flux[d_advected,k] - flux[d_advected,k+sm1_ed])*dzi
             else:
                 for k in xrange(gw,kmax):
                     # pass
-                    tendency[shift_advected+k] = \
-                        alpha0_half[k]*(flux[shift_advected+k]-flux[shift_advected+k+sm1_ed])*dzi
+                    tendency[d_advected,k] = alpha0_half[k]*(flux[d_advected,k]-flux[d_advected,k+sm1_ed])*dzi
 
             for k in xrange(Gr.nzg):
-                tendency_M1[shift_advected+k] += tendency[shift_advected+k]
+                tendency_M1[d_advected,k] += tendency[d_advected,k]
 
         return
 

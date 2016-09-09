@@ -32,9 +32,6 @@ cdef class ThermodynamicsDry:
         # PV.add_variable('s','m/s',"sym","scalar")
         # M1.add_variable('s','m/s',"scalar")
         M1.add_variable('th','K',"scalar")
-        M2.add_variable('uth', '(m/s)^2', "velocity")
-        M2.add_variable('vth', '(m/s)^2', "velocity")
-        M2.add_variable('wth', '(m/s)^2', "velocity")
 
         return
 
@@ -47,7 +44,6 @@ cdef class ThermodynamicsDry:
         # buoyancy update: compute buoyancy_c(alpha0, alpha); compute wt (w-tendency)
         # bvf_dry: compute theta(p0,T); compute Brunt Vaisalla Frequency (bvf=g/theta*partialz theta)
         return
-
 
 
 # cpdef stats_io(self, Grid Gr, ReferenceState.ReferenceState RS, PrognosticVariables.PrognosticVariables PV,
