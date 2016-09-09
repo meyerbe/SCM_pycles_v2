@@ -104,4 +104,4 @@ cdef class ScalarDiffusion:
 
                     scalar_count += 1
 
-        print('SD: M1_tendencies[phi=s,k=10]: ', M1_tendencies[th_index+10], np.amax(M1_tendencies))
+        # print('SD: M1_tendencies[phi=s,k=10]: ', M1_tendencies[th_index+10], np.amax(M1_tendencies))

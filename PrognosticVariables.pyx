@@ -161,9 +161,7 @@ cdef class MeanVariables:
             kmax = Gr.nzg
             Py_ssize_t var
 
-        print('M1 shape', self.values.shape)
         for var in xrange(self.nv):
-            print('var', var, self.nv)
             for k in xrange(0,kmax):
                 self.values[var,k] += self.tendencies[var,k] * TS.dt
                 self.tendencies[var,k] = 0.0

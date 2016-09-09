@@ -88,4 +88,4 @@ cdef class MomentumDiffusion:
 
                     vel_count += 1
 
-        print('MA: M1_tendencies[u,k=10]: ', M1_tendencies[10], np.amax(M1_tendencies))
+        # print('MA: M1_tendencies[u,k=10]: ', M1_tendencies[10], np.amax(M1_tendencies))
