@@ -156,10 +156,10 @@ cdef class InitSoares(InitializationBase):
         # np.random.seed(Pa.rank)
         # print(M1.name_index.keys())
         cdef:
-            Py_ssize_t u_varshift = M1.get_varshift(Gr,'u')
-            Py_ssize_t v_varshift = M1.get_varshift(Gr,'v')
-            Py_ssize_t w_varshift = M1.get_varshift(Gr,'w')
-            Py_ssize_t th_varshift = M1.get_varshift(Gr,'th')
+            Py_ssize_t u_varshift = M1.name_index['u']
+            Py_ssize_t v_varshift = M1.name_index['v']
+            Py_ssize_t w_varshift = M1.name_index['w']
+            Py_ssize_t th_varshift = M1.name_index['th']
             Py_ssize_t k
             # Py_ssize_t e_varshift
             double [:] theta = np.empty((Gr.nzg),dtype=np.double,order='c')
@@ -188,17 +188,16 @@ cdef class InitSoares(InitializationBase):
             else:
                 theta_pert_ = 0.0
             temp = (theta[k] + theta_pert_)*exner_c(Ref.p0_half[k])
-            M1.values[th_varshift + k] = entropy_from_tp(Ref.p0_half[k],temp,qt,ql,qi)               # s = Thermodynamics.entropy(p_half[k],temperature_half[k],self.qtg,ql_half[k],qi_half[k])
-            M1.values[u_varshift + k] = 0.0
-            M1.values[v_varshift + k] = 0.0
-            M1.values[w_varshift + k] = 0.0
+            M1.values[th_varshift,k] = entropy_from_tp(Ref.p0_half[k],temp,qt,ql,qi)               # s = Thermodynamics.entropy(p_half[k],temperature_half[k],self.qtg,ql_half[k],qi_half[k])
+            M1.values[u_varshift,k] = 0.0
+            M1.values[v_varshift,k] = 0.0
+            M1.values[w_varshift,k] = 0.0
 
         # (2) Initialize Second Order Momenta
-        print(M2.name_index.keys())
-        cdef:
-            Py_ssize_t ww_varshift = M2.get_varshift(Gr,'ww')
-        for k in xrange(Gr.nzg):
-            M2.values[ww_varshift + k] = 0.0
+        for var1 in xrange(M2.nv):
+            for var2 in xrange(var1,M2.nv):
+                for k in xrange(Gr.nzg):
+                    M2.values[var1,var2,k] = 0.0
 
 
          # # if 'e' in PV.name_index:
@@ -264,23 +263,21 @@ cdef class InitTest(InitializationBase):
 
         # (2) Initialize Mean Variables
         cdef:
-            Py_ssize_t u_varshift = M1.get_varshift(Gr,'u')
-            Py_ssize_t v_varshift = M1.get_varshift(Gr,'v')
-            Py_ssize_t w_varshift = M1.get_varshift(Gr,'w')
-            Py_ssize_t th_varshift = M1.get_varshift(Gr,'th')
-            Py_ssize_t k
+            Py_ssize_t u_varshift = M1.name_index['u']
+            Py_ssize_t v_varshift = M1.name_index['v']
+            Py_ssize_t w_varshift = M1.name_index['w']
+            Py_ssize_t th_varshift = M1.name_index['th']
+            Py_ssize_t k, var1, var2
             Py_ssize_t nv_vel = M1.nv_velocities
-
             # double [:] s = M1.values[s_varshift:s_varshift+Gr.nzg]
-
             # double [:] p0 = Ref.p0_half
 
         # (i) Theta (potential temperature) profile (Soares) incl. perturbations
         for k in xrange(Gr.nzg):
-            M1.values[th_varshift+k] = 6000.0
-            M1.values[u_varshift+k] = 0.0
-            M1.values[v_varshift+k] = 0.0
-            M1.values[w_varshift+k] = 0.0
+            M1.values[th_varshift,k] = 6000.0
+            M1.values[u_varshift,k] = 0.0
+            M1.values[v_varshift,k] = 0.0
+            M1.values[w_varshift,k] = 0.0
 
         # # (ii) Velocities & Entropy
         cdef:
@@ -290,5 +287,9 @@ cdef class InitTest(InitializationBase):
         print('Initializing Velocity and Entropy')
 
         # (2) Initialize Second Order Momenta
+        for var1 in xrange(M2.nv):
+            for var2 in xrange(var1,M2.nv):
+                for k in xrange(Gr.nzg):
+                    M2.values[var1,var2,k] = 0.0
 
         return

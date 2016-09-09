@@ -109,7 +109,9 @@ cdef class MeanVariables:
         self.nv_scalars = 0
         self.nv_velocities = 0
         self.var_type = np.array([],dtype=np.int,order='c')
+        self.velocity_directions = np.zeros((Gr.dims,),dtype=np.int,order='c')
         return
+
 
     cpdef add_variable(self,name,units,var_type):
         # Store names and units
@@ -128,27 +130,31 @@ cdef class MeanVariables:
             print("Not a valid var_type. Killing simulation now!")
             sys.exit()
         print('adding Variable ', name, self.nv)
-        print('u', self.name_index['u'])
+        # print('u', self.name_index['u'])
         return
 
+
     cpdef initialize(self, Grid Gr, NetCDFIO_Stats NS):
-    # cpdef initialize(self, Grid Gr):
-        # try:
-        #     self.velocity_directions[0] = self.get_nv('u')      # Causes Problems!!!
-        #     self.velocity_directions[1] = self.get_nv('v')
-        #     self.velocity_directions[2] = self.get_nv('w')
-        # except:
-        #     print('problem setting velocity directions')
-        #     print('Killing simulation now!')
-        #     sys.exit()
+        try:
+            self.velocity_directions[0] = self.get_nv('u')
+            self.velocity_directions[1] = self.get_nv('v')
+            self.velocity_directions[2] = self.get_nv('w')
+        except:
+            print('problem setting velocity directions')
+            print('Killing simulation now!')
+            sys.exit()
+
+        print('M1:', self.name_index)
         self.values = np.zeros(shape=(self.nv,Gr.nzg),dtype=np.double,order='c')
         self.tendencies = np.zeros(shape=(self.nv,Gr.nzg),dtype=np.double,order='c')
+
         # Add prognostic variables to Statistics IO
         print('Setting up statistical output files for PV.M1')
         for var_name in self.name_index.keys():
             #Add mean profile
             NS.add_profile(var_name+'_mean', Gr)
         return
+
 
     cpdef update(self, Grid Gr, TimeStepping TS):
         cdef:
@@ -162,9 +168,8 @@ cdef class MeanVariables:
                 self.values[var,k] += self.tendencies[var,k] * TS.dt
                 self.tendencies[var,k] = 0.0
 
-
-        u_index = self.name_index['u']
-        print('M1: M1_tendencies[u,k=10]: ', self.tendencies[u_index+10], np.amax(self.tendencies))
+        # u_index = self.name_index['u']
+        # print('M1: M1_tendencies[u,k=10]: ', self.tendencies[u_index+10], np.amax(self.tendencies))
         # print('M1: M1_tendencies[u,k=10]: ', self.tendencies[10], np.amax(self.tendencies))
         # th_varshift = self.get_varshift(Gr, 'th')
         # print('M1: M1_tendencies[phi=th,k=10]: ', self.tendencies[th_varshift+10], np.amax(self.tendencies))
@@ -270,28 +275,65 @@ cdef class SecondOrderMomenta:
         self.var_type = np.array([],dtype=np.int,order='c')
         return
 
-    cpdef add_variable(self,name,units,var_type):
+
+    cpdef add_variable(self,name,units,var_type,n,m):
         # Store names and units
-        self.name_index[name] = self.nv
+        self.name_index[name] = [n,m]
         self.index_name.append(name)
         self.units[name] = units
-        self.nv = len(self.name_index.keys())
-        #Set the type of the variable being added 0=velocity; 1=scalars
+
+        #Set the type of the variable being added
+        # 0=velocity*velocity; 1=scalars*scalar or velocity*scalar; 2=pressure correlation
         if var_type == "velocity":
             self.var_type = np.append(self.var_type,0)
             self.nv_velocities += 1
         elif var_type == "scalar":
             self.var_type = np.append(self.var_type,1)
             self.nv_scalars += 1
+        elif var_type == "pressure":
+            self.var_type = np.append(self.var_type,2)
         else:
             print("Not a valid var_type. Killing simulation now!")
             sys.exit()
-        print('adding Variable ', name, self.nv)
 
         return
 
-    cpdef initialize(self, Grid Gr, NetCDFIO_Stats NS):
-        print('2nd order moments: ', self.nv)
+    cpdef initialize(self, Grid Gr, MeanVariables M1, NetCDFIO_Stats NS):
+        print('2nd order moments: ')
+
+        '''Local Covariances'''
+
+        '''Momentum Covariances'''
+        for n in xrange(M1.nv_velocities):
+            var1 = M1.index_name[n]
+            for m in xrange(n,M1.nv_velocities):
+                var2 = M1.index_name[m]
+                print('!!!', var1,n,var2,m)
+                self.add_variable(var1+var2,'(m/s)^2',"velocity",n,m)
+            for m in xrange(M1.nv_scalars):
+                var2 = M1.index_name[M1.nv_velocities + m]
+                unit = '(m/1)'+ M1.units[var2]
+                self.add_variable(var1+var2,unit,"scalar",n,m)
+            m = M1.nv
+            self.add_variable(var1+'p','(m/s)(N/m)',"pressure",n,m)
+
+        '''Scalar Fluxes and Covariances'''
+        for n in xrange(M1.nv_scalars):
+            var1 = M1.index_name[M1.nv_velocities + n]
+            for m in xrange(n,M1.nv_scalars):
+                var2 = M1.index_name[M1.nv_velocities + m]
+                unit = M1.units[var1] + M1.units[var2]
+                self.add_variable(var1+var2,unit,"scalar",n,m)
+            m = M1.nv
+            self.add_variable(var1+'p','(m/s)(N/m)',"pressure",n,m)
+
+
+        print('M1.nv', M1.nv)
+        print('M2.nv', self.nv)
+        print('name_index', self.name_index)
+        print('index_name', self.index_name)
+
+        self.nv = M1.nv+1       # additional variable: pressure
         self.values = np.zeros((self.nv,self.nv,Gr.nzg),dtype=np.double,order='c')
         self.tendencies = np.zeros((self.nv,self.nv,Gr.nzg),dtype=np.double,order='c')
 
@@ -301,6 +343,7 @@ cdef class SecondOrderMomenta:
             # Add mean profile
             NS.add_profile(var_name, Gr)
         return
+
 
     cpdef update(self, Grid Gr, TimeStepping TS):
         cdef:

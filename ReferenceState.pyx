@@ -5,6 +5,7 @@
 # cython: cdivision=True
 
 from Grid cimport Grid
+from NetCDFIO cimport NetCDFIO_Stats
 cimport numpy as np
 import numpy as np
 import sys
@@ -39,8 +40,8 @@ cdef class ReferenceState:
         return
 
     # def initialize(self, Grid Gr, Thermodynamics, NetCDFIO_Stats NS):
-    # def initialize(self, Grid Gr, NetCDFIO_Stats NS):
-    def initialize(self, Grid Gr):
+    def initialize(self, Grid Gr, NetCDFIO_Stats NS):
+    # def initialize(self, Grid Gr):
         '''
         Initilize the reference profiles. The function is typically called from the case specific initialization
         fucntion defined in Initialization.pyx

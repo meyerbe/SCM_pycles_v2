@@ -12,7 +12,7 @@ import os       # for self.outpath
 from Grid cimport Grid
 cimport TimeStepping
 cimport ReferenceState
-# from Initialization import InitializationFactory
+from Initialization import InitializationFactory
 cimport PrognosticVariables
 # cimport MomentumAdvection
 # cimport ScalarAdvection
@@ -21,7 +21,7 @@ cimport PrognosticVariables
 # cimport MomentumDiffusion
 # cimport ScalarDiffusion
 cimport NetCDFIO
-# from Thermodynamics import ThermodynamicsFactory
+from Thermodynamics import ThermodynamicsFactory
 # from TurbulenceScheme import TurbulenceFactory
 # # cimport TurbulenceScheme
 
@@ -32,14 +32,14 @@ class Simulation1d:
         self.Gr = Grid(namelist)
         self.TS = TimeStepping.TimeStepping()
         self.Ref = ReferenceState.ReferenceState(self.Gr)
-        # self.Init = InitializationFactory(namelist)
+        self.Init = InitializationFactory(namelist)
 
         self.PV = PrognosticVariables.PrognosticVariables(self.Gr)
         self.M1 = PrognosticVariables.MeanVariables(self.Gr)
         self.M2 = PrognosticVariables.SecondOrderMomenta(self.Gr)
 
-        # self.Th = ThermodynamicsFactory(namelist)
-        #
+        self.Th = ThermodynamicsFactory(namelist)
+
         # self.MA = MomentumAdvection.MomentumAdvection(namelist)
         # self.SA = ScalarAdvection.ScalarAdvection(namelist)
         # self.Turb = TurbulenceFactory(namelist)
@@ -68,25 +68,32 @@ class Simulation1d:
         self.M1.add_variable('v', 'm/s', "velocity")
         self.M1.add_variable('w', 'm/s', "velocity")
 
-        self.M2.add_variable('uu', '(m/s)^2', "velocity")
-        self.M2.add_variable('vv', '(m/s)^2', "velocity")
-        self.M2.add_variable('wu', '(m/s)^2', "velocity")
-        self.M2.add_variable('wv', '(m/s)^2', "velocity")
-        self.M2.add_variable('ww', '(m/s)^2', "velocity")
-        self.M2.add_variable('pu', '(m/s)^2', "velocity")
-        self.M2.add_variable('pv', '(m/s)^2', "velocity")
-        self.M2.add_variable('pw', '(m/s)^2', "velocity")
+        # self.M2.add_variable('uu', '(m/s)^2', "velocity")
+        # self.M2.add_variable('vv', '(m/s)^2', "velocity")
+        # self.M2.add_variable('wu', '(m/s)^2', "velocity")
+        # self.M2.add_variable('wv', '(m/s)^2', "velocity")
+        # self.M2.add_variable('ww', '(m/s)^2', "velocity")
+        # self.M2.add_variable('pu', '(m/s)^2', "velocity")
+        # self.M2.add_variable('pv', '(m/s)^2', "velocity")
+        # self.M2.add_variable('pw', '(m/s)^2', "velocity")
 
 
         # AuxillaryVariables(namelist, self.PV, self.DV, self.Pa)
-        # self.Th.initialize(self.Gr, self.M1, self.M2)        # adding prognostic thermodynamic variables
+        self.Th.initialize(self.Gr, self.M1, self.M2)        # adding prognostic thermodynamic variables
         self.PV.initialize(self.Gr, self.StatsIO)
         self.M1.initialize(self.Gr, self.StatsIO)
-        self.M2.initialize(self.Gr, self.StatsIO)
+        self.M2.initialize(self.Gr, self.M1, self.StatsIO)
 
-        # self.Init.initialize_reference(self.Gr, self.Ref, self.StatsIO)
-        # self.Init.initialize_profiles(self.Gr, self.Ref, self.M1, self.M2, self.StatsIO)
-        #
+        # for var1 in self.M1.index_name.keys():
+        #     for var2 in self.M1.index_name.keys():
+        #         n = self.M1.name_index(var1)
+        #         m = self.M1.name_index(var2)
+        #         n = M1.name_index(var_name[1])
+        #         m = M1.name_index(var_name[2])
+
+        self.Init.initialize_reference(self.Gr, self.Ref, self.StatsIO)
+        self.Init.initialize_profiles(self.Gr, self.Ref, self.M1, self.M2, self.StatsIO)
+
         # self.MA.initialize(self.Gr, self.M1)
         # self.SA.initialize(self.Gr, self.M1)
         # self.SGS.initialize(self.Gr, self.M1, self.M2)
