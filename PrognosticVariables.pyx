@@ -264,8 +264,9 @@ cdef class SecondOrderMomenta:
         # —> dz ww on w-grid                —> ww on phi-grid      -> compare to momentum advection for gradients
 
     def __init__(self, Grid Gr):
-        self.name_index = {}
-        self.index_name = []
+        self.name_index = {}        # key = name of correlation, e.g. 'wu'
+        self.index_name = []        # list of correlation names
+        self.var_index = {}         # key = name of variables (u,v,w,th,qt,p)
         self.units = {}
         self.nv = 0
         self.nv_scalars = 0
@@ -298,16 +299,23 @@ cdef class SecondOrderMomenta:
 
     cpdef initialize(self, Grid Gr, MeanVariables M1, NetCDFIO_Stats NS):
         print('2nd order moments: ')
+        print(M1.name_index)
+        # self.var_index = M1.name_index
+        # self.nv = len(self.var_index.keys())
+
+
 
         '''Local Covariances'''
 
         '''Momentum (Co)Variances: uu, uv, uw, vv, vw, ww'''
-        for n in xrange(M1.nv_velocities):
-            var1 = M1.index_name[n]
-            for m in xrange(n,M1.nv_velocities):
-                var2 = M1.index_name[m]
+        for m in xrange(M1.nv_velocities):
+            var1 = M1.index_name[m]
+            self.var_index[var1] = self.nv
+            self.nv = len(self.var_index.keys())
+            for n in xrange(m,M1.nv_velocities):
+                var2 = M1.index_name[n]
                 # print('!!!', var1,n,var2,m)
-                self.add_variable(var1+var2,'(m/s)^2',"velocity",n,m)
+                self.add_variable(var1+var2,'(m/s)^2',"velocity",m,n)
             '''Scalar Fluxes: wth, wqt'''
             for m in xrange(M1.nv_scalars):
                 var2 = M1.index_name[M1.nv_velocities + m]
@@ -320,20 +328,24 @@ cdef class SecondOrderMomenta:
         '''Scalar Variances and Covariances: thth, thqt, qtqt'''
         for n in xrange(M1.nv_scalars):
             var1 = M1.index_name[M1.nv_velocities + n]
+            self.var_index[var1] = self.nv
+            self.nv = len(self.var_index.keys())
             for m in xrange(n,M1.nv_scalars):
                 var2 = M1.index_name[M1.nv_velocities + m]
                 unit = M1.units[var1] + M1.units[var2]
                 self.add_variable(var1+var2,unit,"scalar",n,m)
             m = M1.nv
             self.add_variable(var1+'p','(m/s)(N/m)',"pressure",n,m)
+        self.var_index['p'] = self.nv
+        self.nv = len(self.var_index.keys())
 
 
-        print('M1.nv', M1.nv)
-        print('M2.nv', self.nv)
-        print('name_index', self.name_index)
-        print('index_name', self.index_name)
+        # print('!! nv !!', self.nv, M1.nv)
+        # print(self.var_index)
+        # print(M1.name_index)
+        # print('name_index', self.name_index)
+        # print('index_name', self.index_name)
 
-        self.nv = M1.nv+1       # additional variable: pressure
         self.values = np.zeros((self.nv,self.nv,Gr.nzg),dtype=np.double,order='c')
         self.tendencies = np.zeros((self.nv,self.nv,Gr.nzg),dtype=np.double,order='c')
 

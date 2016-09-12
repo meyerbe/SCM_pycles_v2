@@ -46,6 +46,7 @@ cdef class SecondOrderMomenta:
     cdef:
         dict name_index
         list index_name
+        dict var_index
         dict units
         Py_ssize_t nv
         Py_ssize_t nv_scalars
