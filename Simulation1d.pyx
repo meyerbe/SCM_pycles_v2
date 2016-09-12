@@ -104,8 +104,8 @@ class Simulation1d:
             self.MA.update_M1_2nd(self.Gr, self.Ref, self.M1)       # self.MA.update(self.Gr, self.Ref, self.M1)
             self.SA.update_M1_2nd(self.Gr, self.Ref, self.M1)       # self.SA.update(self.Gr, self.Ref, self.M1)
 
-            self.MD.update(self.Gr, self.Ref, self.M1, self.SGS)
-            self.SD.update(self.Gr, self.Ref, self.M1, self.SGS)
+            self.MD.update_M1(self.Gr, self.Ref, self.M1, self.SGS)
+            self.SD.update_M1(self.Gr, self.Ref, self.M1, self.SGS)
             # self.M1.plot('after SD update', self.Gr, self.TS)
 
             self.Turb.update_M1(self.Gr, self.Ref, self.M1, self.M2)                         # --> add turbulent flux divergence to mean field tendencies: dz<w'phi'>
@@ -117,14 +117,7 @@ class Simulation1d:
 
 
             # (2) update second order momenta (M2) tendencies
-            # self.MA.update                        # --> self.MA.update_M2(): advection of M2
-            # self.SA.update                        # --> self.SA.update_M2(): advection of M2
-            # self.MD.update()
-            # self.SD.update()
-            # self.Turb.update_M2()                 # update higher order terms in M2 tendencies
-            # print('Sim: Turb update')
             self.Turb.update(self.Gr, self.Ref, self.M1, self.M2)
-            #     # Turb.advect_M2_local(Gr, M1, M2)
             # # ??? update boundary conditions???
             # # ??? pressure correlations ???
             # # ??? surface fluxes ??? (--> in SGS or MD/SD scheme?)

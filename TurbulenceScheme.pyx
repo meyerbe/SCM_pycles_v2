@@ -66,6 +66,7 @@ cdef class TurbulenceBase:
         return
 
     cpdef update_M1(self,Grid Gr, ReferenceState Ref, PrognosticVariables.MeanVariables M1, PrognosticVariables.SecondOrderMomenta M2):
+        print('Turb: update M1')
         '''
         uw      --> up
         vw      --> vp
@@ -79,25 +80,25 @@ cdef class TurbulenceBase:
         cdef:
             Py_ssize_t k, m, n
             double [:] th0 = Ref.th0       # !!! right interfaces ???
+            double dzi = Gr.dzi
+            double [:] alpha0 = Ref.alpha0
+            double [:] rho0_half = Ref.rho0_half
 
         n = M1.name_index['w']
-        # (1) vertical eddy fluxes: in all prognostic variables
+        # (1) vertical edd fluxes: in all prognostic variables
         for var in M1.name_index.keys():
             turb = var + 'w'
             m = M1.name_index[var]
             for k in xrange(Gr.nzg):
-                M1.tendencies[m,k] -= M2.values[m,n,k]
+                M1.tendencies[m,k] -= alpha0[k]*dzi*(rho0_half[k+1]*M2.values[m,n,k+1]-rho0_half[k]*M2.values[m,n,k])
 
-        # (2) Buoyancy Flux: in w
-        for n in xrange(M1.nv):
-            for k in xrange(Gr.nzg):
-                M1.tendencies[n,k] -= g/th0[k]*self.buoyancy[n,k]
+        # (2) Buoyancy Flux: in w --> mean buoyancy approximated as zero (accurate if <rho> agrees with the reference state)
+        # for n in xrange(M1.nv):
+        #     for k in xrange(Gr.nzg):
+        #         M1.tendencies[n,k] -= g/th0[k]*self.buoyancy[n,k]
 
-        # (3) Pressure Correlations
-        '''w'''
-        n = M1.name_index['w']
-        # for k in xrange(Gr.nzg):
-        #     M1.tendencies[n,k] -= M1.tendencies[]
+        # (3) Pressure ???
+        # ???
         return
 
     cpdef stats_io(self):
@@ -130,7 +131,7 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
         # (3) Pressure: ?
         # (4) Third and higher order terms (first guess set to zero)
         # self.update_M1(Gr, Ref, M1, M2)
-        self.advect_M2_local(Gr, M1, M2)
+        self.advect_M2_local(Gr, Ref, M1, M2)
         self.pressure_correlations_Mironov(Gr, M1, M2)
         self.pressure_correlations_Andre(Gr, M1, M2)
         self.buoyancy_update(Gr, Ref, M1, M2)
@@ -150,7 +151,7 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
             double L
             str var
 
-        # (2) Buoyancy Flux: in w
+        # Buoyancy Flux: in w
         if 'qt' in M1.name_index.keys():
             nth = M1.name_index['th']
             nqt = M1.name_index['qt']
@@ -172,9 +173,16 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
 
         self.buoyancy = M2_b
 
+        list = ['uw', 'vw', 'ww', 'wth', 'wqt', 'wp']
+        # for n in xrange(M1.nv):
+        #     for k in xrange(Gr.nzg):
+        #         M1.tendencies[n,k] -= g/th0[k]*self.buoyancy[n,k]
+
+
         return
 
-    cpdef advect_M2_local(self, Grid Gr, PrognosticVariables.MeanVariables M1, PrognosticVariables.SecondOrderMomenta M2):
+
+    cpdef advect_M2_local(self, Grid Gr, ReferenceState Ref, PrognosticVariables.MeanVariables M1, PrognosticVariables.SecondOrderMomenta M2):
         print('Turb update: advect M2 local')
         # implemented for staggered grid
         # w: on w-grid
@@ -189,31 +197,38 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
             Py_ssize_t w_index = M1.name_index['w']
             Py_ssize_t th_index = M1.name_index['th']
 
-        #     Py_ssize_t wu_shift = M2.get_varshift(Gr, 'wu')
-        #     Py_ssize_t wv_shift = M2.get_varshift(Gr, 'wv')
-        #     Py_ssize_t ww_shift = M2.get_varshift(Gr, 'ww')
-        #     Py_ssize_t wth_shift = M2.get_varshift(Gr, 'wth')
-
             double [:] u = M1.values[u_index,:]
             double [:] v = M1.values[v_index,:]
             double [:] w = M1.values[w_index,:]
             double [:] th = M1.values[th_index,:]
 
+            double [:] flux = np.zeros(Gr.nzg,dtype=np.double,order='c')
+            double [:,:,:] tendencies = M2.tendencies
+            double [:,:,:] values = M2.values
+            double [:] rho0 = Ref.rho0
+            double [:] alpha0_half = Ref.alpha0_half
+
             double dzi = Gr.dzi
             Py_ssize_t m, n, k, var_shift
 
 
+
         # (i) advection by mean vertical velocity
-        for m in xrange(M1.nv):
-            for n in xrange(m,M1.nv):
-                if m==w_index and n==w_index:   # if name != 'ww':
-                # w on w-grid, M2.value on phi-grid --> compare to momentum advection for gradients
-                    for k in xrange(1,Gr.nzg-1):
-                        M2.tendencies[m,n,k] -= w[k]*(M2.values[m,n,k]-M2.values[m,n,k-1])*dzi
-                else:
-                # w and M2.value both on w-grid --> compare to scalar advection for gradients
-                    for k in xrange(Gr.nzg):
-                        M2.tendencies[m,n,k] -= 0.5*(w[k]+w[k+1])*(M2.values[m,n,k]-M2.values[m,n,k-1])*dzi
+        # interpolate only M2 in fluxes (w on staggered grid)
+        for m in xrange(M2.nv):
+            for n in xrange(m,M2.nv):
+                for k in xrange(1,Gr.nzg):
+                    flux[k] = rho0[k]*w[k]*0.5*(M2.values[m,n,k]+M2.values[m,n,k-1])
+                for k in xrange(1,Gr.nzg-1):
+                    M2.tendencies[m,n,k] = -alpha0_half[k]*(flux[k+1]-flux[k])*dzi
+                # if m==w_index and n==w_index:   # if name == 'ww':
+                # # w on w-grid, M2.value on phi-grid --> compare to momentum advection for gradients
+                #     for k in xrange(1,Gr.nzg-1):
+                #         M2.tendencies[m,n,k] -= w[k]*(M2.values[m,n,k]-M2.values[m,n,k-1])*dzi
+                # else:
+                # # w and M2.value both on w-grid --> compare to scalar advection for gradients
+                #     for k in xrange(Gr.nzg):
+                #         M2.tendencies[m,n,k] -= 0.5*(w[k]+w[k+1])*(M2.values[m,n,k]-M2.values[m,n,k-1])*dzi
 
 
         # (ii) advection by M2
@@ -228,20 +243,24 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
         # ww on phi-grid --> ww ok; w ok
         # ws on w-grid --> interpolate ww; s_mean ok; ws ok; interpolate w_mean
         for k in xrange(Gr.nzg):
-            M2.tendencies[u_index,w_index,k] -= 0.5*(M2.values[w_index,w_index,k]+M2.values[w_index,w_index,k+1])*(u[k]-u[k-1])*dzi \
-                                         - M2.values[u_index,w_index,k]*( 0.5*(w[k]+w[k+1]) - 0.5*(w[k-1]+w[k]) )*dzi
-            M2.tendencies[v_index,w_index,k] -= 0.5*(M2.values[w_index,w_index,k]+M2.values[w_index,w_index,k+1])*(v[k]-v[k-1])*dzi \
-                                         - M2.values[v_index,w_index,k]*( 0.5*(w[k]+w[k+1]) - 0.5*(w[k-1]+w[k]) )*dzi
-            M2.tendencies[w_index,w_index,k] -= M2.values[w_index,w_index,k]*(w[k]-w[k-1])*dzi
-            M2.tendencies[w_index,th_index,k] -= 0.5*(M2.values[w_index,w_index,k]+M2.values[w_index,w_index,k+1])*(th[k]-th[k-1])*dzi \
-                                         - M2.values[w_index,th_index,k]*( 0.5*(w[k]+w[k+1]) - 0.5*(w[k-1]+w[k]) )*dzi
-            # M2.tendencies[wu_shift,k] -= 0.5*(M2.values[ww_shift,k]+M2.values[ww_shift,k+1])*(u[k]-u[k-1])*dzi \
-            #                              - M2.values[wu_shift,k]*( 0.5*(w[k]+w[k+1]) - 0.5*(w[k-1]+w[k]) )*dzi
-            # M2.tendencies[wv_shift,k] -= 0.5*(M2.values[ww_shift,k]+M2.values[ww_shift,k+1])*(v[k]-v[k-1])*dzi \
-            #                              - M2.values[wv_shift,k]*( 0.5*(w[k]+w[k+1]) - 0.5*(w[k-1]+w[k]) )*dzi
-            # M2.tendencies[ww_shift,k] -= M2.values[ww_shift,k]*(w[k]-w[k-1])*dzi
-            # M2.tendencies[wth_shift,k] -= 0.5*(M2.values[ww_shift,k]+M2.values[ww_shift,k+1])*(s[k]-s[k-1])*dzi \
-            #                              - M2.values[wth_shift,k]*( 0.5*(w[k]+w[k+1]) - 0.5*(w[k-1]+w[k]) )*dzi
+            tendencies[u_index, u_index, k] = -2*values[u_index,w_index,k] * (u[k+1]-u[k])*dzi
+            tendencies[v_index, v_index, k] = -2*values[v_index,w_index,k] * (v[k+1]-v[k])*dzi
+            tendencies[u_index, w_index, k] = -values[w_index,w_index,k]*(u[k+1]-u[k])*dzi - values[u_index,w_index,k]*(w[k+1]-w[k])*dzi
+            tendencies[v_index, w_index, k] = -values[w_index,w_index,k]*(v[k+1]-v[k])*dzi - values[v_index,w_index,k]*(w[k+1]-w[k])*dzi
+            tendencies[w_index, w_index, k] = -2*values[w_index,w_index,k]*(w[k+1]-w[k])*dzi
+            tendencies[u_index, th_index, k] = -values[w_index,th_index,k]*(u[k+1]-u[k])*dzi - values[u_index,w_index,k]*(th[k+1]-th[k])*dzi
+            tendencies[v_index, th_index, k] = -values[w_index,th_index,k]*(v[k+1]-v[k])*dzi - values[v_index,w_index,k]*(th[k+1]-th[k])*dzi
+            tendencies[w_index, th_index, k] = -values[w_index,th_index,k]*(w[k+1]-w[k])*dzi - values[w_index,w_index,k]*(th[k+1]-th[k])*dzi
+            tendencies[th_index, th_index, k] = -2*values[w_index,th_index,k]*(th[k+1]-th[k])*dzi
+
+        if 'qt' in M1.index_name:
+            qt_index = M1.name_index['qt']
+            qt = M1.values[qt_index,:]
+            tendencies[u_index, qt_index, k] = -values[w_index,qt_index,k]*(u[k+1]-u[k])*dzi - values[u_index,w_index,k]*(qt[k+1]-qt[k])*dzi
+            tendencies[v_index, qt_index, k] = -values[w_index,qt_index,k]*(v[k+1]-v[k])*dzi - values[v_index,w_index,k]*(qt[k+1]-qt[k])*dzi
+            tendencies[w_index, qt_index, k] = -values[w_index,qt_index,k]*(w[k+1]-w[k])*dzi - values[w_index,w_index,k]*(qt[k+1]-qt[k])*dzi
+            tendencies[qt_index, qt_index, k] = -2*values[w_index,qt_index,k]*(qt[k+1]-qt[k])*dzi
+
 
         return
 
