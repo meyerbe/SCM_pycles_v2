@@ -303,8 +303,6 @@ cdef class SecondOrderMomenta:
         # self.var_index = M1.name_index
         # self.nv = len(self.var_index.keys())
 
-
-
         '''Local Covariances'''
 
         '''Momentum (Co)Variances: uu, uv, uw, vv, vw, ww'''

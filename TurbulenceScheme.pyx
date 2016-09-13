@@ -392,7 +392,7 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
 
 
     cpdef pressure_correlations_Andre(self, Grid Gr, PrognosticVariables.MeanVariables M1, PrognosticVariables.SecondOrderMomenta M2):
-        # '''following Mironov (2009), based on André (1978), Launder (1975) and Rotta (1951)'''
+        # '''following André (1978), based on Launder (1975) and Rotta (1951)'''
         # !!! only dry thermodynamics !!!
         # !!! only expression for vertical moisture flux (no horizontal fluxes) !!!
         print('Turb update: pressue correlations André')
