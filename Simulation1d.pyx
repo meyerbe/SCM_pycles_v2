@@ -125,7 +125,12 @@ class Simulation1d:
 
             self.M1.update(self.Gr, self.TS)        # --> updating values by adding tendencies
             self.M2.update(self.Gr, self.TS)        # --> updating values by adding tendencies
+
+            self.M1.plot_tendencies('end', self.Gr, self.TS)
+            self.M2.plot_tendencies('end', self.Gr, self.TS)
             self.TS.update()
+            self.M1.plot('end', self.Gr, self.TS)
+            self.M2.plot('end', self.Gr, self.TS)
 
         return
 

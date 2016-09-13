@@ -188,7 +188,8 @@ cdef class InitSoares(InitializationBase):
             else:
                 theta_pert_ = 0.0
             temp = (theta[k] + theta_pert_)*exner(Ref.p0_half[k])
-            M1.values[th_varshift,k] = entropy_from_tp(Ref.p0_half[k],temp,qt,ql,qi)               # s = Thermodynamics.entropy(p_half[k],temperature_half[k],self.qtg,ql_half[k],qi_half[k])
+            # M1.values[th_varshift,k] = entropy_from_tp(Ref.p0_half[k],temp,qt,ql,qi)               # s = Thermodynamics.entropy(p_half[k],temperature_half[k],self.qtg,ql_half[k],qi_half[k])
+            M1.values[th_varshift,k] = temp
             M1.values[u_varshift,k] = 0.0
             M1.values[v_varshift,k] = 0.0
             M1.values[w_varshift,k] = 0.0
@@ -204,6 +205,10 @@ cdef class InitSoares(InitializationBase):
         # #     e_varshift = PV.get_varshift(Gr, 'e')
         # #     for k in xrange(Gr.nzg):
         # #       PV.values[e_varshift + k] = 0.0
+
+        if 'qt' in M1.name_index:
+            qt_varshift = M1.name_index['qt']
+            M1.values[qt_varshift] = 0.0
 
         return
 
@@ -274,7 +279,7 @@ cdef class InitTest(InitializationBase):
 
         # (i) Theta (potential temperature) profile (Soares) incl. perturbations
         for k in xrange(Gr.nzg):
-            M1.values[th_varshift,k] = 6000.0
+            M1.values[th_varshift,k] = 293.0
             M1.values[u_varshift,k] = 0.0
             M1.values[v_varshift,k] = 0.0
             M1.values[w_varshift,k] = 0.0

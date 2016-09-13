@@ -1245,6 +1245,9 @@ def DCBLSoares():
     namelist['scalar_transport'] = {}
     namelist['scalar_transport']['order'] = 2
 
+    namelist['turbulence'] = {}
+    namelist['turbulence']['scheme'] = '2nd_order'
+
     namelist['damping'] = {}
     namelist['damping']['scheme'] = 'Rayleigh'  # no more 'DampingToDomainMean' ???
     namelist['damping']['Rayleigh'] = {}
@@ -1345,6 +1348,9 @@ def DCBLSoares_moist():
     # 2 = second_order_a
     namelist['scalar_transport'] = {}
     namelist['scalar_transport']['order'] = 2
+
+    namelist['turbulence'] = {}
+    namelist['turbulence']['scheme'] = '2nd_order'
 
     namelist['damping'] = {}
     namelist['damping']['scheme'] = 'Rayleigh'  # no more 'DampingToDomainMean' ???

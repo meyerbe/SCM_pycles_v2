@@ -175,53 +175,62 @@ cdef class MeanVariables:
         return
 
 
-    # cpdef plot(self, str message, Grid Gr, TimeStepping TS):
-    #     cdef:
-    #         double [:,:] values = self.values
-    #         double [:,:] tendencies = self.tendencies
-    #         Py_ssize_t th_varshift = self.get_varshift(Gr,'th')
-    #         Py_ssize_t w_varshift = self.get_varshift(Gr,'w')
-    #         Py_ssize_t v_varshift = self.get_varshift(Gr,'v')
-    #         Py_ssize_t u_varshift = self.get_varshift(Gr,'u')
-    #
-    #     plt.figure(1,figsize=(15,7))
-    #     # plt.plot(values[s_varshift+Gr.gw:s_varshift+Gr.nzg-Gr.gw], Gr.z)
-    #     plt.subplot(1,4,1)
-    #     plt.plot(values[th_varshift:th_varshift+Gr.nzg], Gr.z)
-    #     plt.title('th')
-    #     plt.subplot(1,4,2)
-    #     plt.plot(values[w_varshift:w_varshift+Gr.nzg], Gr.z)
-    #     plt.title('w')
-    #     plt.subplot(1,4,3)
-    #     plt.plot(values[v_varshift:v_varshift+Gr.nzg], Gr.z)
-    #     plt.title('v')
-    #     plt.subplot(1,4,4)
-    #     plt.plot(values[u_varshift:u_varshift+Gr.nzg], Gr.z)
-    #     plt.title('u')
-    #     # plt.show()
-    #     plt.savefig('./figs/profiles_' + message + '_' + np.str(TS.t) + '.png')
-    #     plt.close()
-    #
-    #     plt.figure(2,figsize=(15,7))
-    #     # plt.plot(values[s_varshift+Gr.gw:s_varshift+Gr.nzg-Gr.gw], Gr.z)
-    #     plt.subplot(1,4,1)
-    #     plt.plot(tendencies[th_varshift:th_varshift+Gr.nzg], Gr.z)
-    #     plt.title('s tend')
-    #     plt.subplot(1,4,2)
-    #     plt.plot(tendencies[w_varshift:w_varshift+Gr.nzg], Gr.z)
-    #     plt.title('w tend')
-    #     plt.subplot(1,4,3)
-    #     plt.plot(tendencies[v_varshift:v_varshift+Gr.nzg], Gr.z)
-    #     plt.title('v tend')
-    #     plt.subplot(1,4,4)
-    #     plt.plot(tendencies[u_varshift:u_varshift+Gr.nzg], Gr.z)
-    #     plt.title('u tend')
-    #     # plt.show()
-    #     plt.savefig('./figs/tendencies_' + message + '_' + np.str(TS.t) + '.png')
-    #     plt.close()
-    #     return
-    #
-    # # # cpdef plot_tendencies(self, Grid Gr, TimeStepping TS):
+    cpdef plot(self, str message, Grid Gr, TimeStepping TS):
+        print('!!! M1 plotting')
+        cdef:
+            double [:,:] values = self.values
+            Py_ssize_t th_varshift = self.name_index['th']
+            Py_ssize_t w_varshift = self.name_index['w']
+            Py_ssize_t v_varshift = self.name_index['v']
+            Py_ssize_t u_varshift = self.name_index['u']
+
+        plt.figure(1,figsize=(15,7))
+        # plt.plot(values[s_varshift+Gr.gw:s_varshift+Gr.nzg-Gr.gw], Gr.z)
+        plt.subplot(1,4,1)
+        plt.plot(values[th_varshift,:], Gr.z)
+        plt.title('th')
+        plt.subplot(1,4,2)
+        plt.plot(values[w_varshift,:], Gr.z)
+        plt.title('w')
+        plt.subplot(1,4,3)
+        plt.plot(values[v_varshift,:], Gr.z)
+        plt.title('v')
+        plt.subplot(1,4,4)
+        plt.plot(values[u_varshift,:], Gr.z)
+        plt.title('u')
+        # plt.show()
+        plt.savefig('./figs/M1_profiles_' + message + '_' + np.str(TS.t) + '.png')
+        plt.close()
+
+
+
+    cpdef plot_tendencies(self, str message, Grid Gr, TimeStepping TS):
+        cdef:
+            double [:,:] tendencies = self.tendencies
+            Py_ssize_t th_varshift = self.name_index['th']
+            Py_ssize_t w_varshift = self.name_index['w']
+            Py_ssize_t v_varshift = self.name_index['v']
+            Py_ssize_t u_varshift = self.name_index['u']
+        plt.figure(2,figsize=(15,7))
+        # plt.plot(values[s_varshift+Gr.gw:s_varshift+Gr.nzg-Gr.gw], Gr.z)
+        plt.subplot(1,4,1)
+        plt.plot(tendencies[th_varshift,:], Gr.z)
+        plt.title('s tend')
+        plt.subplot(1,4,2)
+        plt.plot(tendencies[w_varshift,:], Gr.z)
+        plt.title('w tend')
+        plt.subplot(1,4,3)
+        plt.plot(tendencies[v_varshift,:], Gr.z)
+        plt.title('v tend')
+        plt.subplot(1,4,4)
+        plt.plot(tendencies[u_varshift,:], Gr.z)
+        plt.title('u tend')
+        # plt.show()
+        plt.savefig('./figs/M1_tendencies_' + message + '_' + np.str(TS.t) + '.png')
+        plt.close()
+        return
+
+
     # # #     cdef:
     # # #         double [:] values = self.values
     # # #         double [:] tendencies = self.tendencies
@@ -364,4 +373,60 @@ cdef class SecondOrderMomenta:
             for var2 in xrange(self.nv):
                 for k in xrange(0,kmax):
                     self.values[var1,var2,k] += self.tendencies[var1,var2,k] * TS.dt
+        return
+
+
+    cpdef plot(self, str message, Grid Gr, TimeStepping TS):
+        print('!!! M1 plotting')
+        cdef:
+            double [:,:,:] values = self.values
+            Py_ssize_t th_varshift = self.var_index['th']
+            Py_ssize_t w_varshift = self.var_index['w']
+            Py_ssize_t v_varshift = self.var_index['v']
+            Py_ssize_t u_varshift = self.var_index['u']
+
+        plt.figure(1,figsize=(15,7))
+        # plt.plot(values[s_varshift+Gr.gw:s_varshift+Gr.nzg-Gr.gw], Gr.z)
+        plt.subplot(1,4,1)
+        plt.plot(values[th_varshift,th_varshift,:], Gr.z)
+        plt.title('thth')
+        plt.subplot(1,4,2)
+        plt.plot(values[w_varshift,w_varshift,:], Gr.z)
+        plt.title('ww')
+        plt.subplot(1,4,3)
+        plt.plot(values[w_varshift,u_varshift,:], Gr.z)
+        plt.title('wu')
+        plt.subplot(1,4,4)
+        plt.plot(values[w_varshift,th_varshift,:], Gr.z)
+        plt.title('wth')
+        # plt.show()
+        plt.savefig('./figs/M2_profiles_' + message + '_' + np.str(TS.t) + '.png')
+        plt.close()
+
+
+
+    cpdef plot_tendencies(self, str message, Grid Gr, TimeStepping TS):
+        cdef:
+            double [:,:,:] tendencies = self.tendencies
+            Py_ssize_t th_varshift = self.var_index['th']
+            Py_ssize_t w_varshift = self.var_index['w']
+            Py_ssize_t v_varshift = self.var_index['v']
+            Py_ssize_t u_varshift = self.var_index['u']
+        plt.figure(2,figsize=(15,7))
+        # plt.plot(values[s_varshift+Gr.gw:s_varshift+Gr.nzg-Gr.gw], Gr.z)
+        plt.subplot(1,4,1)
+        plt.plot(tendencies[th_varshift,th_varshift,:], Gr.z)
+        plt.title('thth tend')
+        plt.subplot(1,4,2)
+        plt.plot(tendencies[w_varshift,w_varshift,:], Gr.z)
+        plt.title('ww tend')
+        plt.subplot(1,4,3)
+        plt.plot(tendencies[w_varshift,u_varshift,:], Gr.z)
+        plt.title('wu tend')
+        plt.subplot(1,4,4)
+        plt.plot(tendencies[w_varshift,th_varshift,:], Gr.z)
+        plt.title('wth tend')
+        # plt.show()
+        plt.savefig('./figs/M2_tendencies_' + message + '_' + np.str(TS.t) + '.png')
+        plt.close()
         return
