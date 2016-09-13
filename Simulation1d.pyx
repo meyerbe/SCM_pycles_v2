@@ -117,7 +117,7 @@ class Simulation1d:
 
 
             # (2) update second order momenta (M2) tendencies
-            self.Turb.update(self.Gr, self.Ref, self.M1, self.M2)
+            self.Turb.update_M2(self.Gr, self.Ref, self.M1, self.M2)
             # # ??? update boundary conditions???
             # # ??? pressure correlations ???
             # # ??? surface fluxes ??? (--> in SGS or MD/SD scheme?)
