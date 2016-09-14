@@ -6,14 +6,17 @@
 
 from Grid cimport Grid
 cimport PrognosticVariables
+from PrognosticVariables cimport MeanVariables
+from PrognosticVariables cimport SecondOrderMomenta
 from ReferenceState cimport ReferenceState
+from TimeStepping cimport TimeStepping
 # cimport DiagnosticVariables
-# cimport Kinematics
 # cimport Surface
 # from NetCDFIO cimport NetCDFIO_Stats
 from libc.math cimport exp, sqrt
 cimport numpy as np
 import numpy as np
+import pylab as plt
 import cython
 include 'parameters.pxi'
 from thermodynamic_functions import latent_heat, exner
@@ -124,16 +127,22 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
         return
 
 
-    cpdef update_M2(self, Grid Gr, ReferenceState Ref, PrognosticVariables.MeanVariables M1, PrognosticVariables.SecondOrderMomenta M2):
+    # cpdef update_M2(self, Grid Gr, ReferenceState Ref, PrognosticVariables.MeanVariables M1, PrognosticVariables.SecondOrderMomenta M2):
+    cpdef update_M2(self, Grid Gr, ReferenceState Ref, TimeStepping TS, PrognosticVariables.MeanVariables M1, PrognosticVariables.SecondOrderMomenta M2):
         print('Turbulence 2nd order: update')
         # (1) Advection: MA.update_M2, SA.update_M2
         # (2) Diffusion: SD.update_M2, MD.update_M2
         # (3) Pressure: ?
         # (4) Third and higher order terms (first guess set to zero)
+        M2.plot_tendencies('20',Gr,TS)
         self.advect_M2_local(Gr, Ref, M1, M2)
-        self.pressure_correlations_Mironov(Gr, M1, M2)
+        M2.plot_tendencies('21',Gr,TS)
+        # self.pressure_correlations_Mironov(Gr, M1, M2)
+        M2.plot_tendencies('22',Gr,TS)
         self.pressure_correlations_Andre(Gr, M1, M2)
+        M2.plot_tendencies('23',Gr,TS)
         self.pressure_correlations_Cheng(Gr, M1, M2)
+        M2.plot_tendencies('24',Gr,TS)
         self.buoyancy_update(Gr, Ref, M1, M2)
         return
 
@@ -395,7 +404,11 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
         # '''following André (1978), based on Launder (1975) and Rotta (1951)'''
         # !!! only dry thermodynamics !!!
         # !!! only expression for vertical moisture flux (no horizontal fluxes) !!!
-        print('Turb update: pressue correlations André')
+        print('Turb update: pressure correlations André')
+
+        time = 0
+        # self.plot('30', Gr, time, M1, M2)
+        # self.plot_tendencies('30', Gr, time, M1, M2)
 
         cdef:
             Py_ssize_t u_index = M1.name_index['u']
@@ -426,6 +439,8 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
             double c6 = 4.85
             double c7 = 1.0-0.125*c6
 
+
+        # (1) TKE and TKE generation rate
         for k in xrange(Gr.nzg):
             # Kinetic Energy ---> Diagnostic Variable (needed elsewhere?!?!)
             tke[k] = np.sqrt(M2.values[0,0,k] + M2.values[1,1,k] + M2.values[2,2,k])
@@ -434,7 +449,8 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
                        - M2.values[u_index,w_index,k]*(M1.values[u_index,k+1]-M1.values[u_index,k])*dzi \
                        - M2.values[v_index,w_index,k]*(M1.values[v_index,k+1]-M1.values[v_index,k])*dzi
 
-        # (1) Energy Dissipation
+
+        # (2) Energy Dissipation
         # lb: Mixing length  for neutral and unstable conditions (Blackadar, 1962)
         # ld: characteristic lengthfor stable stratification
         karman = 0.35           # von Karman constant
@@ -447,32 +463,49 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
                 c1 = 0.019+0.051*l[k]/lb
                 epsilon[k] = c1/np.sqrt(tke[k]*tke[k]*tke[k])
 
-        # (2) Momentum Fluxes: generation rate and tendency
+
+        # (3) Momentum Fluxes: generation rate and tendency
         for i in xrange(M1.nv_velocities):
             for k in xrange(Gr.nzg):
                 P[i,w_index,k] = alpha*g*(M2.values[i,th_index,k])
                 P[w_index,i,k] = alpha*g*(M2.values[th_index,i,k])
             for k in xrange(Gr.nzg-1):
                 M2.tendencies[i,i,k] += 2/3*( c4*epsilon[k] + c5*P_tke[k])
+        # self.plot_tendencies('31', Gr, time, M1, M2)
 
         for i in xrange(M1.nv_velocities):
             for j in xrange(i,M1.nv_velocities):
                 for k in xrange(Gr.nzg-1):
                     P[i,j,k] -= M2.values[i,w_index,k]*(M1.values[j,k+1]-M1.values[j,k])*dzi \
                                 + M2.values[j,w_index,k]*(M1.values[i,k+1]-M1.values[i,k])*dzi
+                    if np.isnan(P[i,j,k]):
+                        print('....... P is nan, ', i,j,k)
                 for k in xrange(Gr.nzg-1):
-                    M2.tendencies[i,j,k] += -c4*epsilon[k]/tke[k]*M2.values[i,j,k] - c5*P[i,j,k]
+                    # M2.tendencies[i,j,k] += -c4*epsilon[k]/tke[k]*M2.values[i,j,k] - c5*P[i,j,k]
+                    if tke[k] > 0:
+                        M2.tendencies[i,j,k] += -c4*epsilon[k]/tke[k]*M2.values[i,j,k] - c5*P[i,j,k]
+                    else:
+                        M2.tendencies[i,j,k] -= c5*P[i,j,k]     # c5=0
 
-        # (3) Heat Flux generation rate and tendency
+        print('epsilon', np.isnan(epsilon).any(), np.isnan(M2.values).any(), np.isnan(P).any())
+        print('tke', np.isnan(tke).any(), np.amin(tke), np.amax(tke))
+
+        # self.plot_tendencies('32', Gr, time, M1, M2)
+        for i in xrange(M1.nv_velocities):
+        # (4) Heat Flux generation rate and tendency
             for k in xrange(Gr.nzg-1):
                 P[i,th_index,k] = alpha*g*M2.values[w_index,th_index,k] \
                                   - M2.values[u_index,w_index,k]*(M1.values[u_index,k+1]-M1.values[u_index,k])*dzi \
                                   - M2.values[v_index,w_index,k]*(M1.values[v_index,k+1]-M1.values[v_index,k])*dzi
             for k in xrange(Gr.nzg-1):
-                M2.tendencies[i,th_index,k] = -c6*epsilon[k]/tke[k]*M2.values[i,th_index,k] - c7*P[i,th_index,k]
+                if tke[k] > 0:
+                    M2.tendencies[i,th_index,k] += -c6*epsilon[k]/tke[k]*M2.values[i,th_index,k] - c7*P[i,th_index,k]
+                else:
+                    M2.tendencies[i,th_index,k] -= c7*P[i,th_index,k]
 
+        self.plot_tendencies('33', Gr, time, M1, M2)
 
-        # (4) Moisture Flux generation rate and tendency
+        # (5) Moisture Flux generation rate and tendency
         if 'qt' in M1.name_index:
             qt_index = M1.name_index['qt']
 
@@ -485,6 +518,9 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
                 M2.tendencies[w_index,qt_index,k] = -c6*epsilon[k]/tke[k]*M2.values[w_index,qt_index,k] \
                                                     - c7*P[w_index,qt_index,k]
 
+        self.plot_tendencies('34', Gr, time, M1, M2)
+
+        time += 1
         return
 
 
@@ -507,3 +543,61 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
 
         return
 
+    cpdef plot(self, str message, Grid Gr, int time, MeanVariables M1, SecondOrderMomenta M2):
+        cdef:
+            double [:,:,:] values = M2.values
+            Py_ssize_t th_varshift = M1.name_index['th']
+            Py_ssize_t w_varshift = M1.name_index['w']
+            Py_ssize_t v_varshift = M1.name_index['v']
+            Py_ssize_t u_varshift = M1.name_index['u']
+
+        if np.isnan(values).any():
+            print('!!!!!', message, ' NAN in M2 tendencies')
+
+        plt.figure(1,figsize=(15,7))
+        # plt.plot(values[s_varshift+Gr.gw:s_varshift+Gr.nzg-Gr.gw], Gr.z)
+        plt.subplot(1,4,1)
+        plt.plot(values[th_varshift,th_varshift,:], Gr.z)
+        plt.title('thth')
+        plt.subplot(1,4,2)
+        plt.plot(values[w_varshift,w_varshift,:], Gr.z)
+        plt.title('ww')
+        plt.subplot(1,4,3)
+        plt.plot(values[w_varshift,u_varshift,:], Gr.z)
+        plt.title('wu')
+        plt.subplot(1,4,4)
+        plt.plot(values[w_varshift,th_varshift,:], Gr.z)
+        plt.title('wth')
+        # plt.show()
+        plt.savefig('./figs/M2_profiles_' + message + '_' + np.str(time) + '.png')
+        plt.close()
+
+
+    cpdef plot_tendencies(self, str message, Grid Gr, int time, MeanVariables M1, SecondOrderMomenta M2):
+        cdef:
+            double [:,:,:] tendencies = M2.tendencies
+            Py_ssize_t th_varshift = M2.var_index['th']
+            Py_ssize_t w_varshift = M2.var_index['w']
+            Py_ssize_t v_varshift = M2.var_index['v']
+            Py_ssize_t u_varshift = M2.var_index['u']
+
+        if np.isnan(tendencies).any():
+            print('!!!!!', message, ' NAN in M2 tendencies')
+        plt.figure(2,figsize=(15,7))
+        # plt.plot(values[s_varshift+Gr.gw:s_varshift+Gr.nzg-Gr.gw], Gr.z)
+        plt.subplot(1,4,1)
+        plt.plot(tendencies[th_varshift,th_varshift,:], Gr.z)
+        plt.title('thth tend')
+        plt.subplot(1,4,2)
+        plt.plot(tendencies[w_varshift,w_varshift,:], Gr.z)
+        plt.title('ww tend')
+        plt.subplot(1,4,3)
+        plt.plot(tendencies[w_varshift,u_varshift,:], Gr.z)
+        plt.title('wu tend')
+        plt.subplot(1,4,4)
+        plt.plot(tendencies[w_varshift,th_varshift,:], Gr.z)
+        plt.title('wth tend')
+        # plt.show()
+        plt.savefig('./figs/M2_tendencies_' + message + '_' + np.str(time) + '.png')
+        plt.close()
+        return

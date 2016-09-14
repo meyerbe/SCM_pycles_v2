@@ -176,13 +176,15 @@ cdef class MeanVariables:
 
 
     cpdef plot(self, str message, Grid Gr, TimeStepping TS):
-        print('!!! M1 plotting')
         cdef:
             double [:,:] values = self.values
             Py_ssize_t th_varshift = self.name_index['th']
             Py_ssize_t w_varshift = self.name_index['w']
             Py_ssize_t v_varshift = self.name_index['v']
             Py_ssize_t u_varshift = self.name_index['u']
+
+        if np.isnan(values).any():
+            print('!!!!!', message, ' NAN in M1')
 
         plt.figure(1,figsize=(15,7))
         # plt.plot(values[s_varshift+Gr.gw:s_varshift+Gr.nzg-Gr.gw], Gr.z)
@@ -202,15 +204,17 @@ cdef class MeanVariables:
         plt.savefig('./figs/M1_profiles_' + message + '_' + np.str(TS.t) + '.png')
         plt.close()
 
-
-
     cpdef plot_tendencies(self, str message, Grid Gr, TimeStepping TS):
+
         cdef:
             double [:,:] tendencies = self.tendencies
             Py_ssize_t th_varshift = self.name_index['th']
             Py_ssize_t w_varshift = self.name_index['w']
             Py_ssize_t v_varshift = self.name_index['v']
             Py_ssize_t u_varshift = self.name_index['u']
+        if np.isnan(tendencies).any():
+            print('!!!!!', message, ' NAN in M1 tendencies')
+
         plt.figure(2,figsize=(15,7))
         # plt.plot(values[s_varshift+Gr.gw:s_varshift+Gr.nzg-Gr.gw], Gr.z)
         plt.subplot(1,4,1)
@@ -230,32 +234,19 @@ cdef class MeanVariables:
         plt.close()
         return
 
+    cpdef get_variable_array(self,name,Grid Gr):
+        index = self.name_index[name]
+        view = np.array(self.values).view()
+        # view.shape = (self.nv,Gr.dims.nlg[0],Gr.dims.nlg[1],Gr.dims.nlg[2])
+        view.shape = (self.nv,Gr.nzg)
+        return view[index,:]
 
-    # # #     cdef:
-    # # #         double [:] values = self.values
-    # # #         double [:] tendencies = self.tendencies
-    # # #         Py_ssize_t s_varshift = self.get_varshift(Gr,'s')
-    # # #         Py_ssize_t w_varshift = self.get_varshift(Gr,'w')
-    # # #         Py_ssize_t v_varshift = self.get_varshift(Gr,'v')
-    # # #         Py_ssize_t u_varshift = self.get_varshift(Gr,'u')
-    # # #     plt.figure(1,figsize=(15,7))
-    # # #     # plt.plot(values[s_varshift+Gr.gw:s_varshift+Gr.nzg-Gr.gw], Gr.z)
-    # # #     plt.subplot(1,4,1)
-    # # #     plt.plot(values[s_varshift:s_varshift+Gr.nzg], Gr.z)
-    # # #     plt.title('s')
-    # # #     plt.subplot(1,4,2)
-    # # #     plt.plot(values[w_varshift:w_varshift+Gr.nzg], Gr.z)
-    # # #     plt.title('w')
-    # # #     plt.subplot(1,4,3)
-    # # #     plt.plot(values[v_varshift:v_varshift+Gr.nzg], Gr.z)
-    # # #     plt.title('v')
-    # # #     plt.subplot(1,4,4)
-    # # #     plt.plot(values[u_varshift:u_varshift+Gr.nzg], Gr.z)
-    # # #     plt.title('u')
-    # # #     plt.show()
-    # # #     plt.savefig('./figs/profiles_' + np.str(TS.t) + '.png')
-    # # #     plt.close()
-    # # #     return
+    cpdef get_tendency_array(self,name,Grid Gr):
+        index = self.name_index[name]
+        view = np.array(self.tendencies).view()
+        # view.shape = (self.nv,Gr.dims.nlg[0],Gr.dims.nlg[1],Gr.dims.nlg[2])
+        view.shape = (self.nv,Gr.nzg)
+        return view[index,:]
 
 
 
@@ -307,8 +298,7 @@ cdef class SecondOrderMomenta:
         return
 
     cpdef initialize(self, Grid Gr, MeanVariables M1, NetCDFIO_Stats NS):
-        print('2nd order moments: ')
-        print(M1.name_index)
+        print('Initialize 2nd order moments: ')
         # self.var_index = M1.name_index
         # self.nv = len(self.var_index.keys())
 
@@ -347,14 +337,22 @@ cdef class SecondOrderMomenta:
         self.nv = len(self.var_index.keys())
 
 
-        # print('!! nv !!', self.nv, M1.nv)
-        # print(self.var_index)
-        # print(M1.name_index)
-        # print('name_index', self.name_index)
-        # print('index_name', self.index_name)
+
+        print('!! nv !!', self.nv, M1.nv)
+        print(self.var_index)
+        print(M1.name_index)
+        print('name_index', self.name_index)
+        print('index_name', self.index_name)
 
         self.values = np.zeros((self.nv,self.nv,Gr.nzg),dtype=np.double,order='c')
         self.tendencies = np.zeros((self.nv,self.nv,Gr.nzg),dtype=np.double,order='c')
+
+        print('values:', self.values.shape, self.tendencies.shape, Gr.nzg)
+        if np.isnan(self.values).any():
+            print('!!! init: NANs in M2 values')
+        if np.isnan(self.tendencies).any():
+            print('!!! init: NANs in M2 tend')
+
 
         # Add prognostic variables to Statistics IO
         print('Setting up statistical output files PV.M2')
@@ -377,13 +375,14 @@ cdef class SecondOrderMomenta:
 
 
     cpdef plot(self, str message, Grid Gr, TimeStepping TS):
-        print('!!! M1 plotting')
         cdef:
             double [:,:,:] values = self.values
             Py_ssize_t th_varshift = self.var_index['th']
             Py_ssize_t w_varshift = self.var_index['w']
             Py_ssize_t v_varshift = self.var_index['v']
             Py_ssize_t u_varshift = self.var_index['u']
+        if np.isnan(values).any():
+            print('!!!!! NAN in M2')
 
         plt.figure(1,figsize=(15,7))
         # plt.plot(values[s_varshift+Gr.gw:s_varshift+Gr.nzg-Gr.gw], Gr.z)
@@ -412,6 +411,9 @@ cdef class SecondOrderMomenta:
             Py_ssize_t w_varshift = self.var_index['w']
             Py_ssize_t v_varshift = self.var_index['v']
             Py_ssize_t u_varshift = self.var_index['u']
+
+        if np.isnan(tendencies).any():
+            print('!!!!! NAN in M2 tendencies')
         plt.figure(2,figsize=(15,7))
         # plt.plot(values[s_varshift+Gr.gw:s_varshift+Gr.nzg-Gr.gw], Gr.z)
         plt.subplot(1,4,1)
@@ -430,3 +432,23 @@ cdef class SecondOrderMomenta:
         plt.savefig('./figs/M2_tendencies_' + message + '_' + np.str(TS.t) + '.png')
         plt.close()
         return
+
+
+    cpdef get_variable_array(self,name,Grid Gr):
+        index = self.name_index[name]
+        m = index[0]
+        n = index[1]
+        view = np.array(self.values).view()
+        # view.shape = (self.nv,Gr.dims.nlg[0],Gr.dims.nlg[1],Gr.dims.nlg[2])
+        view.shape = (self.nv,self.nv,Gr.nzg)
+        return view[m,n,:]
+
+    cpdef get_tendency_array(self,name,Grid Gr):
+        # index = self.name_index[name]
+        index = self.name_index[name]
+        m = index[0]
+        n = index[1]
+        view = np.array(self.tendencies).view()
+        # view.shape = (self.nv,Gr.dims.nlg[0],Gr.dims.nlg[1],Gr.dims.nlg[2])
+        view.shape = (self.nv,self.nv,Gr.nzg)
+        return view[m,n,:]

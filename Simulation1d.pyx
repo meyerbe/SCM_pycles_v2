@@ -7,6 +7,7 @@
 import time
 import numpy as np
 cimport numpy as np
+import pylab as plt
 import os       # for self.outpath
 
 from Grid cimport Grid
@@ -72,19 +73,34 @@ class Simulation1d:
         self.PV.initialize(self.Gr, self.StatsIO)
         self.M1.initialize(self.Gr, self.StatsIO)
         self.M2.initialize(self.Gr, self.M1, self.StatsIO)
+        self.M2.plot_tendencies('1', self.Gr, self.TS)
 
         self.Init.initialize_reference(self.Gr, self.Ref, self.StatsIO)
         self.Init.initialize_profiles(self.Gr, self.Ref, self.M1, self.M2, self.StatsIO)
+        self.M2.plot_tendencies('2', self.Gr, self.TS)
 
         self.MA.initialize(self.Gr, self.M1)
         self.SA.initialize(self.Gr, self.M1)
         self.Turb.initialize(self.Gr, self.M1)
+
         self.SGS.initialize(self.Gr, self.M1, self.M2)
         self.MD.initialize(self.Gr, self.M1)
         self.SD.initialize(self.Gr, self.M1)
+        # self.M2.plot_tendencies('3', self.Gr, self.TS)
 
         print('Initialization completed!')
         # self.plot()
+        # self.M2.plot_tendencies('4', self.Gr, self.TS)
+        # self.M2.plot_tendencies('5', self.Gr, self.TS)
+        self.M1.plot_tendencies('end', self.Gr, self.TS)
+        # self.M2.plot_tendencies('6', self.Gr, self.TS)
+        self.M2.plot_tendencies('end', self.Gr, self.TS)
+
+        self.M1.plot('end', self.Gr, self.TS)
+        self.M2.plot('end', self.Gr, self.TS)
+        # self.M2.plot_tendencies('7', self.Gr, self.TS)
+        # self.M2.plot_tendencies('10', self.Gr, self.TS)
+        self.plot_M1('0','M1')
         return
 
 
@@ -93,41 +109,54 @@ class Simulation1d:
         print('Sim: start run')
         print(self.TS.t, self.TS.t_max)
 
+        self.M2.plot_tendencies('10',self.Gr,self.TS)
+        # self.M1.plot_tendencies('11',self.Gr,self.TS)
         while(self.TS.t < self.TS.t_max):
             print('time:', self.TS.t)
-            # pass
+
+            # self.plot('0','th','tendency','M1')
+            self.plot_M1('1','M1')
+                # def plot(self,message,var_name,type,pv_name):
             # (0) update auxiliary fields
             self.SGS.update(self.Gr)       # --> compute diffusivity / viscosity for M1 and M2 (being the same at the moment)
-            # self.M1.plot('beginning of timestep', self.Gr, self.TS)
+            self.plot_M1('2','M1')
+
             # (1) update mean field (M1) tendencies
             self.Th.update()
+            self.plot_M1('3','M1')
             self.MA.update_M1_2nd(self.Gr, self.Ref, self.M1)       # self.MA.update(self.Gr, self.Ref, self.M1)
             self.SA.update_M1_2nd(self.Gr, self.Ref, self.M1)       # self.SA.update(self.Gr, self.Ref, self.M1)
+            self.plot_M1('4','M1')
 
             self.MD.update_M1(self.Gr, self.Ref, self.M1, self.SGS)
             self.SD.update_M1(self.Gr, self.Ref, self.M1, self.SGS)
             # self.M1.plot('after SD update', self.Gr, self.TS)
+            self.plot_M1('5','M1')
 
             self.Turb.update_M1(self.Gr, self.Ref, self.M1, self.M2)                         # --> add turbulent flux divergence to mean field tendencies: dz<w'phi'>
             # ??? surface fluxes ??? (--> in SGS or MD/SD scheme?)
             # ??? update boundary conditions ???
             # ??? pressure solver ???
+            self.M2.plot_tendencies('11',self.Gr,self.TS)
+            self.plot_M1('6','M1')
 
-            # self.M1.plot('without tendency update', self.Gr, self.TS)
 
 
             # (2) update second order momenta (M2) tendencies
-            self.Turb.update_M2(self.Gr, self.Ref, self.M1, self.M2)
+            # self.Turb.update_M2(self.Gr, self.Ref, self.M1, self.M2)
+            self.Turb.update_M2(self.Gr, self.Ref, self.TS, self.M1, self.M2)
             # # ??? update boundary conditions???
             # # ??? pressure correlations ???
             # # ??? surface fluxes ??? (--> in SGS or MD/SD scheme?)
-
+            self.M2.plot_tendencies('12',self.Gr,self.TS)
 
             self.M1.update(self.Gr, self.TS)        # --> updating values by adding tendencies
             self.M2.update(self.Gr, self.TS)        # --> updating values by adding tendencies
+            self.M2.plot_tendencies('14',self.Gr,self.TS)
 
+            # self.M2.plot_tendencies('end', self.Gr, self.TS)
+            self.M2.plot_tendencies('end',self.Gr,self.TS)
             self.M1.plot_tendencies('end', self.Gr, self.TS)
-            self.M2.plot_tendencies('end', self.Gr, self.TS)
             self.TS.update()
             self.M1.plot('end', self.Gr, self.TS)
             self.M2.plot('end', self.Gr, self.TS)
@@ -136,17 +165,51 @@ class Simulation1d:
 
 
 
+    def plot_M1(self,message,pv_name):
+        plt.figure(1,figsize=(15,7))
+        var_list = ['w','th']
+        i = 1
+        for var_name in var_list:
+            var_val = self.M1.get_variable_array(var_name,self.Gr)
+            var_tend = self.M1.get_tendency_array(var_name,self.Gr)
+            plt.subplot(2,2,np.int(i))
+            plt.plot(var_val)
+            plt.subplot(2,2,np.int(i)+2)
+            plt.plot(var_val)
+            # plt.plot(var,self.Gr.z)
+            plt.title(var_name + ', ' + message + ', time: ' + np.str(self.TS.t))
+            plt.plot(var_tend)
+            plt.title(var_name + '_tend , ' + message + ', time: ' + np.str(self.TS.t))
+            i += 1
+        # plt.show()
+        plt.savefig('figs/M1_all_' + message + '_' + np.str(self.TS.t) + '.png')
+        # plt.savefig(self.outpath + '/' + var_name + '_' + message + '_' + np.str(self.TS.t) + '.png')
+        plt.close()
+        return
 
 
-    # def plot(self):
-    #
-    #     plt.figure(1)
-    #     plt.plot()
-    #     plt.title(var + ', ' + message)
-    #     # plt.show()
-    #     plt.savefig(self.outpath + '/' + var + '_' + message + '.png')
-    #     plt.close()
+    def plot(self,message,var_name,array_type,pv_name):
+        # if pv_name == 'M1':
+        #     cdef:
+        #         Py_ssize_t var_index = 1
+        #         double [:] var =
 
+        if pv_name == 'M1':
+            if array_type == 'value':
+                var = self.M1.get_variable_array(var_name,self.Gr)
+            elif array_type == 'tendency':
+                var = self.M1.get_tendency_array(var_name,self.Gr)
+                var_name = var_name + '_tend'
+
+        plt.figure(1,figsize=(15,7))
+        # plt.plot(var,self.Gr.z)
+        plt.plot(var)
+        plt.title(var_name + ', ' + message + ', time: ' + np.str(self.TS.t))
+        # plt.show()
+        plt.savefig('figs/' + var_name + '_' + message + '_' + np.str(self.TS.t) + '.png')
+        # plt.savefig(self.outpath + '/' + var_name + '_' + message + '_' + np.str(self.TS.t) + '.png')
+        plt.close()
+        return
 
 
 

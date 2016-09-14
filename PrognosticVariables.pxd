@@ -40,6 +40,8 @@ cdef class MeanVariables:
     cpdef update(self, Grid Gr, TimeStepping TS)
     cpdef plot(self, str message, Grid Gr, TimeStepping TS)
     cpdef plot_tendencies(self, str message, Grid Gr, TimeStepping TS)
+    cpdef get_variable_array(self,name,Grid Gr)
+    cpdef get_tendency_array(self,name,Grid Gr)
     cdef inline Py_ssize_t get_nv(self, str variable_name):
         return self.name_index[variable_name]
 
@@ -63,5 +65,7 @@ cdef class SecondOrderMomenta:
     cpdef update(self, Grid Gr, TimeStepping TS)
     cpdef plot(self, str message, Grid Gr, TimeStepping TS)
     cpdef plot_tendencies(self, str message, Grid Gr, TimeStepping TS)
+    cpdef get_variable_array(self,name,Grid Gr)
+    cpdef get_tendency_array(self,name,Grid Gr)
     cdef inline Py_ssize_t get_nv(self, str variable_name):
         return self.name_index[variable_name]
