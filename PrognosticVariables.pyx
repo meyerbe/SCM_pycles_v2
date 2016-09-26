@@ -8,6 +8,13 @@ import numpy as np
 cimport numpy as np
 import sys
 import pylab as plt
+params = {'legend.fontsize': 'x-large',
+          'figure.figsize': (15, 5),
+         'axes.labelsize': 'xx-small',
+         'axes.titlesize':'x-large',
+         'xtick.labelsize':'xx-small',
+         'ytick.labelsize':'xx-small'}
+plt.rcParams.update(params)
 
 from NetCDFIO cimport NetCDFIO_Stats
 from Grid cimport Grid
@@ -192,7 +199,7 @@ cdef class MeanVariables:
         plt.plot(values[th_varshift,:], Gr.z)
         plt.title('th')
         plt.subplot(1,4,2)
-        plt.plot(values[w_varshift,:], Gr.z)
+        plt.plot(values[w_varshift,:], Gr.z, '-x')
         plt.title('w')
         plt.subplot(1,4,3)
         plt.plot(values[v_varshift,:], Gr.z)
@@ -219,9 +226,9 @@ cdef class MeanVariables:
         # plt.plot(values[s_varshift+Gr.gw:s_varshift+Gr.nzg-Gr.gw], Gr.z)
         plt.subplot(1,4,1)
         plt.plot(tendencies[th_varshift,:], Gr.z)
-        plt.title('s tend')
+        plt.title('th tend')
         plt.subplot(1,4,2)
-        plt.plot(tendencies[w_varshift,:], Gr.z)
+        plt.plot(tendencies[w_varshift,:], Gr.z, '-x')
         plt.title('w tend')
         plt.subplot(1,4,3)
         plt.plot(tendencies[v_varshift,:], Gr.z)
@@ -371,6 +378,7 @@ cdef class SecondOrderMomenta:
             for var2 in xrange(self.nv):
                 for k in xrange(0,kmax):
                     self.values[var1,var2,k] += self.tendencies[var1,var2,k] * TS.dt
+                    self.tendencies[var1,var2,k] = 0.0
         return
 
 
@@ -401,6 +409,8 @@ cdef class SecondOrderMomenta:
         # plt.show()
         plt.savefig('./figs/M2_profiles_' + message + '_' + np.str(TS.t) + '.png')
         plt.close()
+
+        return
 
 
 
