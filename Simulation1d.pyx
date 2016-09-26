@@ -131,7 +131,6 @@ class Simulation1d:
 
 
             self.M1.plot_tendencies('before_Diffusion', self.Gr, self.TS)
-            # self.MD.update_M1(self.Gr, self.Ref, self.M1, self.SGS)
             # self.SD.update_M1(self.Gr, self.Ref, self.M1, self.SGS)         # !!! problem: Nan in M1 tendency
             self.Diff.update_M1(self.Gr, self.Ref, self.M1, self.SGS)
             self.Diff.plot(self.Gr, self.TS)
@@ -266,8 +265,7 @@ class Simulation1d:
                 self.SGS.stats_io(self.Gr,self.DV,self.PV,self.Ke,self.StatsIO,self.Pa)
                 self.SA.stats_io(self.Gr, self.PV, self.StatsIO, self.Pa)
                 self.MA.stats_io(self.Gr, self.PV, self.StatsIO, self.Pa)
-                # self.SD.stats_io(self.Gr, self.Ref,self.PV, self.DV, self.StatsIO, self.Pa)
-                # self.MD.stats_io(self.Gr, self.PV, self.DV, self.Ke, self.StatsIO, self.Pa)
+                self.Diff.stats_io()
                 self.Ke.stats_io(self.Gr,self.Ref,self.PV,self.StatsIO,self.Pa)
                 self.Tr.stats_io( self.Gr, self.StatsIO, self.Pa)
                 self.Ra.stats_io(self.Gr, self.DV, self.StatsIO, self.Pa)
