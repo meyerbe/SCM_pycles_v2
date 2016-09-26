@@ -68,7 +68,7 @@ cdef class TimeStepping:
     cpdef update(self):
         self.t += self.dt
     #     self.nstep += 1
-        print('time:', self.t)
+    #     print('time:', self.t)
     #     cdef:
     #         Py_ssize_t i
     #
