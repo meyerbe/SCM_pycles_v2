@@ -18,8 +18,6 @@ cimport PrognosticVariables
 cimport MomentumAdvection
 cimport ScalarAdvection
 from SGS import SGSFactory
-# cimport MomentumDiffusion
-# cimport ScalarDiffusion
 cimport Diffusion
 cimport NetCDFIO
 from Thermodynamics import ThermodynamicsFactory
@@ -47,8 +45,6 @@ class Simulation1d:
 
         self.SGS = SGSFactory(namelist)
         self.Diff = Diffusion.Diffusion()
-        # self.MD = MomentumDiffusion.MomentumDiffusion()
-        # self.SD = ScalarDiffusion.ScalarDiffusion(namelist)
 
         self.StatsIO = NetCDFIO.NetCDFIO_Stats()
         return
@@ -86,8 +82,6 @@ class Simulation1d:
         self.Turb.initialize(self.Gr, self.M1)
 
         self.SGS.initialize(self.Gr, self.M1, self.M2)
-        # self.MD.initialize(self.Gr, self.M1)
-        # self.SD.initialize(self.Gr, self.M1)
         self.Diff.initialize(self.Gr, self.M1)
         # self.M2.plot_tendencies('3', self.Gr, self.TS)
 
@@ -131,7 +125,6 @@ class Simulation1d:
 
 
             self.M1.plot_tendencies('before_Diffusion', self.Gr, self.TS)
-            # self.SD.update_M1(self.Gr, self.Ref, self.M1, self.SGS)         # !!! problem: Nan in M1 tendency
             self.Diff.update_M1(self.Gr, self.Ref, self.M1, self.SGS)
             self.Diff.plot(self.Gr, self.TS)
             self.M1.plot_tendencies('after_Diffusion', self.Gr, self.TS)

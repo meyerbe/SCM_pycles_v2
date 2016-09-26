@@ -354,7 +354,7 @@ cdef class SecondOrderMomenta:
         self.values = np.zeros((self.nv,self.nv,Gr.nzg),dtype=np.double,order='c')
         self.tendencies = np.zeros((self.nv,self.nv,Gr.nzg),dtype=np.double,order='c')
 
-        print('values:', self.values.shape, self.tendencies.shape, Gr.nzg)
+        # print('values:', self.values.shape, self.tendencies.shape, Gr.nzg)
         if np.isnan(self.values).any():
             print('!!! init: NANs in M2 values')
         if np.isnan(self.tendencies).any():
