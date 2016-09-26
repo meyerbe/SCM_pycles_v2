@@ -18,8 +18,9 @@ cimport PrognosticVariables
 cimport MomentumAdvection
 cimport ScalarAdvection
 from SGS import SGSFactory
-cimport MomentumDiffusion
-cimport ScalarDiffusion
+# cimport MomentumDiffusion
+# cimport ScalarDiffusion
+cimport Diffusion
 cimport NetCDFIO
 from Thermodynamics import ThermodynamicsFactory
 from TurbulenceScheme import TurbulenceFactory
@@ -45,8 +46,9 @@ class Simulation1d:
         self.Turb = TurbulenceFactory(namelist)
 
         self.SGS = SGSFactory(namelist)
-        self.MD = MomentumDiffusion.MomentumDiffusion()
-        self.SD = ScalarDiffusion.ScalarDiffusion(namelist)
+        self.Diff = Diffusion.Diffusion()
+        # self.MD = MomentumDiffusion.MomentumDiffusion()
+        # self.SD = ScalarDiffusion.ScalarDiffusion(namelist)
 
         self.StatsIO = NetCDFIO.NetCDFIO_Stats()
         return
@@ -84,8 +86,9 @@ class Simulation1d:
         self.Turb.initialize(self.Gr, self.M1)
 
         self.SGS.initialize(self.Gr, self.M1, self.M2)
-        self.MD.initialize(self.Gr, self.M1)
-        self.SD.initialize(self.Gr, self.M1)
+        # self.MD.initialize(self.Gr, self.M1)
+        # self.SD.initialize(self.Gr, self.M1)
+        self.Diff.initialize(self.Gr, self.M1)
         # self.M2.plot_tendencies('3', self.Gr, self.TS)
 
         print('Initialization completed!')
@@ -100,7 +103,7 @@ class Simulation1d:
         self.M2.plot('end', self.Gr, self.TS)
         # self.M2.plot_tendencies('7', self.Gr, self.TS)
         # self.M2.plot_tendencies('10', self.Gr, self.TS)
-        self.plot_M1('0','M1')
+        # self.plot_M1('0','M1')
         return
 
 
@@ -115,44 +118,45 @@ class Simulation1d:
             print('time:', self.TS.t)
 
             # self.plot('0','th','tendency','M1')
-            self.plot_M1('1','M1')
+            # self.plot_M1('1','M1')
                 # def plot(self,message,var_name,type,pv_name):
             # (0) update auxiliary fields
             self.SGS.update(self.Gr)       # --> compute diffusivity / viscosity for M1 and M2 (being the same at the moment)
-            self.plot_M1('2','M1')
+            self.SGS.plot(self.Gr, self.TS)
 
             # (1) update mean field (M1) tendencies
-            self.Th.update()
-            self.plot_M1('3','M1')
-            self.MA.update_M1_2nd(self.Gr, self.Ref, self.M1)       # self.MA.update(self.Gr, self.Ref, self.M1)
-            self.SA.update_M1_2nd(self.Gr, self.Ref, self.M1)       # self.SA.update(self.Gr, self.Ref, self.M1)
-            self.plot_M1('4','M1')
+            # self.Th.update()
+            # self.MA.update_M1_2nd(self.Gr, self.Ref, self.M1)       # self.MA.update(self.Gr, self.Ref, self.M1)
+            # self.SA.update_M1_2nd(self.Gr, self.Ref, self.M1)       # self.SA.update(self.Gr, self.Ref, self.M1)
 
-            self.MD.update_M1(self.Gr, self.Ref, self.M1, self.SGS)
-            self.SD.update_M1(self.Gr, self.Ref, self.M1, self.SGS)
-            # self.M1.plot('after SD update', self.Gr, self.TS)
-            self.plot_M1('5','M1')
 
-            self.Turb.update_M1(self.Gr, self.Ref, self.M1, self.M2)                         # --> add turbulent flux divergence to mean field tendencies: dz<w'phi'>
+            self.M1.plot_tendencies('before_Diffusion', self.Gr, self.TS)
+            # self.MD.update_M1(self.Gr, self.Ref, self.M1, self.SGS)
+            # self.SD.update_M1(self.Gr, self.Ref, self.M1, self.SGS)         # !!! problem: Nan in M1 tendency
+            self.Diff.update_M1(self.Gr, self.Ref, self.M1, self.SGS)
+            self.Diff.plot(self.Gr, self.TS)
+            self.M1.plot_tendencies('after_Diffusion', self.Gr, self.TS)
+            # self.M1.plot('Diffusion', self.Gr, self.TS)
+
+            # self.Turb.update_M1(self.Gr, self.Ref, self.M1, self.M2)                         # --> add turbulent flux divergence to mean field tendencies: dz<w'phi'>
             # ??? surface fluxes ??? (--> in SGS or MD/SD scheme?)
             # ??? update boundary conditions ???
             # ??? pressure solver ???
-            self.M2.plot_tendencies('11',self.Gr,self.TS)
-            self.plot_M1('6','M1')
+            # self.M2.plot_tendencies('11',self.Gr,self.TS)
 
 
 
             # (2) update second order momenta (M2) tendencies
             # self.Turb.update_M2(self.Gr, self.Ref, self.M1, self.M2)
-            self.Turb.update_M2(self.Gr, self.Ref, self.TS, self.M1, self.M2)
+            # self.Turb.update_M2(self.Gr, self.Ref, self.TS, self.M1, self.M2)
             # # ??? update boundary conditions???
             # # ??? pressure correlations ???
             # # ??? surface fluxes ??? (--> in SGS or MD/SD scheme?)
-            self.M2.plot_tendencies('12',self.Gr,self.TS)
+            # self.M2.plot_tendencies('12',self.Gr,self.TS)
 
             self.M1.update(self.Gr, self.TS)        # --> updating values by adding tendencies
             self.M2.update(self.Gr, self.TS)        # --> updating values by adding tendencies
-            self.M2.plot_tendencies('14',self.Gr,self.TS)
+            # self.M2.plot_tendencies('14',self.Gr,self.TS)
 
             # self.M2.plot_tendencies('end', self.Gr, self.TS)
             self.M2.plot_tendencies('end',self.Gr,self.TS)
@@ -262,13 +266,13 @@ class Simulation1d:
                 self.SGS.stats_io(self.Gr,self.DV,self.PV,self.Ke,self.StatsIO,self.Pa)
                 self.SA.stats_io(self.Gr, self.PV, self.StatsIO, self.Pa)
                 self.MA.stats_io(self.Gr, self.PV, self.StatsIO, self.Pa)
-                self.SD.stats_io(self.Gr, self.Ref,self.PV, self.DV, self.StatsIO, self.Pa)
-                self.MD.stats_io(self.Gr, self.PV, self.DV, self.Ke, self.StatsIO, self.Pa)
+                # self.SD.stats_io(self.Gr, self.Ref,self.PV, self.DV, self.StatsIO, self.Pa)
+                # self.MD.stats_io(self.Gr, self.PV, self.DV, self.Ke, self.StatsIO, self.Pa)
                 self.Ke.stats_io(self.Gr,self.Ref,self.PV,self.StatsIO,self.Pa)
                 self.Tr.stats_io( self.Gr, self.StatsIO, self.Pa)
                 self.Ra.stats_io(self.Gr, self.DV, self.StatsIO, self.Pa)
                 self.Budg.stats_io(self.Sur, self.StatsIO, self.Pa)
-                self.Aux.stats_io(self.Gr, self.Ref, self.PV, self.DV, self.MA, self.MD, self.StatsIO, self.Pa)
+                # self.Aux.stats_io(self.Gr, self.Ref, self.PV, self.DV, self.MA, self.MD, self.StatsIO, self.Pa)
                 self.StatsIO.close_files(self.Pa)
                 self.Pa.root_print('Finished Doing StatsIO')
 

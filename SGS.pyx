@@ -6,6 +6,7 @@
 
 from Grid cimport Grid
 cimport PrognosticVariables
+from TimeStepping cimport TimeStepping
 # cimport DiagnosticVariables
 # cimport Kinematics
 # cimport Surface
@@ -13,6 +14,7 @@ cimport PrognosticVariables
 from libc.math cimport exp, sqrt
 cimport numpy as np
 import numpy as np
+import pylab as plt
 import cython
 
 
@@ -69,6 +71,39 @@ class UniformViscosity():
     #              PrognosticVariables.PrognosticVariables PV, Kinematics.Kinematics Ke, NetCDFIO_Stats NS):
     def stats_io(self):
 
+        return
+
+    def plot(self, Grid Gr, TimeStepping TS):
+        if np.isnan(self.viscosity_M1).any():
+            print('!!!!! NAN in viscosity M1')
+        if np.isnan(self.diffusivity_M1).any():
+            print('!!!!! NAN in diffusivity M1')
+        if np.isnan(self.viscosity_M2).any():
+            print('!!!!! NAN in viscosity M2')
+        if np.isnan(self.diffusivity_M2).any():
+            print('!!!!! NAN in diffusivity M2')
+
+
+        plt.figure(1,figsize=(15,7))
+        # plt.plot(values[s_varshift+Gr.gw:s_varshift+Gr.nzg-Gr.gw], Gr.z)
+        plt.subplot(1,4,1)
+        plt.plot(self.viscosity_M1[0,:], Gr.z)
+        plt.plot(self.viscosity_M1[1,:], Gr.z)
+        plt.plot(self.viscosity_M1[2,:], Gr.z)
+        plt.title('M1 viscosity')
+        plt.subplot(1,4,2)
+        plt.plot(self.diffusivity_M1[0,:], Gr.z)
+        plt.title('M1 diffusivity')
+        plt.subplot(1,4,3)
+        plt.plot(self.viscosity_M2[0,:], Gr.z)
+        plt.title('M2 viscosity')
+        plt.subplot(1,4,4)
+        plt.plot(self.diffusivity_M2[0,:], Gr.z)
+        plt.title('M2 diffusivity')
+        # plt.show()
+        # plt.savefig('./figs/diffusivity_' + message + '_' + np.str(TS.t) + '.png')
+        plt.savefig('./figs/diffusivity_' + np.str(TS.t) + '.png')
+        plt.close()
         return
 
 

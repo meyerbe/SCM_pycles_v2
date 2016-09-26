@@ -112,15 +112,20 @@ _ext = Extension('ScalarAdvection', ['ScalarAdvection.pyx'], include_dirs=includ
                  runtime_library_dirs=library_dirs)
 extensions.append(_ext)
 
-_ext = Extension('MomentumDiffusion', ['MomentumDiffusion.pyx'], include_dirs=include_path,
+_ext = Extension('Diffusion', ['Diffusion.pyx'], include_dirs=include_path,
                  extra_compile_args=extra_compile_args, libraries=libraries, library_dirs=library_dirs,
                  runtime_library_dirs=library_dirs)
 extensions.append(_ext)
 
-_ext = Extension('ScalarDiffusion', ['ScalarDiffusion.pyx'], include_dirs=include_path,
-                 extra_compile_args=extra_compile_args, libraries=libraries, library_dirs=library_dirs,
-                 runtime_library_dirs=library_dirs)
-extensions.append(_ext)
+# _ext = Extension('MomentumDiffusion', ['MomentumDiffusion.pyx'], include_dirs=include_path,
+#                  extra_compile_args=extra_compile_args, libraries=libraries, library_dirs=library_dirs,
+#                  runtime_library_dirs=library_dirs)
+# extensions.append(_ext)
+#
+# _ext = Extension('ScalarDiffusion', ['ScalarDiffusion.pyx'], include_dirs=include_path,
+#                  extra_compile_args=extra_compile_args, libraries=libraries, library_dirs=library_dirs,
+#                  runtime_library_dirs=library_dirs)
+# extensions.append(_ext)
 
 _ext = Extension('SGS', ['SGS.pyx'], include_dirs=include_path,
                  extra_compile_args=extra_compile_args, libraries=libraries, library_dirs=library_dirs,
