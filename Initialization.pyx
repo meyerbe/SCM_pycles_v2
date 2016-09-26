@@ -169,11 +169,11 @@ cdef class InitSoares(InitializationBase):
         # (i) Theta (potential temperature) profile (Soares) incl. perturbations
         # fluctuation height = 200m; fluctuation amplitude = 0.1 K
         for k in xrange(Gr.nzg):
-            if Gr.z_half[k] <= 1350.0:
+            if Gr.z[k] <= 1350.0:
                 theta[k] = 300.0
             else:
-                # theta[k] = 300.0 + 2.0/1000.0 * (Gr.z_half[k] - 1350.0)
-               theta[k] = 297.3 + 2.0/1000.0 * (Gr.z_half[k])
+                # theta[k] = 300.0 + 2.0/1000.0 * (Gr.z[k] - 1350.0)
+               theta[k] = 297.3 + 2.0/1000.0 * (Gr.z[k])
 
 
         # # (ii) Velocities & Entropy
@@ -183,16 +183,17 @@ cdef class InitSoares(InitializationBase):
             double qi = 0.0
         print('Initializing Velocity and Entropy')
         for k in xrange(Gr.nzg):
-            if Gr.z_half[k] < 200.0:
+            if Gr.z[k] < 200.0:
                 theta_pert_ = (theta_pert[k] - 0.5)* 0.1
             else:
                 theta_pert_ = 0.0
-            temp = (theta[k] + theta_pert_)*exner(Ref.p0_half[k])
+            temp = (theta[k] + theta_pert_)*exner(Ref.p0[k])
             # M1.values[th_varshift,k] = entropy_from_tp(Ref.p0_half[k],temp,qt,ql,qi)               # s = Thermodynamics.entropy(p_half[k],temperature_half[k],self.qtg,ql_half[k],qi_half[k])
             M1.values[th_varshift,k] = temp
             M1.values[u_varshift,k] = 0.0
             M1.values[v_varshift,k] = 0.0
             M1.values[w_varshift,k] = 0.0
+
 
         # (2) Initialize Second Order Momenta
         for var1 in xrange(M2.nv):
@@ -277,19 +278,39 @@ cdef class InitTest(InitializationBase):
             # double [:] s = M1.values[s_varshift:s_varshift+Gr.nzg]
             # double [:] p0 = Ref.p0_half
 
-        # (i) Theta (potential temperature) profile (Soares) incl. perturbations
+        # (i) Velocities & Theta (potential temperature) profile (Soares) incl. perturbations
+        print('Initializing Velocity and Pot Temperature')
         for k in xrange(Gr.nzg):
             M1.values[th_varshift,k] = 293.0
             M1.values[u_varshift,k] = 0.0
             M1.values[v_varshift,k] = 0.0
             M1.values[w_varshift,k] = 0.0
 
-        # # (ii) Velocities & Entropy
+        for k in xrange(Gr.nzg):
+            M1.values[u_varshift,k] = 0.01 * (Gr.z[k])
+            M1.values[th_varshift,k] = 293.0 + 0.1 * (Gr.z[k])
+            if Gr.z[k] <= 200.0:
+                # print('0.1:', Gr.nzg, k, Gr.z[k])
+                M1.values[w_varshift,k] = 0.001 * (Gr.z[k])
+            else:
+                # print('0.2:', Gr.nzg, k, Gr.z[k])
+                M1.values[w_varshift,k] = 0.001*200.0 + 0.002 * (Gr.z[k]-200.0)
+
+
+            # if Gr.z[k] <= 1350.0:
+               #     theta[k] = 300.0
+            # else:
+            #     # theta[k] = 300.0 + 2.0/1000.0 * (Gr.z[k] - 1350.0)
+            #    theta[k] = 297.3 + 2.0/1000.0 * (Gr.z[k])
+
+        # # (ii) Moisture
         cdef:
             double qt = 0.0
             double ql = 0.0
             double qi = 0.0
-        print('Initializing Velocity and Entropy')
+
+
+
 
         # (2) Initialize Second Order Momenta
         for var1 in xrange(M2.nv):
