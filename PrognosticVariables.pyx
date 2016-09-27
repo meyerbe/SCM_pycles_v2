@@ -208,7 +208,7 @@ cdef class MeanVariables:
         plt.plot(values[u_varshift,:], Gr.z)
         plt.title('u')
         # plt.show()
-        plt.savefig('./figs/M1_profiles_' + message + '_' + np.str(TS.t) + '.png')
+        plt.savefig('./figs/M1_profiles_' + message + '_' + np.str(np.int(TS.t)) + '.png')
         plt.close()
 
     cpdef plot_tendencies(self, str message, Grid Gr, TimeStepping TS):
@@ -237,7 +237,7 @@ cdef class MeanVariables:
         plt.plot(tendencies[u_varshift,:], Gr.z)
         plt.title('u tend')
         # plt.show()
-        plt.savefig('./figs/M1_tendencies_' + message + '_' + np.str(TS.t) + '.png')
+        plt.savefig('./figs/M1_tendencies_' + message + '_' + np.str(np.int(TS.t)) + '.png')
         plt.close()
         return
 
@@ -407,7 +407,7 @@ cdef class SecondOrderMomenta:
         plt.plot(values[w_varshift,th_varshift,:], Gr.z)
         plt.title('wth')
         # plt.show()
-        plt.savefig('./figs/M2_profiles_' + message + '_' + np.str(TS.t) + '.png')
+        plt.savefig('./figs/M2_profiles_' + message + '_' + np.str(np.int(TS.t)) + '.png')
         plt.close()
 
         return
@@ -439,7 +439,7 @@ cdef class SecondOrderMomenta:
         plt.plot(tendencies[w_varshift,th_varshift,:], Gr.z)
         plt.title('wth tend')
         # plt.show()
-        plt.savefig('./figs/M2_tendencies_' + message + '_' + np.str(TS.t) + '.png')
+        plt.savefig('./figs/M2_tendencies_' + message + '_' + np.str(np.int(TS.t)) + '.png')
         plt.close()
         return
 

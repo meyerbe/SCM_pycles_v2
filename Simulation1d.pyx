@@ -124,7 +124,7 @@ class Simulation1d:
             # self.SA.update_M1_2nd(self.Gr, self.Ref, self.M1)       # self.SA.update(self.Gr, self.Ref, self.M1)
 
 
-            self.M1.plot_tendencies('before_Diffusion', self.Gr, self.TS)
+
             self.Diff.update_M1(self.Gr, self.Ref, self.M1, self.SGS)
             self.Diff.plot(self.Gr, self.TS)
             self.M1.plot_tendencies('after_Diffusion', self.Gr, self.TS)
@@ -146,13 +146,16 @@ class Simulation1d:
             # # ??? surface fluxes ??? (--> in SGS or MD/SD scheme?)
             # self.M2.plot_tendencies('12',self.Gr,self.TS)
 
+            self.M1.plot_tendencies('end', self.Gr, self.TS)
+            self.M2.plot_tendencies('end', self.Gr, self.TS)
+
             self.M1.update(self.Gr, self.TS)        # --> updating values by adding tendencies
             self.M2.update(self.Gr, self.TS)        # --> updating values by adding tendencies
             # self.M2.plot_tendencies('14',self.Gr,self.TS)
 
             # self.M2.plot_tendencies('end', self.Gr, self.TS)
-            self.M2.plot_tendencies('end',self.Gr,self.TS)
-            self.M1.plot_tendencies('end', self.Gr, self.TS)
+            self.M2.plot_tendencies('control',self.Gr,self.TS)
+            self.M1.plot_tendencies('control', self.Gr, self.TS)
             self.TS.update()
             self.M1.plot('end', self.Gr, self.TS)
             self.M2.plot('end', self.Gr, self.TS)
@@ -173,12 +176,12 @@ class Simulation1d:
             plt.subplot(2,2,np.int(i)+2)
             plt.plot(var_val)
             # plt.plot(var,self.Gr.z)
-            plt.title(var_name + ', ' + message + ', time: ' + np.str(self.TS.t))
+            plt.title(var_name + ', ' + message + ', time: ' + np.str(np.int(self.TS.t)))
             plt.plot(var_tend)
-            plt.title(var_name + '_tend , ' + message + ', time: ' + np.str(self.TS.t))
+            plt.title(var_name + '_tend , ' + message + ', time: ' + np.str(np.int(self.TS.t)))
             i += 1
         # plt.show()
-        plt.savefig('figs/M1_all_' + message + '_' + np.str(self.TS.t) + '.png')
+        plt.savefig('figs/M1_all_' + message + '_' + np.str(np.int(self.TS.t)) + '.png')
         # plt.savefig(self.outpath + '/' + var_name + '_' + message + '_' + np.str(self.TS.t) + '.png')
         plt.close()
         return

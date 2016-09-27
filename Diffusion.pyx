@@ -98,25 +98,30 @@ cdef class Diffusion:
                         # strain_rate[shift + ijk] = 0.5 * (vgrad[shift_v1 + ijk] + vgrad[shift_v2 + ijk]) ;
                         # flux[ijk] = -2.0 * strain_rate[ijk] * viscosity[ijk + stencil[i1]] * rho0_half[k];
                         flux[n,k] = - rho0[k] * visc[n,k] * grad[n,k]
+                        # flux[n,k] = - visc[n,k] * grad[n,k]
                 elif M1.var_type[n] == 1:
                     # print('scalar count', scalar_count, diff.shape)
                     for k in xrange(1,Gr.nzg-1):
                         flux[n,k] = - rho0[k] * diff[scalar_count,k] * grad[n,k]
+                        # flux[n,k] = - diff[scalar_count,k] * grad[n,k]
                     scalar_count += 1
 
             for n in xrange(M1.nv):
                 if n >= w_shift:
                     for k in xrange(2,Gr.nzg-2):
                         tendencies[n,k] = - alpha0[n] * (flux[n,k+1]-flux[n,k-1])*dzi2
+                        # tendencies[n,k] = - (flux[n,k+1]-flux[n,k-1])*dzi2
                 else:
                     for k in xrange(2,Gr.nzg-2):
                         tendencies[n,k] = - 0.5 * alpha0[n] * (flux[n,k+1]-flux[n,k-1])*dzi2
+                        # tendencies[n,k] = - 0.5 * (flux[n,k+1]-flux[n,k-1])*dzi2
 
 
         with nogil:
             for n in xrange(M1.nv):
                 for k in xrange(Gr.nzg):
                     M1_tendencies[n,k] += tendencies[n,k]
+
 
         # print(np.where(self.tendencies_M1 != M1_tendencies))
         if np.isnan(self.tendencies_M1).any():
@@ -165,13 +170,13 @@ cdef class Diffusion:
         plt.legend()
         plt.subplot(1,4,3)
         plt.plot(self.tendencies_M1[3,:], Gr.z, 'x-', label='tend th')
-        plt.title('M1 Fluxes')
+        plt.title('M1 Tendencies')
         plt.legend()
         plt.subplot(1,4,4)
         plt.plot(self.flux_M1[3,:], Gr.z, 'x-', label='flux th')
         plt.title('M1 Fluxes')
         plt.legend()
         # plt.show()
-        plt.savefig('./figs/Diffusion_' + np.str(TS.t) + '.png')
+        plt.savefig('./figs/Diffusion_' + np.str(np.int(TS.t)) + '.png')
         plt.close()
         return
