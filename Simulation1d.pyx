@@ -62,9 +62,9 @@ class Simulation1d:
         # cdef:
         #     PV_ = self.PV
         # print(PV_.nv)     #not accessible (also not as # print(self.PV.nv))
-        self.M1.add_variable('u', 'm/s', "velocity")
-        self.M1.add_variable('v', 'm/s', "velocity")
-        self.M1.add_variable('w', 'm/s', "velocity")
+        self.M1.add_variable('u', 'm/s', "sym", "velocity")
+        self.M1.add_variable('v', 'm/s', "sym", "velocity")
+        self.M1.add_variable('w', 'm/s', "asym", "velocity")
 
         # AuxillaryVariables(namelist, self.PV, self.DV, self.Pa)
         self.Th.initialize(self.Gr, self.M1, self.M2)        # adding prognostic thermodynamic variables
@@ -89,12 +89,12 @@ class Simulation1d:
         # self.plot()
         # self.M2.plot_tendencies('4', self.Gr, self.TS)
         # self.M2.plot_tendencies('5', self.Gr, self.TS)
-        self.M1.plot_tendencies('end', self.Gr, self.TS)
+        self.M1.plot_tendencies('init', self.Gr, self.TS)
         # self.M2.plot_tendencies('6', self.Gr, self.TS)
-        self.M2.plot_tendencies('end', self.Gr, self.TS)
+        self.M2.plot_tendencies('init', self.Gr, self.TS)
 
-        self.M1.plot('end', self.Gr, self.TS)
-        self.M2.plot('end', self.Gr, self.TS)
+        self.M1.plot('init', self.Gr, self.TS)
+        self.M2.plot('init', self.Gr, self.TS)
         # self.M2.plot_tendencies('7', self.Gr, self.TS)
         # self.M2.plot_tendencies('10', self.Gr, self.TS)
         # self.plot_M1('0','M1')
@@ -106,23 +106,24 @@ class Simulation1d:
         print('Sim: start run')
         print(self.TS.t, self.TS.t_max)
 
-        self.M2.plot_tendencies('10',self.Gr,self.TS)
+        # self.M2.plot_tendencies('10',self.Gr,self.TS)
         # self.M1.plot_tendencies('11',self.Gr,self.TS)
         while(self.TS.t < self.TS.t_max):
             print('time:', self.TS.t)
 
             # self.plot('0','th','tendency','M1')
             # self.plot_M1('1','M1')
-                # def plot(self,message,var_name,type,pv_name):
+
             # (0) update auxiliary fields
             self.SGS.update(self.Gr)       # --> compute diffusivity / viscosity for M1 and M2 (being the same at the moment)
             self.SGS.plot(self.Gr, self.TS)
 
             # (1) update mean field (M1) tendencies
-            # self.Th.update()
-            # self.MA.update_M1_2nd(self.Gr, self.Ref, self.M1)       # self.MA.update(self.Gr, self.Ref, self.M1)
+            self.Th.update()        # --> does nothing so far !!! do buoyancy update; add to w-tend (so far no coupling btw. thermodynamics and dynamics)
+            # self.M1.plot_tendencies('after_Th', self.Gr, self.TS)
+            self.MA.update_M1_2nd(self.Gr, self.Ref, self.M1)       # self.MA.update(self.Gr, self.Ref, self.M1)
             # self.SA.update_M1_2nd(self.Gr, self.Ref, self.M1)       # self.SA.update(self.Gr, self.Ref, self.M1)
-
+            self.M1.plot_tendencies('after_MA', self.Gr, self.TS)
 
 
             self.Diff.update_M1(self.Gr, self.Ref, self.M1, self.SGS)
@@ -157,6 +158,7 @@ class Simulation1d:
             self.M2.plot_tendencies('control',self.Gr,self.TS)
             self.M1.plot_tendencies('control', self.Gr, self.TS)
             self.TS.update()
+            self.M1.update_bcs(self.Gr)
             self.M1.plot('end', self.Gr, self.TS)
             self.M2.plot('end', self.Gr, self.TS)
 

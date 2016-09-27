@@ -41,6 +41,7 @@ cdef class PrognosticVariables:
         self.nv_scalars = 0
         self.nv_velocities = 0
         self.var_type = np.array([],dtype=np.int,order='c')
+        self.bc_type = np.array([],dtype=np.double,order='c')
         return
 
     cpdef add_variable(self,name,units,var_type):
@@ -116,16 +117,27 @@ cdef class MeanVariables:
         self.nv_scalars = 0
         self.nv_velocities = 0
         self.var_type = np.array([],dtype=np.int,order='c')
+        self.bc_type = np.array([],dtype=np.double,order='c')
         self.velocity_directions = np.zeros((Gr.dims,),dtype=np.int,order='c')
         return
 
 
-    cpdef add_variable(self,name,units,var_type):
+    cpdef add_variable(self,name,units,bc_type,var_type):
+    # cpdef add_variable(self,name,units,var_type):
         # Store names and units
         self.name_index[name] = self.nv
         self.index_name.append(name)
         self.units[name] = units
         self.nv = len(self.name_index.keys())
+
+        #Add bc type to array
+        if bc_type == "sym":
+            self.bc_type = np.append(self.bc_type,[1.0])
+        elif bc_type =="asym":
+            self.bc_type = np.append(self.bc_type,[-1.0])
+        else:
+            print("Not a valid bc_type.")
+
         #Set the type of the variable being added 0=velocity; 1=scalars
         if var_type == "velocity":
             self.var_type = np.append(self.var_type,0)
@@ -257,6 +269,63 @@ cdef class MeanVariables:
 
 
 
+    # @cython.boundscheck(False)
+    # @cython.wraparound(False)
+    cpdef update_bcs(self, Grid Gr):
+        cdef:
+            Py_ssize_t nv = self.nv
+            Py_ssize_t gw = Gr.gw
+            Py_ssize_t k, kmin
+    #     cdef int ndof = self.ndof
+    #     cdef int n = 0
+    #     _rank = comm.cart_comm.Get_rank()
+    #     cdef int  _coords = comm.cart_comm.Get_coords(_rank)[2]
+    #     cdef int  _mpi_kdim = comm.nprocs[2]
+    #     cdef double [:,:,:,:] values = self.values
+    #     cdef double [:] bcfactor = self.bcfactor[:]
+    #
+    #     cdef int kstart
+    #     cdef int nzl = grid.nzl
+    #
+    #     with nogil:
+        # set bottom boundary condition
+        if 1 == 1:
+            kmin = gw
+            for k in xrange(gw):
+                for n in xrange(nv):
+                    pass
+
+
+    #                     for k in xrange(_gw):
+    #                         for n in xrange(ndof):
+    #                             if(bcfactor[n] == 1):
+    #                                 values[i,j,kstart-1-k,n] = values[i,j,kstart+k,n] * bcfactor[n]
+    #                             else:
+    #                                 if(k == 0):
+    #                                     values[i,j,kstart-1-k,n] = 0.0
+    #                                 else:
+    #                                     values[i,j,kstart-1-k,n] = values[i,j,kstart+k-1,n] * bcfactor[n]
+    #
+    #     if _mpi_kdim ==  _coords + 1:
+    #         with nogil:
+    #             #This processor is at the top of the domain so need to set top boundary condition
+    #             kstart = nzl - _gw
+    #             for i in xrange(nxl):
+    #                 for j in xrange(nyl):
+    #                     for k in xrange(_gw):
+    #                         for n in xrange(ndof):
+    #                             if(bcfactor[n] == 1):
+    #                                 values[i,j,kstart+k,n] = values[i,j,kstart-k-1,n] * bcfactor[n]
+    #                             else:
+    #                                 if(k == 0):
+    #                                     values[i,j,kstart+k,n] = 0.0
+    #                                 else:
+    #                                     values[i,j,kstart+k,n] = values[i,j,kstart-k,n] * bcfactor[n]
+    #
+        return
+
+
+
 
 
 
@@ -345,7 +414,7 @@ cdef class SecondOrderMomenta:
 
 
 
-        print('!! nv !!', self.nv, M1.nv)
+        # print('!! nv !!', self.nv, M1.nv)
         print(self.var_index)
         print(M1.name_index)
         print('name_index', self.name_index)

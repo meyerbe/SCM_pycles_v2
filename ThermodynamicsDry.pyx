@@ -31,7 +31,7 @@ cdef class ThermodynamicsDry:
     cpdef initialize(self, Grid Gr, PrognosticVariables.MeanVariables M1, PrognosticVariables.SecondOrderMomenta M2):
         # PV.add_variable('s','m/s',"sym","scalar")
         # M1.add_variable('s','m/s',"scalar")
-        M1.add_variable('th','K',"scalar")
+        M1.add_variable('th','K',"sym","scalar")
 
         return
 

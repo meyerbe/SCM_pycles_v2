@@ -50,8 +50,8 @@ cdef class ThermodynamicsSA:
     cpdef initialize(self, Grid.Grid Gr, PrognosticVariables.MeanVariables M1, PrognosticVariables.SecondOrderMomenta M2):
 
         # PV.add_variable('s','m/s',"sym","scalar")
-        M1.add_variable('th','K',"scalar")
-        M1.add_variable('qt','g/kg',"scalar")
+        M1.add_variable('th','K',"sym","scalar")
+        M1.add_variable('qt','g/kg',"sym","scalar")
 
         return
 
