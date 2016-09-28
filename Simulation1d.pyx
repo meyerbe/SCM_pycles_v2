@@ -64,7 +64,8 @@ class Simulation1d:
         # print(PV_.nv)     #not accessible (also not as # print(self.PV.nv))
         self.M1.add_variable('u', 'm/s', "sym", "velocity")
         self.M1.add_variable('v', 'm/s', "sym", "velocity")
-        self.M1.add_variable('w', 'm/s', "asym", "velocity")
+        # self.M1.add_variable('w', 'm/s', "asym", "velocity")
+        self.M1.add_variable('w', 'm/s', "sym", "velocity")
 
         # AuxillaryVariables(namelist, self.PV, self.DV, self.Pa)
         self.Th.initialize(self.Gr, self.M1, self.M2)        # adding prognostic thermodynamic variables
@@ -122,8 +123,11 @@ class Simulation1d:
             self.Th.update()        # --> does nothing so far !!! do buoyancy update; add to w-tend (so far no coupling btw. thermodynamics and dynamics)
             # self.M1.plot_tendencies('after_Th', self.Gr, self.TS)
             self.MA.update_M1_2nd(self.Gr, self.Ref, self.M1)       # self.MA.update(self.Gr, self.Ref, self.M1)
-            # self.SA.update_M1_2nd(self.Gr, self.Ref, self.M1)       # self.SA.update(self.Gr, self.Ref, self.M1)
-            self.M1.plot_tendencies('after_MA', self.Gr, self.TS)
+            # self.M1.plot_tendencies('after_MA', self.Gr, self.TS)
+            self.SA.update_M1_2nd(self.Gr, self.Ref, self.M1)       # self.SA.update(self.Gr, self.Ref, self.M1)
+            # self.M1.plot_tendencies('after_SA', self.Gr, self.TS)
+            self.MA.plot(self.Gr, self.TS, self.M1)
+            self.SA.plot(self.Gr, self.TS, self.M1)
 
 
             self.Diff.update_M1(self.Gr, self.Ref, self.M1, self.SGS)
@@ -148,19 +152,18 @@ class Simulation1d:
             # self.M2.plot_tendencies('12',self.Gr,self.TS)
 
             self.M1.plot_tendencies('end', self.Gr, self.TS)
-            self.M2.plot_tendencies('end', self.Gr, self.TS)
+            # self.M2.plot_tendencies('end', self.Gr, self.TS)
 
             self.M1.update(self.Gr, self.TS)        # --> updating values by adding tendencies
             self.M2.update(self.Gr, self.TS)        # --> updating values by adding tendencies
             # self.M2.plot_tendencies('14',self.Gr,self.TS)
 
-            # self.M2.plot_tendencies('end', self.Gr, self.TS)
-            self.M2.plot_tendencies('control',self.Gr,self.TS)
+            # self.M2.plot_tendencies('control',self.Gr,self.TS)
             self.M1.plot_tendencies('control', self.Gr, self.TS)
             self.TS.update()
-            self.M1.update_bcs(self.Gr)
+            # self.M1.update_bcs(self.Gr)
             self.M1.plot('end', self.Gr, self.TS)
-            self.M2.plot('end', self.Gr, self.TS)
+            # self.M2.plot('end', self.Gr, self.TS)
 
         return
 
