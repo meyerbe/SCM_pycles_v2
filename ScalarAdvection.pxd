@@ -2,6 +2,7 @@ from Grid cimport Grid
 from PrognosticVariables cimport MeanVariables
 from PrognosticVariables cimport SecondOrderMomenta
 from ReferenceState cimport ReferenceState
+from TimeStepping cimport TimeStepping
 # # cimport DiagnosticVariables
 # cimport TimeStepping
 # from NetCDFIO cimport NetCDFIO_Stats

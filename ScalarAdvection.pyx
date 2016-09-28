@@ -18,6 +18,8 @@ from ReferenceState cimport ReferenceState
 import numpy as np
 cimport numpy as np
 import sys
+import pylab as plt
+
 
 import cython
 
@@ -66,47 +68,38 @@ cdef class ScalarAdvection:
         # (1b) turbulent advection: 1/rho0*\partialz(<rho0 w'phi'>)
 
         cdef:
-            Py_ssize_t scalar_index
+            Py_ssize_t index
             Py_ssize_t scalar_count=0
             Py_ssize_t k
+            Py_ssize_t gw = Gr.gw
             Py_ssize_t w_index = M1.name_index['w']
             # double dzi = Gr.dzi
             double dzi2 = 0.5*Gr.dzi
 
             double [:,:] M1_values = M1.values
+            double [:,:] tendency_M1 = M1.tendencies
             double [:,:] flux = self.flux
             double [:,:] tendency = self.tendencies
-            double [:,:] tendency_M1 = M1.tendencies
 
             double [:] rho0 = Ref.rho0
-            double [:] rho0_half = Ref.rho0_half
             double [:] alpha0 = Ref.alpha0
-            double [:] alpha0_half = Ref.alpha0_half
 
-            # Py_ssize_t s_shift = PV.get_varshift(Gr,'s')
-            # Py_ssize_t t_shift = DV.get_varshift(Gr,'temperature')
-            # Py_ssize_t ql_shift, qv_shift, qt_shift
-
-        for scalar_index in xrange(M1.nv): #Loop over the prognostic variables
-            if M1.var_type[scalar_index] == 1: # Only compute advection if variable i is a scalar
+        for index in xrange(M1.nv): #Loop over the prognostic variables
+            if M1.var_type[index] == 1: # Only compute advection if variable i is a scalar
                 flux_index = scalar_count    # The flux has a different shift since it is only for the scalars
                 # print('scalar count', scalar_count)
                 # print('scalar shift', scalar_shift)
                 # print('flux_shift', flux_shift)
 
-                for k in xrange(1,Gr.nzg-1):
-                    # scalar_int = 0.5*(M1_values[scalar_index,k]+M1_values[scalar_index,k+1])
-                    # flux[flux_index,k] = rho0[k]*M1_values[w_index,k]*scalar_int
-                    # tendency[flux_index,k] = - alpha0_half[k]*(flux[flux_index,k]-flux[flux_index,k-1])*dzi
-                    flux[flux_index,k] = rho0[k]*M1_values[w_index,k]*M1_values[scalar_index,k]
+                for k in xrange(Gr.nzg):
+                    flux[flux_index,k] = rho0[k]*M1_values[w_index,k]*M1_values[index,k]
+                for k in xrange(gw,Gr.nzg-gw):
                     tendency[flux_index,k] = - alpha0[k]*(flux[flux_index,k+1]-flux[flux_index,k-1])*dzi2
+                for k in xrange(Gr.nzg):
+                    tendency_M1[index,k] += tendency[flux_index,k]
+
                 scalar_count += 1
 
-
-        # print(tendency.shape, tendency.size, scalar_shift, k)
-        # compute_qt_sedimentation_s_source(&Gr.dims, &Rs.p0_half[0],  &Rs.rho0_half[0], &self.flux[flux_shift],
-        #                         &PV.values[qt_shift], &DV.values[qv_shift], &DV.values[t_shift],
-        #                         &PV.tendencies[s_shift], self.Lambda_fp,self.L_fp, Gr.dims.dx[d],d)
         return
 
 
@@ -117,4 +110,59 @@ cdef class ScalarAdvection:
     # cpdef stats_io(self, Grid.Grid Gr, PrognosticVariables.PrognosticVariables PV, NetCDFIO_Stats NS):
     cpdef stats_io(self):
 
+        return
+
+
+    def plot(self, Grid Gr, TimeStepping TS, MeanVariables M1):
+        if np.isnan(self.tendencies).any():
+            print('!!!!! NAN in SA Tendencies M1')
+            if np.isnan(self.tendencies[0,:]).any():
+                print('!!!!! NAN in SA Tendencies M1, 0')
+            if np.isnan(self.tendencies[1,:]).any():
+                print('!!!!! NAN in SA Tendencies M1, 1')
+            if np.isnan(self.tendencies[2,:]).any():
+                print('!!!!! NAN in SA Tendencies M1, 2')
+            if np.isnan(self.tendencies[3,:]).any():
+                print('!!!!! NAN in SA Tendencies M1, 3')
+        if np.isnan(self.flux).any():
+            print('!!!!! NAN in SA Fluxes M1')
+
+        print('SA', self.tendencies.shape, self.flux.shape)
+
+        plt.figure(1,figsize=(15,7))
+        # plt.plot(values[s_varshift+Gr.gw:s_varshift+Gr.nzg-Gr.gw], Gr.z)
+        plt.subplot(1,5,1)
+        plt.plot(M1.tendencies[3,:], Gr.z, 'x-', label='tend th')
+        plt.title('M1.Tendencies')
+        plt.legend(loc=3)
+        plt.subplot(1,5,2)
+        plt.plot(M1.tendencies[0,:], Gr.z, 'x-', label='tend u')
+        plt.plot(M1.tendencies[1,:], Gr.z, 'x-', label='tend v')
+        plt.plot(M1.tendencies[2,:], Gr.z, 'x-', label='tend w')
+        plt.title('M1.Tendencies')
+        plt.legend(loc=3)
+        # plt.subplot(1,4,2)
+        # plt.plot(self.tendencies[0,:], Gr.z, 'x-', label='tend u')
+        # plt.plot(self.tendencies[1,:], Gr.z, 'x-', label='tend v')
+        # plt.plot(self.tendencies[2,:], Gr.z, 'x-', label='tend w')
+        # plt.title('self.Tendencies')
+        # plt.legend(loc=3)
+        plt.subplot(1,5,3)
+        plt.plot(self.flux[0,:], Gr.z, 'x-', label='flux th')
+        plt.title('self.Fluxes')
+        plt.legend(loc=4)
+
+        plt.subplot(1,5,4)
+        plt.plot(M1.values[3,:], Gr.z, 'x-', label=' th')
+        plt.title('M1.values')
+        plt.legend(loc=4)
+        plt.subplot(1,5,5)
+        plt.plot(M1.values[0,:], Gr.z, 'x-', label=' u')
+        plt.plot(M1.values[1,:], Gr.z, 'x-', label=' v')
+        plt.plot(M1.values[2,:], Gr.z, 'x-', label=' w')
+        plt.title('M1.values')
+        plt.legend(loc=4)
+        # plt.show()
+        plt.savefig('./figs/SA_' + np.str(np.int(TS.t)) + '.png')
+        plt.close()
         return
