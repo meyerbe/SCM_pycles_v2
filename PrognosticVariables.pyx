@@ -217,7 +217,7 @@ cdef class MeanVariables:
         plt.plot(values[v_varshift,:], Gr.z)
         plt.title('v')
         plt.subplot(1,4,4)
-        plt.plot(values[u_varshift,:], Gr.z)
+        plt.plot(values[u_varshift,:], Gr.z, '-x')
         plt.title('u')
         # plt.show()
         plt.savefig('./figs/M1_profiles_' + message + '_' + np.str(np.int(TS.t)) + '.png')
@@ -272,56 +272,50 @@ cdef class MeanVariables:
     # @cython.boundscheck(False)
     # @cython.wraparound(False)
     cpdef update_bcs(self, Grid Gr):
+        print('Updating M1 BCS')
         cdef:
             Py_ssize_t nv = self.nv
             Py_ssize_t gw = Gr.gw
-            Py_ssize_t k, kmin
+            Py_ssize_t nzg = Gr.nzg
+            Py_ssize_t k, kstart
     #     cdef int ndof = self.ndof
     #     cdef int n = 0
-    #     _rank = comm.cart_comm.Get_rank()
     #     cdef int  _coords = comm.cart_comm.Get_coords(_rank)[2]
     #     cdef int  _mpi_kdim = comm.nprocs[2]
-    #     cdef double [:,:,:,:] values = self.values
-    #     cdef double [:] bcfactor = self.bcfactor[:]
-    #
+            double [:,:] values = self.values
+            double [:] bcfactor = self.bc_type
+
     #     cdef int kstart
     #     cdef int nzl = grid.nzl
-    #
+
+    # (1) set bottom boundary condition
     #     with nogil:
-        # set bottom boundary condition
         if 1 == 1:
-            kmin = gw
+            kstart = gw
             for k in xrange(gw):
                 for n in xrange(nv):
-                    pass
+                    if (bcfactor[n] == 1):
+                        values[n,kstart-1-k] = values[n,kstart+k]*bcfactor[n]
+                    else:
+                        if k==0:
+                            values[n,kstart-1-k] = 0.0
+                        else:
+                            values[n,kstart-1-k] = values[n,kstart+k]*bcfactor[n]
 
-
-    #                     for k in xrange(_gw):
-    #                         for n in xrange(ndof):
-    #                             if(bcfactor[n] == 1):
-    #                                 values[i,j,kstart-1-k,n] = values[i,j,kstart+k,n] * bcfactor[n]
-    #                             else:
-    #                                 if(k == 0):
-    #                                     values[i,j,kstart-1-k,n] = 0.0
-    #                                 else:
-    #                                     values[i,j,kstart-1-k,n] = values[i,j,kstart+k-1,n] * bcfactor[n]
-    #
-    #     if _mpi_kdim ==  _coords + 1:
+    # (2) set top boundary condition
     #         with nogil:
-    #             #This processor is at the top of the domain so need to set top boundary condition
-    #             kstart = nzl - _gw
-    #             for i in xrange(nxl):
-    #                 for j in xrange(nyl):
-    #                     for k in xrange(_gw):
-    #                         for n in xrange(ndof):
-    #                             if(bcfactor[n] == 1):
-    #                                 values[i,j,kstart+k,n] = values[i,j,kstart-k-1,n] * bcfactor[n]
-    #                             else:
-    #                                 if(k == 0):
-    #                                     values[i,j,kstart+k,n] = 0.0
-    #                                 else:
-    #                                     values[i,j,kstart+k,n] = values[i,j,kstart-k,n] * bcfactor[n]
-    #
+        if 1 == 1:
+            kstart = nzg - gw
+            for k in xrange(gw):
+                for n in xrange(nv):
+                    if(bcfactor[n] == 1):
+                        values[n,kstart+k] = values[n,kstart-k-1] * bcfactor[n]
+                    else:
+                        if(k == 0):
+                            values[n,kstart+k] = 0.0
+                        else:
+                            values[n,kstart+k] = values[n,kstart-k] * bcfactor[n]
+
         return
 
 
@@ -344,7 +338,7 @@ cdef class SecondOrderMomenta:
         self.index_name = []        # list of correlation names
         self.var_index = {}         # key = name of variables (u,v,w,th,qt,p)
         self.units = {}
-        self.nv = 0
+        self.nv = 0                 # M2.nv = M1.nv+1 (additional variable: pressure); M2.nv=len(M2.var_index)
         self.nv_scalars = 0
         self.nv_velocities = 0
         self.var_type = np.array([],dtype=np.int,order='c')
@@ -414,7 +408,7 @@ cdef class SecondOrderMomenta:
 
 
 
-        # print('!! nv !!', self.nv, M1.nv)
+        print('M2: nv=', self.nv, 'M1: nv=', M1.nv)
         print(self.var_index)
         print(M1.name_index)
         print('name_index', self.name_index)
@@ -470,8 +464,8 @@ cdef class SecondOrderMomenta:
         plt.plot(values[w_varshift,w_varshift,:], Gr.z)
         plt.title('ww')
         plt.subplot(1,4,3)
-        plt.plot(values[w_varshift,u_varshift,:], Gr.z)
-        plt.title('wu')
+        plt.plot(values[u_varshift,w_varshift,:], Gr.z)
+        plt.title('uw')
         plt.subplot(1,4,4)
         plt.plot(values[w_varshift,th_varshift,:], Gr.z)
         plt.title('wth')
