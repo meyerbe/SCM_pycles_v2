@@ -137,7 +137,10 @@ _ext = Extension('TurbulenceScheme', ['TurbulenceScheme.pyx'], include_dirs=incl
                  runtime_library_dirs=library_dirs)
 extensions.append(_ext)
 
-
+_ext = Extension('Damping', ['Damping.pyx'], include_dirs=include_path,
+                 extra_compile_args=extra_compile_args, libraries=libraries, library_dirs=library_dirs,
+                 runtime_library_dirs=library_dirs)
+extensions.append(_ext)
 
 
 
@@ -219,10 +222,7 @@ extensions.append(_ext)
 #                  runtime_library_dirs=library_dirs)
 # extensions.append(_ext)
 #
-# _ext = Extension('Damping', ['Damping.pyx'], include_dirs=include_path,
-#                  extra_compile_args=extra_compile_args, libraries=libraries, library_dirs=library_dirs,
-#                  runtime_library_dirs=library_dirs)
-# extensions.append(_ext)
+
 #
 # _ext = Extension('Forcing', ['Forcing.pyx'], include_dirs=include_path,
 #                  extra_compile_args=extra_compile_args, libraries=libraries, library_dirs=library_dirs,

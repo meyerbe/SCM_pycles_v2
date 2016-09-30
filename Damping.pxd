@@ -20,11 +20,11 @@ cdef class Dummy:
     cpdef update(self, Grid Gr, ReferenceState RS, MeanVariables M1, SecondOrderMomenta M2)
 
 cdef class Rayleigh:
-#     cdef:
-#         double z_d  # Depth of damping layer
-#         double gamma_r  # Inverse damping timescale
-#         double[:] gamma_zhalf
-#         double[:] gamma_z
+    cdef:
+        double z_d  # Depth of damping layer
+        double gamma_r  # Inverse damping timescale
+        double[:] gamma_zhalf
+        double[:] gamma_z
     cpdef initialize(self, Grid Gr, ReferenceState RS)
     # cpdef update(self, Grid Gr, ReferenceState RS, PrognosticVariables.PrognosticVariables PV,DiagnosticVariables.DiagnosticVariables DV)
     cpdef update(self, Grid Gr, ReferenceState RS, MeanVariables M1, SecondOrderMomenta M2)

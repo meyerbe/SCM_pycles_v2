@@ -84,7 +84,7 @@ class UniformViscosity():
             print('!!!!! NAN in diffusivity M2')
 
 
-        plt.figure(1,figsize=(15,7))
+        plt.figure(1,figsize=(12,6))
         # plt.plot(values[s_varshift+Gr.gw:s_varshift+Gr.nzg-Gr.gw], Gr.z)
         plt.subplot(1,4,1)
         plt.plot(self.viscosity_M1[0,:], Gr.z)

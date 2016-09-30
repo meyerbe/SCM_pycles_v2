@@ -13,6 +13,7 @@ from scipy.interpolate import PchipInterpolator,pchip_interpolate
 from NetCDFIO cimport NetCDFIO_Stats
 from Grid cimport Grid
 from ReferenceState cimport ReferenceState
+from TimeStepping cimport TimeStepping
 from PrognosticVariables cimport MeanVariables
 from PrognosticVariables cimport SecondOrderMomenta
 # cimport DiagnosticVariables
@@ -66,7 +67,7 @@ cdef class InitializationBase:
         return
     cpdef initialize_reference(self, Grid Gr, ReferenceState Ref, NetCDFIO_Stats NS):
         return
-    cpdef initialize_profiles(self, Grid Gr, ReferenceState Ref, MeanVariables M1, SecondOrderMomenta M2, NetCDFIO_Stats NS):
+    cpdef initialize_profiles(self, Grid Gr, ReferenceState Ref, TimeStepping TS, MeanVariables M1, SecondOrderMomenta M2, NetCDFIO_Stats NS):
         return
     cpdef initialize_surface(self, Grid Gr, ReferenceState Ref):
     # cpdef initialize_surface(self, Grid Gr, ReferenceState Ref, NetCDFIO_Stats NS):
@@ -144,8 +145,7 @@ cdef class InitSoares(InitializationBase):
         return
 
 
-    cpdef initialize_profiles(self, Grid Gr, ReferenceState Ref, MeanVariables M1, SecondOrderMomenta M2, NetCDFIO_Stats NS):
-
+    cpdef initialize_profiles(self, Grid Gr, ReferenceState Ref, TimeStepping TS, MeanVariables M1, SecondOrderMomenta M2, NetCDFIO_Stats NS):
         # (1) Generate initial perturbations
         self.pert_min = 0.0
         self.pert_max = 200.0
@@ -160,11 +160,10 @@ cdef class InitSoares(InitializationBase):
             Py_ssize_t v_varshift = M1.name_index['v']
             Py_ssize_t w_varshift = M1.name_index['w']
             Py_ssize_t th_varshift = M1.name_index['th']
-            Py_ssize_t k
+            Py_ssize_t k, var1, var2, qt_varshift
             # Py_ssize_t e_varshift
             double [:] theta = np.empty((Gr.nzg),dtype=np.double,order='c')
             double temp
-            # double [:] p0 = Ref.p0_half
 
         # (i) Theta (potential temperature) profile (Soares) incl. perturbations
         # fluctuation height = 200m; fluctuation amplitude = 0.1 K
@@ -176,7 +175,7 @@ cdef class InitSoares(InitializationBase):
                theta[k] = 297.3 + 2.0/1000.0 * (Gr.z[k])
 
 
-        # # (ii) Velocities & Entropy
+        # # (ii) Velocities & Entropy & Moisture
         cdef:
             double qt = 0.0
             double ql = 0.0
@@ -194,12 +193,17 @@ cdef class InitSoares(InitializationBase):
             M1.values[v_varshift,k] = 0.0
             M1.values[w_varshift,k] = 0.0
 
+        if 'qt' in M1.name_index:
+            qt_varshift = M1.name_index['qt']
+            M1.values[qt_varshift] = 0.0
+
 
         # (2) Initialize Second Order Momenta
+        print('Initialize 2nd order momenta')
         for var1 in xrange(M2.nv):
             for var2 in xrange(var1,M2.nv):
                 for k in xrange(Gr.nzg):
-                    M2.values[var1,var2,k] = 0.0
+                    M2.values[var1,var2,k] = 0.1
 
 
          # # if 'e' in PV.name_index:
@@ -207,9 +211,7 @@ cdef class InitSoares(InitializationBase):
         # #     for k in xrange(Gr.nzg):
         # #       PV.values[e_varshift + k] = 0.0
 
-        if 'qt' in M1.name_index:
-            qt_varshift = M1.name_index['qt']
-            M1.values[qt_varshift] = 0.0
+
 
         return
 
@@ -234,7 +236,7 @@ cdef class InitBomex(InitializationBase):
         return
 
 
-    cpdef initialize_profiles(self, Grid Gr, ReferenceState Ref, MeanVariables M1, SecondOrderMomenta M2, NetCDFIO_Stats NS):
+    cpdef initialize_profiles(self, Grid Gr, ReferenceState Ref, TimeStepping TS, MeanVariables M1, SecondOrderMomenta M2, NetCDFIO_Stats NS):
 
 
         return
@@ -259,7 +261,7 @@ cdef class InitTest(InitializationBase):
         return
 
 
-    cpdef initialize_profiles(self, Grid Gr, ReferenceState Ref, MeanVariables M1, SecondOrderMomenta M2, NetCDFIO_Stats NS):
+    cpdef initialize_profiles(self, Grid Gr, ReferenceState Ref, TimeStepping TS, MeanVariables M1, SecondOrderMomenta M2, NetCDFIO_Stats NS):
 
         # (1) Generate initial perturbations
         # self.pert_min = 0.0
@@ -287,7 +289,8 @@ cdef class InitTest(InitializationBase):
             M1.values[w_varshift,k] = 0.0
 
         for k in xrange(Gr.nzg):
-            M1.values[u_varshift,k] = 0.01 * (Gr.z[k])
+            M1.values[u_varshift,k] = 0.002 * (Gr.z[k])
+            # M1.values[w_varshift,k] = 0.0025 * (Gr.z[k])
             M1.values[th_varshift,k] = 293.0 + 0.1 * (Gr.z[k])
             if Gr.z[k] <= 200.0:
                 # print('0.1:', Gr.nzg, k, Gr.z[k])
@@ -313,9 +316,11 @@ cdef class InitTest(InitializationBase):
 
 
         # (2) Initialize Second Order Momenta
+        print('Initialize 2nd order momenta')
         for var1 in xrange(M2.nv):
             for var2 in xrange(var1,M2.nv):
                 for k in xrange(Gr.nzg):
-                    M2.values[var1,var2,k] = 0.0
+                    M2.values[var1,var2,k] = 0.1
+        M2.plot('initialization',Gr, TS)
 
         return

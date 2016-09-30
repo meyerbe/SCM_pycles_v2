@@ -19,12 +19,24 @@ include 'parameters.pxi'
 
 cdef class Damping:
     def __init__(self, namelist):
-        if(namelist['damping']['scheme'] == 'None'):
+        try:
+            name = namelist['damping']['scheme']
+        except:
+            print('Damping Scheme not defined, using Dummy')
+            name = 'Dummy'
+
+        if(name == 'None'):
             self.scheme = Dummy(namelist)
             print('No Damping!')
-        elif(namelist['damping']['scheme'] == 'Rayleigh'):
+        elif(name == 'Rayleigh'):
             self.scheme = Rayleigh(namelist)
             print('Using Rayleigh Damping')
+        # if(namelist['damping']['scheme'] == 'None'):
+        #     self.scheme = Dummy(namelist)
+        #     print('No Damping!')
+        # elif(namelist['damping']['scheme'] == 'Rayleigh'):
+        #     self.scheme = Rayleigh(namelist)
+        #     print('Using Rayleigh Damping')
         return
 
     cpdef initialize(self, Grid Gr, ReferenceState RS):
@@ -57,7 +69,6 @@ cdef class Rayleigh:
         except:
             print('Rayleigh damping z_d not given in namelist')
             print('Killing simulation now!')
-            #Pa.kill()
             sys.exit()
 
         try:
@@ -65,68 +76,51 @@ cdef class Rayleigh:
         except:
             print('Rayleigh damping gamm_r not given in namelist')
             print('Killing simulation now!')
-            #Pa.kill()
             sys.exit()
 
         return
 
     cpdef initialize(self, Grid Gr, ReferenceState RS):
-#         cdef:
-#             int k
-#             double z_top
-#
-#         self.gamma_zhalf = np.zeros(
-#             (Gr.dims.nlg[2]),
-#             dtype=np.double,
-#             order='c')
-#         self.gamma_z = np.zeros((Gr.dims.nlg[2]), dtype=np.double, order='c')
-#         z_top = Gr.dims.dx[2] * Gr.dims.n[2]
-#         with nogil:
-#             for k in range(Gr.dims.nlg[2]):
-#                 if Gr.zl_half[k] >= z_top - self.z_d:
-#                     self.gamma_zhalf[
-#                         k] = self.gamma_r * sin((pi / 2.0) * (1.0 - (z_top - Gr.zl_half[k]) / self.z_d))**2.0
-#                 if Gr.zl[k] >= z_top - self.z_d:
-#                     self.gamma_z[
-#                         k] = self.gamma_r * sin((pi / 2.0) * (1.0 - (z_top - Gr.zl[k]) / self.z_d))**2.0
+        cdef:
+            int k
+            double z_top
+
+        self.gamma_zhalf = np.zeros((Gr.nzg),dtype=np.double,order='c')
+        self.gamma_z = np.zeros((Gr.nzg), dtype=np.double, order='c')
+        z_top = Gr.dz * Gr.nz
+        # with nogil:
+        if 1 == 1:
+            for k in range(Gr.nzg):
+                if Gr.zl_half[k] >= z_top - self.z_d:
+                    self.gamma_zhalf[
+                        k] = self.gamma_r * sin((pi / 2.0) * (1.0 - (z_top - Gr.zl_half[k]) / self.z_d))**2.0
+                if Gr.zl[k] >= z_top - self.z_d:
+                    self.gamma_z[
+                        k] = self.gamma_r * sin((pi / 2.0) * (1.0 - (z_top - Gr.zl[k]) / self.z_d))**2.0
         return
 
     # cpdef update(self, Grid Gr, ReferenceState.ReferenceState RS, PrognosticVariables.PrognosticVariables PV,DiagnosticVariables.DiagnosticVariables DV):
     cpdef update(self, Grid Gr, ReferenceState RS, MeanVariables M1, SecondOrderMomenta M2):
-#         cdef:
-#             Py_ssize_t var_shift
-#             Py_ssize_t imin = Gr.dims.gw
-#             Py_ssize_t jmin = Gr.dims.gw
-#             Py_ssize_t kmin = Gr.dims.gw
-#             Py_ssize_t imax = Gr.dims.nlg[0] - Gr.dims.gw
-#             Py_ssize_t jmax = Gr.dims.nlg[1] - Gr.dims.gw
-#             Py_ssize_t kmax = Gr.dims.nlg[2] - Gr.dims.gw
-#             Py_ssize_t istride = Gr.dims.nlg[1] * Gr.dims.nlg[2]
-#             Py_ssize_t jstride = Gr.dims.nlg[2]
-#             Py_ssize_t i, j, k, ishift, jshift, ijk
-#             double[:] domain_mean
-#
-#         for var_name in PV.name_index:
-#             var_shift = PV.get_varshift(Gr, var_name)
-#             domain_mean = Pa.HorizontalMean(Gr, & PV.values[var_shift])
-#             if var_name == 'w':
-#                 with nogil:
-#                     for i in xrange(imin, imax):
-#                         ishift = i * istride
-#                         for j in xrange(jmin, jmax):
-#                             jshift = j * jstride
-#                             for k in xrange(kmin, kmax):
-#                                 ijk = ishift + jshift + k
-#                                 PV.tendencies[var_shift + ijk] -= (PV.values[var_shift + ijk] - domain_mean[k]) * self.gamma_zhalf[k]
-#             else:
-#                 with nogil:
-#                     for i in xrange(imin, imax):
-#                         ishift = i * istride
-#                         for j in xrange(jmin, jmax):
-#                             jshift = j * jstride
-#                             for k in xrange(kmin, kmax):
-#                                 ijk = ishift + jshift + k
-#                                 PV.tendencies[var_shift + ijk] -= (PV.values[var_shift + ijk] - domain_mean[k]) * self.gamma_z[k]
+        cdef:
+            Py_ssize_t var_shift
+            Py_ssize_t kmin = Gr.gw
+            Py_ssize_t kmax = Gr.nzg - Gr.gw
+            Py_ssize_t k
+            double[:] domain_mean
+
+        for var_name in M1.name_index:
+            var_shift = M1.get_varshift(Gr, var_name)
+            # !!!!!!!!!!!!!!!!!!!!!
+            print('!!!! PROBLEM in Rayleigh Damping domain mean !!!!!!')
+            # domain_mean = Pa.HorizontalMean(Gr, & M1.values[var_shift])
+            if var_name == 'w':
+                with nogil:
+                    for k in xrange(kmin, kmax):
+                        M1.tendencies[var_shift,k] -= (M1.values[var_shift,k] - domain_mean[k]) * self.gamma_zhalf[k]
+            else:
+                with nogil:
+                    for k in xrange(kmin, kmax):
+                        M1.tendencies[var_shift,k] -= (M1.values[var_shift,k] - domain_mean[k]) * self.gamma_z[k]
         return
 
 

@@ -154,7 +154,7 @@ cdef class Diffusion:
         if np.isnan(self.flux_M1).any():
             print('!!!!! NAN in Diff Fluxes M1')
 
-        plt.figure(1,figsize=(15,7))
+        plt.figure(1,figsize=(12,6))
         # plt.plot(values[s_varshift+Gr.gw:s_varshift+Gr.nzg-Gr.gw], Gr.z)
         plt.subplot(1,4,1)
         plt.plot(self.tendencies_M1[0,:], Gr.z, 'x-', label='tend u')

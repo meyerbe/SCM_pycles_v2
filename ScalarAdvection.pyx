@@ -129,7 +129,7 @@ cdef class ScalarAdvection:
 
         print('SA', self.tendencies.shape, self.flux.shape)
 
-        plt.figure(1,figsize=(15,7))
+        plt.figure(1,figsize=(12,6))
         # plt.plot(values[s_varshift+Gr.gw:s_varshift+Gr.nzg-Gr.gw], Gr.z)
         plt.subplot(1,5,1)
         plt.plot(M1.tendencies[3,:], Gr.z, 'x-', label='tend th')

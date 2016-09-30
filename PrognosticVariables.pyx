@@ -205,7 +205,7 @@ cdef class MeanVariables:
         if np.isnan(values).any():
             print('!!!!!', message, ' NAN in M1')
 
-        plt.figure(1,figsize=(15,7))
+        plt.figure(1,figsize=(12,6))
         # plt.plot(values[s_varshift+Gr.gw:s_varshift+Gr.nzg-Gr.gw], Gr.z)
         plt.subplot(1,4,1)
         plt.plot(values[th_varshift,:], Gr.z)
@@ -234,7 +234,7 @@ cdef class MeanVariables:
         if np.isnan(tendencies).any():
             print('!!!!!', message, ' NAN in M1 tendencies')
 
-        plt.figure(2,figsize=(15,7))
+        plt.figure(2,figsize=(12,6))
         # plt.plot(values[s_varshift+Gr.gw:s_varshift+Gr.nzg-Gr.gw], Gr.z)
         plt.subplot(1,4,1)
         plt.plot(tendencies[th_varshift,:], Gr.z)
@@ -455,7 +455,7 @@ cdef class SecondOrderMomenta:
         if np.isnan(values).any():
             print('!!!!! NAN in M2')
 
-        plt.figure(1,figsize=(15,7))
+        plt.figure(1,figsize=(12,6))
         # plt.plot(values[s_varshift+Gr.gw:s_varshift+Gr.nzg-Gr.gw], Gr.z)
         plt.subplot(1,4,1)
         plt.plot(values[th_varshift,th_varshift,:], Gr.z)
@@ -487,7 +487,7 @@ cdef class SecondOrderMomenta:
 
         if np.isnan(tendencies).any():
             print('!!!!! NAN in M2 tendencies')
-        plt.figure(2,figsize=(15,7))
+        plt.figure(2,figsize=(12,6))
         # plt.plot(values[s_varshift+Gr.gw:s_varshift+Gr.nzg-Gr.gw], Gr.z)
         plt.subplot(1,4,1)
         plt.plot(tendencies[th_varshift,th_varshift,:], Gr.z)

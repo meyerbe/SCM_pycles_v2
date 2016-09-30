@@ -6,6 +6,7 @@ from scipy.interpolate import PchipInterpolator,pchip_interpolate
 from NetCDFIO cimport NetCDFIO_Stats
 from Grid cimport Grid
 from ReferenceState cimport ReferenceState
+from TimeStepping cimport TimeStepping
 from PrognosticVariables cimport MeanVariables
 from PrognosticVariables cimport SecondOrderMomenta
 
@@ -20,7 +21,7 @@ cdef class InitializationBase:
         double pert_min
         double pert_max
     cpdef initialize_reference(self, Grid Gr, ReferenceState Ref, NetCDFIO_Stats NS)
-    cpdef initialize_profiles(self, Grid Gr, ReferenceState Ref, MeanVariables M1, SecondOrderMomenta M2, NetCDFIO_Stats NS)
+    cpdef initialize_profiles(self, Grid Gr, ReferenceState Ref, TimeStepping TS, MeanVariables M1, SecondOrderMomenta M2, NetCDFIO_Stats NS)
     #cpdef initialize_surface(self, Grid Gr, ReferenceState Ref, NetCDFIO_Stats NS)
     cpdef initialize_surface(self, Grid Gr, ReferenceState Ref)
     cpdef initialize_io(self, NetCDFIO_Stats Stats)
@@ -30,7 +31,7 @@ cdef class InitializationBase:
 
 cdef class InitSoares(InitializationBase):
     cpdef initialize_reference(self, Grid Gr, ReferenceState Ref, NetCDFIO_Stats NS)
-    cpdef initialize_profiles(self, Grid Gr, ReferenceState Ref, MeanVariables M1, SecondOrderMomenta M2, NetCDFIO_Stats NS)
+    cpdef initialize_profiles(self, Grid Gr, ReferenceState Ref, TimeStepping TS, MeanVariables M1, SecondOrderMomenta M2, NetCDFIO_Stats NS)
     # cpdef initialize_surface(self, Grid Gr, ReferenceState Ref )
     # cpdef initialize_io(self, NetCDFIO_Stats Stats)
     # cpdef update_surface(self, MeanVariables MV)
@@ -38,7 +39,7 @@ cdef class InitSoares(InitializationBase):
 
 cdef class InitTest(InitializationBase):
     cpdef initialize_reference(self, Grid Gr, ReferenceState Ref, NetCDFIO_Stats NS)
-    cpdef initialize_profiles(self, Grid Gr, ReferenceState Ref, MeanVariables M1, SecondOrderMomenta M2, NetCDFIO_Stats NS)
+    cpdef initialize_profiles(self, Grid Gr, ReferenceState Ref, TimeStepping TS, MeanVariables M1, SecondOrderMomenta M2, NetCDFIO_Stats NS)
     # cpdef initialize_surface(self, Grid Gr, ReferenceState Ref )
     # cpdef initialize_io(self, NetCDFIO_Stats Stats)
     # cpdef update_surface(self, MeanVariables MV)
