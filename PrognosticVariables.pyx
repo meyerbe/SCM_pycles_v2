@@ -90,8 +90,6 @@ cdef class PrognosticVariables:
             #Add min ts
             NS.add_ts(var_name+'_min',Gr)
 
-        # if 'qt' in self.name_index.keys() and 's' in self.name_index.keys():
-        #     NS.add_profile('qt_s_product_mean', Gr)
         return
 
     cpdef update(self, Grid Gr, TimeStepping TS):
@@ -171,7 +169,7 @@ cdef class MeanVariables:
         print('Setting up statistical output files for PV.M1')
         for var_name in self.name_index.keys():
             #Add mean profile
-            NS.add_profile(var_name+'_mean', Gr)
+            NS.add_profile(var_name, Gr)
         return
 
 
@@ -427,6 +425,7 @@ cdef class SecondOrderMomenta:
         # Add prognostic variables to Statistics IO
         print('Setting up statistical output files PV.M2')
         for var_name in self.name_index.keys():
+            print('M2: adding stats profiles', var_name)
             # Add mean profile
             NS.add_profile(var_name, Gr)
         return

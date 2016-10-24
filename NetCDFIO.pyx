@@ -26,7 +26,6 @@ cdef class NetCDFIO_Stats:
     @cython.wraparound(True)
     cpdef initialize(self, dict namelist, Grid Gr):
         print('StatsIO.initialize', Gr.nz)
-    # cpdef initialize(self, dict namelist, Gr):
         self.last_output_time = 0.0
         self.uuid = str(namelist['meta']['uuid'])
         self.frequency = namelist['stats_io']['frequency']
@@ -63,9 +62,36 @@ cdef class NetCDFIO_Stats:
                 os.path.join( outpath, namelist['meta']['simname'] + '.in'))
         self.setup_stats_file(Gr)
         return
-#
 
 
+
+# from LES: PrognosticVariables.stats_io()
+    cpdef update(self, Grid Gr, TimeStepping TS, MeanVariables M1, SecondOrderMomenta M2):
+        cdef:
+            Py_ssize_t var_index, var_index2
+
+        self.open_files()
+        self.write_simulation_time(TS.t)
+
+        # (1) Output the Mean Variables M1
+        for var_name in M1.name_index.keys():
+            print('Stats IO: write profile M1' + var_name)
+            var_index = M1.name_index[var_name]
+            print(var_name, type(var_name), var_index, np.shape(M1.values[var_index,Gr.gw:Gr.gw+Gr.nz]), Gr.nz)
+            self.write_profile(var_name,M1.values[var_index,Gr.gw:Gr.gw+Gr.nz])
+
+        # (2) Output the 2nd Order Momenta M2
+        for var_name1 in M2.var_index.keys():
+            for var_name2 in M2.var_index.keys():
+                var_index1 = M2.var_index[var_name1]
+                var_index2 = M2.var_index[var_name2]
+                corr_name = var_name1 + var_name2
+                if corr_name in M2.name_index.keys():
+                # if var_index2 <= var_index1:
+                    print('Stats IO: write profile M2 ' + var_name1 + var_name2 + corr_name)
+                    self.write_profile(corr_name,M2.values[var_index1,var_index2,Gr.gw:Gr.gw+Gr.nz])
+
+        return
 
 
 
@@ -90,12 +116,12 @@ cdef class NetCDFIO_Stats:
         profile_grp.createDimension('z', Gr.nz)
         profile_grp.createDimension('t', None)
         z = profile_grp.createVariable('z', 'f8', ('z'))
-        # z[:] = np.array(Gr.z[Gr.gw:-Gr.gw])
+        z[:] = np.array(Gr.z[Gr.gw:-Gr.gw])
         z_half = profile_grp.createVariable('z_half', 'f8', ('z'))
-#         z_half[:] = np.array(Gr.z_half[Gr.dims.gw:-Gr.dims.gw])
+        z_half[:] = np.array(Gr.z_half[Gr.gw:-Gr.gw])
         profile_grp.createVariable('t', 'f8', ('t'))
-#         del z
-#         del z_half
+        del z
+        del z_half
 
         reference_grp = root_grp.createGroup('reference')
         reference_grp.createDimension('z', Gr.nz)
@@ -151,6 +177,7 @@ cdef class NetCDFIO_Stats:
         #root_grp = nc.Dataset(self.path_plus_file, 'r+', format='NETCDF4')
         #profile_grp = root_grp.groups['profiles']
         var = self.profiles_grp.variables[var_name]
+        # print('write profile', var.shape, data.shape)
         var[-1, :] = np.array(data)
         #root_grp.close()
         return

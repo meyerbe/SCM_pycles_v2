@@ -22,6 +22,7 @@ cimport Diffusion
 cimport NetCDFIO
 from Thermodynamics import ThermodynamicsFactory
 from TurbulenceScheme import TurbulenceFactory
+cimport Damping
 # # cimport TurbulenceScheme
 
 
@@ -31,6 +32,7 @@ class Simulation1d:
         self.Gr = Grid(namelist)
         self.TS = TimeStepping.TimeStepping()
         self.Ref = ReferenceState.ReferenceState(self.Gr)
+        self.Damp = Damping.Damping(namelist)
         self.Init = InitializationFactory(namelist)
 
         self.PV = PrognosticVariables.PrognosticVariables(self.Gr)
@@ -59,9 +61,6 @@ class Simulation1d:
 
         # Add new prognostic variables
         self.PV.add_variable('phi', 'm/s', "velocity")      # self.PV.add_variable('phi', 'm/s', "sym", "velocity")
-        # cdef:
-        #     PV_ = self.PV
-        # print(PV_.nv)     #not accessible (also not as # print(self.PV.nv))
         self.M1.add_variable('u', 'm/s', "sym", "velocity")
         self.M1.add_variable('v', 'm/s', "sym", "velocity")
         # self.M1.add_variable('w', 'm/s', "asym", "velocity")
@@ -72,11 +71,11 @@ class Simulation1d:
         self.PV.initialize(self.Gr, self.StatsIO)
         self.M1.initialize(self.Gr, self.StatsIO)
         self.M2.initialize(self.Gr, self.M1, self.StatsIO)
-        self.M2.plot_tendencies('1', self.Gr, self.TS)
+        # self.M2.plot_tendencies('1', self.Gr, self.TS)
 
         self.Init.initialize_reference(self.Gr, self.Ref, self.StatsIO)
-        self.Init.initialize_profiles(self.Gr, self.Ref, self.M1, self.M2, self.StatsIO)
-        self.M2.plot_tendencies('2', self.Gr, self.TS)
+        self.Init.initialize_profiles(self.Gr, self.Ref, self.TS, self.M1, self.M2, self.StatsIO)
+        # self.M2.plot_tendencies('2', self.Gr, self.TS)
 
         self.MA.initialize(self.Gr, self.M1)
         self.SA.initialize(self.Gr, self.M1)
@@ -99,6 +98,9 @@ class Simulation1d:
         # self.M2.plot_tendencies('7', self.Gr, self.TS)
         # self.M2.plot_tendencies('10', self.Gr, self.TS)
         # self.plot_M1('0','M1')
+
+
+        self.StatsIO.update(self.Gr, self.TS, self.M1, self.M2)
         return
 
 
@@ -112,65 +114,70 @@ class Simulation1d:
         while(self.TS.t < self.TS.t_max):
             print('time:', self.TS.t)
 
-            # self.plot('0','th','tendency','M1')
-            # self.plot_M1('1','M1')
-
             # (0) update auxiliary fields
             self.SGS.update(self.Gr)       # --> compute diffusivity / viscosity for M1 and M2 (being the same at the moment)
-            self.SGS.plot(self.Gr, self.TS)
+            ## self.SGS.plot(self.Gr, self.TS)
 
             # (1) update mean field (M1) tendencies
             self.Th.update()        # --> does nothing so far !!! do buoyancy update; add to w-tend (so far no coupling btw. thermodynamics and dynamics)
-            # self.M1.plot_tendencies('after_Th', self.Gr, self.TS)
-            self.MA.update_M1_2nd(self.Gr, self.Ref, self.M1)       # self.MA.update(self.Gr, self.Ref, self.M1)
-            # self.M1.plot_tendencies('after_MA', self.Gr, self.TS)
-            self.SA.update_M1_2nd(self.Gr, self.Ref, self.M1)       # self.SA.update(self.Gr, self.Ref, self.M1)
-            # self.M1.plot_tendencies('after_SA', self.Gr, self.TS)
-            self.MA.plot(self.Gr, self.TS, self.M1)
-            self.SA.plot(self.Gr, self.TS, self.M1)
+            ## self.M1.plot_tendencies('after_Th', self.Gr, self.TS)
+            # self.MA.update_M1_2nd(self.Gr, self.Ref, self.M1)       # self.MA.update(self.Gr, self.Ref, self.M1)
+            # self.SA.update_M1_2nd(self.Gr, self.Ref, self.M1)       # self.SA.update(self.Gr, self.Ref, self.M1)
+            ## self.MA.plot(self.Gr, self.TS, self.M1)
+            ## self.SA.plot(self.Gr, self.TS, self.M1)
+            ## self.M1.plot_tendencies('after_MA', self.Gr, self.TS)
+            ## self.M1.plot_tendencies('after_SA', self.Gr, self.TS)
 
-
+            self.M1.plot('1', self.Gr, self.TS)
             self.Diff.update_M1(self.Gr, self.Ref, self.M1, self.SGS)
+            self.M1.plot('2', self.Gr, self.TS)
             self.Diff.plot(self.Gr, self.TS)
             self.M1.plot_tendencies('after_Diffusion', self.Gr, self.TS)
-            # self.M1.plot('Diffusion', self.Gr, self.TS)
+            ## self.M1.plot('Diffusion', self.Gr, self.TS)
 
-            # self.Turb.update_M1(self.Gr, self.Ref, self.M1, self.M2)                         # --> add turbulent flux divergence to mean field tendencies: dz<w'phi'>
+            self.Turb.update_M1(self.Gr, self.Ref, self.TS, self.M1, self.M2)                         # --> add turbulent flux divergence to mean field tendencies: dz<w'phi'>
             # ??? surface fluxes ??? (--> in SGS or MD/SD scheme?)
             # ??? update boundary conditions ???
             # ??? pressure solver ???
-            # self.M2.plot_tendencies('11',self.Gr,self.TS)
+            self.M1.plot_tendencies('after_Turb', self.Gr, self.TS)
+            # self.M1.plot('Turb_M1', self.Gr, self.TS)
+            self.M1.plot('3', self.Gr, self.TS)
 
 
 
             # (2) update second order momenta (M2) tendencies
-            # self.Turb.update_M2(self.Gr, self.Ref, self.M1, self.M2)
-            # self.Turb.update_M2(self.Gr, self.Ref, self.TS, self.M1, self.M2)
+            self.Turb.update_M2(self.Gr, self.Ref, self.TS, self.M1, self.M2)
+            self.Turb.plot('Turb', self.Gr, self.TS, self.M1, self.M2)
             # # ??? update boundary conditions???
             # # ??? pressure correlations ???
             # # ??? surface fluxes ??? (--> in SGS or MD/SD scheme?)
-            # self.M2.plot_tendencies('12',self.Gr,self.TS)
+            self.M2.plot_tendencies('Turb',self.Gr,self.TS)
 
             self.M1.plot_tendencies('end', self.Gr, self.TS)
             # self.M2.plot_tendencies('end', self.Gr, self.TS)
 
             self.M1.update(self.Gr, self.TS)        # --> updating values by adding tendencies
             self.M2.update(self.Gr, self.TS)        # --> updating values by adding tendencies
-            # self.M2.plot_tendencies('14',self.Gr,self.TS)
 
-            # self.M2.plot_tendencies('control',self.Gr,self.TS)
-            self.M1.plot_tendencies('control', self.Gr, self.TS)
+            if np.mod(self.TS.t,60)==0:
+                self.M1.plot_tendencies('control', self.Gr, self.TS)
+                self.M2.plot_tendencies('control',self.Gr,self.TS)
             self.TS.update()
             # self.M1.update_bcs(self.Gr)
             self.M1.plot('end', self.Gr, self.TS)
-            # self.M2.plot('end', self.Gr, self.TS)
+            self.M2.plot('end', self.Gr, self.TS)
+
+            # (3) IO
+            if self.StatsIO.last_output_time + self.StatsIO.frequency == self.TS.t:
+                print('do StatsIO.update')
+                self.StatsIO.update(self.Gr, self.TS, self.M1, self.M2)
 
         return
 
 
 
     def plot_M1(self,message,pv_name):
-        plt.figure(1,figsize=(15,7))
+        plt.figure(1,figsize=(12,6))
         var_list = ['w','th']
         i = 1
         for var_name in var_list:
@@ -205,7 +212,7 @@ class Simulation1d:
                 var = self.M1.get_tendency_array(var_name,self.Gr)
                 var_name = var_name + '_tend'
 
-        plt.figure(1,figsize=(15,7))
+        plt.figure(1,figsize=(12,6))
         # plt.plot(var,self.Gr.z)
         plt.plot(var)
         plt.title(var_name + ', ' + message + ', time: ' + np.str(self.TS.t))

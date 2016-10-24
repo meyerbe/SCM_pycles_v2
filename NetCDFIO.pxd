@@ -1,8 +1,11 @@
-# cimport ParallelMPI
-# cimport TimeStepping
-cimport PrognosticVariables
-# cimport DiagnosticVariables
 from Grid cimport Grid
+# from ReferenceState cimport ReferenceState
+from TimeStepping cimport TimeStepping
+cimport PrognosticVariables
+from PrognosticVariables cimport MeanVariables
+from PrognosticVariables cimport SecondOrderMomenta
+# cimport DiagnosticVariables
+
 cdef class NetCDFIO_Stats:
     cdef:
         object root_grp
@@ -20,6 +23,7 @@ cdef class NetCDFIO_Stats:
         public bint do_output
 
     cpdef initialize(self, dict namelist, Grid Gr)
+    cpdef update(self, Grid Gr, TimeStepping TS, MeanVariables M1, SecondOrderMomenta M2)
     cpdef setup_stats_file(self, Grid Gr)
     cpdef add_profile(self, var_name, Grid Gr)
     cpdef add_reference_profile(self, var_name, Grid Gr)
