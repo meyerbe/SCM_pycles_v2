@@ -39,6 +39,9 @@ cdef class ReferenceState:
         self.th0 = np.zeros(Gr.nzg, dtype=np.double, order='c')
         self.th0_half = np.zeros(Gr.nzg, dtype=np.double, order='c')
 
+        self.dz_rho0 = np.zeros(Gr.nzg, dtype=np.double, order='c')
+        self.dz_rho0_half = np.zeros(Gr.nzg, dtype=np.double, order='c')
+
         return
 
     # def initialize(self, Grid Gr, Thermodynamics, NetCDFIO_Stats NS):
@@ -154,6 +157,10 @@ cdef class ReferenceState:
         self.rho0_half = 1.0 / np.array(self.alpha0_half)
         self.th0 = th
         self.th0_half = th_half
+
+        for k in xrange(1,Gr.nzg):
+            self.dz_rho0[k] = 0.5*Gr.dzi*(self.rho0[k+1]-self.rho0[k-1])
+            self.dz_rho0_half[k] = 0.5*Gr.dzi*(self.rho0_half[k+1]-self.rho0_half[k-1])
 
         # Write reference profiles to StatsIO
         NS.add_reference_profile('alpha0', Gr)

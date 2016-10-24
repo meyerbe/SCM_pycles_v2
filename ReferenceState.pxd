@@ -11,6 +11,9 @@ cdef class ReferenceState:
         public double [:] th0
         public double [:] th0_half
 
+        public double [:] dz_rho0
+        public double [:] dz_rho0_half
+
         double sg
         double thg
 
