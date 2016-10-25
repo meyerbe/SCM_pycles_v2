@@ -91,6 +91,7 @@ cdef class NetCDFIO_Stats:
                     print('Stats IO: write profile M2 ' + var_name1 + var_name2 + corr_name)
                     self.write_profile(corr_name,M2.values[var_index1,var_index2,Gr.gw:Gr.gw+Gr.nz])
 
+        self.last_output_time = TS.t
         return
 
 
