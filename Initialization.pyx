@@ -8,6 +8,7 @@
 import netCDF4 as nc
 import numpy as np
 cimport numpy as np
+import pylab as plt
 from scipy.interpolate import PchipInterpolator,pchip_interpolate
 
 from NetCDFIO cimport NetCDFIO_Stats
@@ -156,23 +157,24 @@ cdef class InitSoares(InitializationBase):
         # np.random.seed(Pa.rank)
         # print(M1.name_index.keys())
         cdef:
-            Py_ssize_t u_varshift = M1.name_index['u']
-            Py_ssize_t v_varshift = M1.name_index['v']
-            Py_ssize_t w_varshift = M1.name_index['w']
-            Py_ssize_t th_varshift = M1.name_index['th']
-            Py_ssize_t k, var1, var2, qt_varshift
+            Py_ssize_t u_index = M1.name_index['u']
+            Py_ssize_t v_index = M1.name_index['v']
+            Py_ssize_t w_index = M1.name_index['w']
+            Py_ssize_t th_index = M1.name_index['th']
+            Py_ssize_t k, var1, var2, qt_index
             # Py_ssize_t e_varshift
+            # Py_ssize_t th_index = M2.var_index['th']
             double [:] theta = np.empty((Gr.nzg),dtype=np.double,order='c')
             double temp
 
         # (i) Theta (potential temperature) profile (Soares) incl. perturbations
         # fluctuation height = 200m; fluctuation amplitude = 0.1 K
         for k in xrange(Gr.nzg):
-            if Gr.z[k] <= 1350.0:
-                theta[k] = 300.0
-            else:
-                # theta[k] = 300.0 + 2.0/1000.0 * (Gr.z[k] - 1350.0)
-               theta[k] = 297.3 + 2.0/1000.0 * (Gr.z[k])
+            # if Gr.z[k] <= 1350.0:
+            #     theta[k] = 300.0
+            # else:
+            #     theta[k] = 300.0 + 2.0/1000.0 * (Gr.z[k] - 1350.0)
+            theta[k] = 297.3 + 2.0/1000.0 * (Gr.z[k])
 
 
         # # (ii) Velocities & Entropy & Moisture
@@ -182,28 +184,34 @@ cdef class InitSoares(InitializationBase):
             double qi = 0.0
         print('Initializing Velocity and Entropy')
         for k in xrange(Gr.nzg):
-            if Gr.z[k] < 200.0:
-                theta_pert_ = (theta_pert[k] - 0.5)* 0.1
-            else:
-                theta_pert_ = 0.0
-            temp = (theta[k] + theta_pert_)*exner(Ref.p0[k])
-            # M1.values[th_varshift,k] = entropy_from_tp(Ref.p0_half[k],temp,qt,ql,qi)               # s = Thermodynamics.entropy(p_half[k],temperature_half[k],self.qtg,ql_half[k],qi_half[k])
-            M1.values[th_varshift,k] = temp
-            M1.values[u_varshift,k] = 0.0
-            M1.values[v_varshift,k] = 0.0
-            M1.values[w_varshift,k] = 0.0
+            # if Gr.z[k] < 200.0:
+            #     theta_pert_ = (theta_pert[k] - 0.5)* 0.1
+            # else:
+            #     theta_pert_ = 0.0
+            # temp = (theta[k] + theta_pert_)*exner(Ref.p0[k])
+            # # M1.values[th_index,k] = entropy_from_tp(Ref.p0_half[k],temp,qt,ql,qi)               # s = Thermodynamics.entropy(p_half[k],temperature_half[k],self.qtg,ql_half[k],qi_half[k])
+            # M1.values[th_index,k] = temp
+            M1.values[th_index,k] = theta[k]
+            M1.values[u_index,k] = 0.0
+            M1.values[v_index,k] = 0.0
+            M1.values[w_index,k] = 0.0
 
         if 'qt' in M1.name_index:
-            qt_varshift = M1.name_index['qt']
-            M1.values[qt_varshift] = 0.0
+            qt_index = M1.name_index['qt']
+            M1.values[qt_index] = 0.0
 
 
         # (2) Initialize Second Order Momenta
         print('Initialize 2nd order momenta')
         for var1 in xrange(M2.nv):
             for var2 in xrange(var1,M2.nv):
-                for k in xrange(Gr.nzg):
-                    M2.values[var1,var2,k] = 0.1
+                if var1 == th_index and var2 == th_index:
+                    for k in xrange(Gr.nzg):
+                        if Gr.z[k] < 200.0:
+                            M2.values[var1,var2,k] = 1e-3
+                else:
+                    for k in xrange(Gr.nzg):
+                        M2.values[var1,var2,k] = 0.0
 
 
          # # if 'e' in PV.name_index:
@@ -262,7 +270,6 @@ cdef class InitTest(InitializationBase):
 
 
     cpdef initialize_profiles(self, Grid Gr, ReferenceState Ref, TimeStepping TS, MeanVariables M1, SecondOrderMomenta M2, NetCDFIO_Stats NS):
-
         # (1) Generate initial perturbations
         # self.pert_min = 0.0
         # self.pert_max = 200.0
@@ -271,10 +278,10 @@ cdef class InitTest(InitializationBase):
 
         # (2) Initialize Mean Variables
         cdef:
-            Py_ssize_t u_varshift = M1.name_index['u']
-            Py_ssize_t v_varshift = M1.name_index['v']
-            Py_ssize_t w_varshift = M1.name_index['w']
-            Py_ssize_t th_varshift = M1.name_index['th']
+            Py_ssize_t u_index = M1.name_index['u']
+            Py_ssize_t v_index = M1.name_index['v']
+            Py_ssize_t w_index = M1.name_index['w']
+            Py_ssize_t th_index = M1.name_index['th']
             Py_ssize_t k, var1, var2
             Py_ssize_t nv_vel = M1.nv_velocities
             # double [:] s = M1.values[s_varshift:s_varshift+Gr.nzg]
@@ -283,22 +290,25 @@ cdef class InitTest(InitializationBase):
         # (i) Velocities & Theta (potential temperature) profile (Soares) incl. perturbations
         print('Initializing Velocity and Pot Temperature')
         for k in xrange(Gr.nzg):
-            M1.values[th_varshift,k] = 293.0
-            M1.values[u_varshift,k] = 0.0
-            M1.values[v_varshift,k] = 0.0
-            M1.values[w_varshift,k] = 0.0
+            M1.values[th_index,k] = 293.0
+            M1.values[u_index,k] = 0.0
+            M1.values[v_index,k] = 0.0
+            M1.values[w_index,k] = 0.0
+
+        plt.figure()
+        plt.plot(M1.values[w_index,:],Gr.z[:])
+        plt.show()
 
         for k in xrange(Gr.nzg):
-            M1.values[u_varshift,k] = 0.002 * (Gr.z[k])
-            # M1.values[w_varshift,k] = 0.0025 * (Gr.z[k])
-            M1.values[th_varshift,k] = 293.0 + 0.1 * (Gr.z[k])
-            if Gr.z[k] <= 200.0:
-                # print('0.1:', Gr.nzg, k, Gr.z[k])
-                M1.values[w_varshift,k] = 0.001 * (Gr.z[k])
-            else:
-                # print('0.2:', Gr.nzg, k, Gr.z[k])
-                M1.values[w_varshift,k] = 0.001*200.0 + 0.002 * (Gr.z[k]-200.0)
-
+            M1.values[u_index,k] = 0.002 * (Gr.z[k])
+            M1.values[w_index,k] = 0.0
+            M1.values[th_index,k] = 293.0 + 0.1 * (Gr.z[k])
+            # if Gr.z[k] <= 200.0:
+            #     # print('0.1:', Gr.nzg, k, Gr.z[k])
+            #     M1.values[w_index,k] = 0.001 * (Gr.z[k])
+            # else:
+            #     # print('0.2:', Gr.nzg, k, Gr.z[k])
+            #     M1.values[w_index,k] = 0.001*200.0 + 0.002 * (Gr.z[k]-200.0)
 
             # if Gr.z[k] <= 1350.0:
                #     theta[k] = 300.0
