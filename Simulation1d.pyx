@@ -113,44 +113,41 @@ class Simulation1d:
         # self.M1.plot_tendencies('11',self.Gr,self.TS)
         while(self.TS.t < self.TS.t_max):
             print('time:', self.TS.t)
+            self.M1.plot('1_start', self.Gr, self.TS)
+            self.M2.plot_tendencies('1_start', self.Gr, self.TS)
+            self.M1.update_boundary_conditions(self.Gr)
 
             # (0) update auxiliary fields
             self.SGS.update(self.Gr)       # --> compute diffusivity / viscosity for M1 and M2 (being the same at the moment)
             ## self.SGS.plot(self.Gr, self.TS)
 
             # (1) update mean field (M1) tendencies
-            self.Th.update()        # --> does nothing so far !!! do buoyancy update; add to w-tend (so far no coupling btw. thermodynamics and dynamics)
-            ## self.M1.plot_tendencies('after_Th', self.Gr, self.TS)
+            self.Th.update()        # --> does nothing, since mean buoyancy approximated to be zero (do buoyancy update; add to w-tend (so far no coupling btw. thermodynamics and dynamics))
+            # self.M1.plot_tendencies('1_after_Th', self.Gr, self.TS)
             # self.MA.update_M1_2nd(self.Gr, self.Ref, self.M1)       # self.MA.update(self.Gr, self.Ref, self.M1)
             # self.SA.update_M1_2nd(self.Gr, self.Ref, self.M1)       # self.SA.update(self.Gr, self.Ref, self.M1)
             ## self.MA.plot(self.Gr, self.TS, self.M1)
             ## self.SA.plot(self.Gr, self.TS, self.M1)
-            ## self.M1.plot_tendencies('after_MA', self.Gr, self.TS)
-            ## self.M1.plot_tendencies('after_SA', self.Gr, self.TS)
 
-            self.M1.plot('1', self.Gr, self.TS)
+
             self.Diff.update_M1(self.Gr, self.Ref, self.M1, self.SGS)
-            self.M1.plot('2', self.Gr, self.TS)
             self.Diff.plot(self.Gr, self.TS)
-            self.M1.plot_tendencies('after_Diffusion', self.Gr, self.TS)
-            ## self.M1.plot('Diffusion', self.Gr, self.TS)
+            self.M1.plot_tendencies('2_after_Diffusion', self.Gr, self.TS)
+            self.M2.plot('2_after_Diffusion', self.Gr, self.TS)
 
             self.Turb.update_M1(self.Gr, self.Ref, self.TS, self.M1, self.M2)                         # --> add turbulent flux divergence to mean field tendencies: dz<w'phi'>
-            # ??? surface fluxes ??? (--> in SGS or MD/SD scheme?)
-            # ??? update boundary conditions ???
-            # ??? pressure solver ???
-            self.M1.plot_tendencies('after_Turb', self.Gr, self.TS)
+                    # ??? surface fluxes ??? (--> in SGS or MD/SD scheme?)
+                    # ??? update boundary conditions ???
+            self.M1.plot_tendencies('3_after_Turb', self.Gr, self.TS)
             # self.M1.plot('Turb_M1', self.Gr, self.TS)
-            self.M1.plot('3', self.Gr, self.TS)
-
 
 
             # (2) update second order momenta (M2) tendencies
             self.Turb.update_M2(self.Gr, self.Ref, self.TS, self.M1, self.M2)
             self.Turb.plot('Turb', self.Gr, self.TS, self.M1, self.M2)
-            # # ??? update boundary conditions???
-            # # ??? pressure correlations ???
-            # # ??? surface fluxes ??? (--> in SGS or MD/SD scheme?)
+                    # # ??? update boundary conditions???
+                    # # ??? pressure correlations ???
+                    # # ??? surface fluxes ??? (--> in SGS or MD/SD scheme?)
             self.M2.plot_tendencies('Turb',self.Gr,self.TS)
 
             self.M1.plot_tendencies('end', self.Gr, self.TS)
@@ -162,12 +159,16 @@ class Simulation1d:
             if np.mod(self.TS.t,60)==0:
                 self.M1.plot_tendencies('control', self.Gr, self.TS)
                 self.M2.plot_tendencies('control',self.Gr,self.TS)
+            # self.M1.update_boundary_conditions_tendencies(self.Gr)
             self.TS.update()
-            # self.M1.update_bcs(self.Gr)
+            self.M1.plot('before_bcs', self.Gr, self.TS)
+            self.M1.update_boundary_conditions(self.Gr)
+            self.M1.update_boundary_conditions_tendencies(self.Gr)
             self.M1.plot('end', self.Gr, self.TS)
             self.M2.plot('end', self.Gr, self.TS)
 
             # (3) IO
+            print('statsio', self.StatsIO.last_output_time, self.StatsIO.frequency, self.TS.t)
             if self.StatsIO.last_output_time + self.StatsIO.frequency == self.TS.t:
                 print('do StatsIO.update')
                 self.StatsIO.update(self.Gr, self.TS, self.M1, self.M2)

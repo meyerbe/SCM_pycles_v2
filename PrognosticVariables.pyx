@@ -191,85 +191,13 @@ cdef class MeanVariables:
 
         return
 
-
-    cpdef plot(self, str message, Grid Gr, TimeStepping TS):
-        cdef:
-            double [:,:] values = self.values
-            Py_ssize_t th_varshift = self.name_index['th']
-            Py_ssize_t w_varshift = self.name_index['w']
-            Py_ssize_t v_varshift = self.name_index['v']
-            Py_ssize_t u_varshift = self.name_index['u']
-
-        if np.isnan(values).any():
-            print('!!!!!', message, ' NAN in M1')
-
-        plt.figure(1,figsize=(12,6))
-        # plt.plot(values[s_varshift+Gr.gw:s_varshift+Gr.nzg-Gr.gw], Gr.z)
-        plt.subplot(1,4,1)
-        plt.plot(values[th_varshift,:], Gr.z)
-        plt.title('th')
-        plt.subplot(1,4,2)
-        plt.plot(values[w_varshift,:], Gr.z, '-x')
-        plt.title('w')
-        plt.subplot(1,4,3)
-        plt.plot(values[v_varshift,:], Gr.z)
-        plt.title('v')
-        plt.subplot(1,4,4)
-        plt.plot(values[u_varshift,:], Gr.z, '-x')
-        plt.title('u')
-        # plt.show()
-        plt.savefig('./figs/M1_profiles_' + message + '_' + np.str(np.int(TS.t)) + '.png')
-        plt.close()
-
-    cpdef plot_tendencies(self, str message, Grid Gr, TimeStepping TS):
-
-        cdef:
-            double [:,:] tendencies = self.tendencies
-            Py_ssize_t th_varshift = self.name_index['th']
-            Py_ssize_t w_varshift = self.name_index['w']
-            Py_ssize_t v_varshift = self.name_index['v']
-            Py_ssize_t u_varshift = self.name_index['u']
-        if np.isnan(tendencies).any():
-            print('!!!!!', message, ' NAN in M1 tendencies')
-
-        plt.figure(2,figsize=(12,6))
-        # plt.plot(values[s_varshift+Gr.gw:s_varshift+Gr.nzg-Gr.gw], Gr.z)
-        plt.subplot(1,4,1)
-        plt.plot(tendencies[th_varshift,:], Gr.z)
-        plt.title('th tend')
-        plt.subplot(1,4,2)
-        plt.plot(tendencies[w_varshift,:], Gr.z, '-x')
-        plt.title('w tend')
-        plt.subplot(1,4,3)
-        plt.plot(tendencies[v_varshift,:], Gr.z)
-        plt.title('v tend')
-        plt.subplot(1,4,4)
-        plt.plot(tendencies[u_varshift,:], Gr.z)
-        plt.title('u tend')
-        # plt.show()
-        plt.savefig('./figs/M1_tendencies_' + message + '_' + np.str(np.int(TS.t)) + '.png')
-        plt.close()
-        return
-
-    cpdef get_variable_array(self,name,Grid Gr):
-        index = self.name_index[name]
-        view = np.array(self.values).view()
-        # view.shape = (self.nv,Gr.dims.nlg[0],Gr.dims.nlg[1],Gr.dims.nlg[2])
-        view.shape = (self.nv,Gr.nzg)
-        return view[index,:]
-
-    cpdef get_tendency_array(self,name,Grid Gr):
-        index = self.name_index[name]
-        view = np.array(self.tendencies).view()
-        # view.shape = (self.nv,Gr.dims.nlg[0],Gr.dims.nlg[1],Gr.dims.nlg[2])
-        view.shape = (self.nv,Gr.nzg)
-        return view[index,:]
-
-
+    #     def zero_all_tendencies(self):
+    #         self.tendencies[:] = 0.0
+    #         return
 
     # @cython.boundscheck(False)
     # @cython.wraparound(False)
-    cpdef update_bcs(self, Grid Gr):
+    cpdef update_boundary_conditions(self, Grid Gr):
         print('Updating M1 BCS')
         cdef:
             Py_ssize_t nv = self.nv
@@ -315,6 +243,131 @@ cdef class MeanVariables:
                             values[n,kstart+k] = values[n,kstart-k] * bcfactor[n]
 
         return
+
+    # @cython.boundscheck(False)
+    # @cython.wraparound(False)
+    cpdef update_boundary_conditions_tendencies(self, Grid Gr):
+        print('Updating M1 Tendencies BCS')
+        cdef:
+            Py_ssize_t nv = self.nv
+            Py_ssize_t gw = Gr.gw
+            Py_ssize_t nzg = Gr.nzg
+            Py_ssize_t k, kstart
+        # cdef int ndof = self.ndof
+        # cdef int n = 0
+            double [:,:] values = self.tendencies
+            double [:] bcfactor = self.bc_type[:]
+
+            # Py_ssize_t nzl = Gr.nzl
+
+        # (1) set bottom boundary condition
+        # with nogil:
+        if 1==1:
+            kstart = gw
+            for k in xrange(gw):
+                for n in xrange(nv):
+                    if(bcfactor[n] == 1):
+                        values[kstart-1-k,n] = values[kstart+k,n] * bcfactor[n]
+                    else:
+                        if(k == 0):
+                            values[kstart-1-k,n] = 0.0
+                        else:
+                            values[kstart-1-k,n] = values[kstart+k-1,n] * bcfactor[n]
+
+
+        # (2) set top boundary condition
+        # with nogil:
+        if 1==1:
+            #This processor is at the top of the domain so need to set top boundary condition
+            kstart = nzg - gw
+            for k in xrange(gw):
+                for n in xrange(nv):
+                    if(bcfactor[n] == 1):
+                        values[kstart+k,n] = values[kstart-k-1,n] * bcfactor[n]
+                    else:
+                        if(k == 0):
+                            values[kstart+k,n] = 0.0
+                        else:
+                            values[kstart+k,n] = values[kstart-k,n] * bcfactor[n]
+        return
+
+
+    cpdef plot(self, str message, Grid Gr, TimeStepping TS):
+        cdef:
+            double [:,:] values = self.values
+            Py_ssize_t th_varshift = self.name_index['th']
+            Py_ssize_t w_varshift = self.name_index['w']
+            Py_ssize_t v_varshift = self.name_index['v']
+            Py_ssize_t u_varshift = self.name_index['u']
+
+        if np.isnan(values).any():
+            print('!!!!!', message, ' NAN in M1')
+
+        plt.figure(1,figsize=(12,6))
+        # plt.plot(values[s_varshift+Gr.gw:s_varshift+Gr.nzg-Gr.gw], Gr.z)
+        plt.subplot(1,4,1)
+        plt.plot(values[th_varshift,:], Gr.z)
+        plt.title('th')
+        plt.subplot(1,4,2)
+        plt.plot(values[w_varshift,:], Gr.z, '-x')
+        plt.title('w')
+        plt.subplot(1,4,3)
+        plt.plot(values[v_varshift,:], Gr.z)
+        plt.title('v')
+        plt.subplot(1,4,4)
+        plt.plot(values[u_varshift,:], Gr.z, '-x')
+        plt.title('u, ' + message)
+        plt.savefig('./figs/M1_profiles_' + message + '_' + np.str(np.int(TS.t)) + '.png')
+        plt.show()
+        plt.close()
+
+    cpdef plot_tendencies(self, str message, Grid Gr, TimeStepping TS):
+
+        cdef:
+            double [:,:] tendencies = self.tendencies
+            Py_ssize_t th_varshift = self.name_index['th']
+            Py_ssize_t w_varshift = self.name_index['w']
+            Py_ssize_t v_varshift = self.name_index['v']
+            Py_ssize_t u_varshift = self.name_index['u']
+        if np.isnan(tendencies).any():
+            print('!!!!!', message, ' NAN in M1 tendencies')
+
+        plt.figure(2,figsize=(12,6))
+        # plt.plot(values[s_varshift+Gr.gw:s_varshift+Gr.nzg-Gr.gw], Gr.z)
+        plt.subplot(1,4,1)
+        plt.plot(tendencies[th_varshift,:], Gr.z)
+        plt.title('th tend')
+        plt.subplot(1,4,2)
+        plt.plot(tendencies[w_varshift,:], Gr.z, '-x')
+        plt.title('w tend')
+        plt.subplot(1,4,3)
+        plt.plot(tendencies[v_varshift,:], Gr.z)
+        plt.title('v tend')
+        plt.subplot(1,4,4)
+        plt.plot(tendencies[u_varshift,:], Gr.z)
+        plt.title('u tend, '+message)
+        plt.savefig('./figs/M1_tendencies_' + message + '_' + np.str(np.int(TS.t)) + '.png')
+        plt.show()
+        plt.close()
+        return
+
+    cpdef get_variable_array(self,name,Grid Gr):
+        index = self.name_index[name]
+        view = np.array(self.values).view()
+        # view.shape = (self.nv,Gr.dims.nlg[0],Gr.dims.nlg[1],Gr.dims.nlg[2])
+        view.shape = (self.nv,Gr.nzg)
+        return view[index,:]
+
+    cpdef get_tendency_array(self,name,Grid Gr):
+        index = self.name_index[name]
+        view = np.array(self.tendencies).view()
+        # view.shape = (self.nv,Gr.dims.nlg[0],Gr.dims.nlg[1],Gr.dims.nlg[2])
+        view.shape = (self.nv,Gr.nzg)
+        return view[index,:]
+
+
+
+
 
 
 
@@ -467,9 +520,9 @@ cdef class SecondOrderMomenta:
         plt.title('uw')
         plt.subplot(1,4,4)
         plt.plot(values[w_varshift,th_varshift,:], Gr.z)
-        plt.title('wth')
-        # plt.show()
+        plt.title('wth, '+message)
         plt.savefig('./figs/M2_profiles_' + message + '_' + np.str(np.int(TS.t)) + '.png')
+        plt.show()
         plt.close()
 
         return
@@ -499,9 +552,9 @@ cdef class SecondOrderMomenta:
         plt.title('wu tend')
         plt.subplot(1,4,4)
         plt.plot(tendencies[w_varshift,th_varshift,:], Gr.z)
-        plt.title('wth tend')
-        # plt.show()
+        plt.title('wth tend, '+message)
         plt.savefig('./figs/M2_tendencies_' + message + '_' + np.str(np.int(TS.t)) + '.png')
+        plt.show()
         plt.close()
         return
 
