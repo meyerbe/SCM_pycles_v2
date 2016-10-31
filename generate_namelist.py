@@ -27,11 +27,7 @@ def main():
     zgils_loc = ast.literal_eval(args.zgils_location)
     print(zgils_loc)
 
-    if case_name == 'StableBubble':
-        namelist = StableBubble()
-    elif case_name == 'SaturatedBubble':
-        namelist = SaturatedBubble()
-    elif case_name == 'SullivanPatton':
+    if case_name == 'SullivanPatton':
         namelist = SullivanPatton()
     elif case_name == 'Bomex':
         namelist = Bomex()
@@ -57,8 +53,6 @@ def main():
         namelist = DCBLSoares()
     elif case_name == 'DCBLSoares_moist':
         namelist = DCBLSoares_moist()
-    # elif case_name == 'DCBLSoares_mod':
-    #     namelist = DCBLSoares_mod()
     elif case_name == 'Test':
         namelist = Test()
     else:
@@ -1227,7 +1221,7 @@ def DCBLSoares():
     namelist['microphysics']['phase_partitioning'] = 'liquid_only'  # seems to be this in all cases???
 
     namelist['sgs'] = {}
-    namelist['sgs']['scheme'] = 'Smagorinsky'
+    namelist['sgs']['scheme'] = 'UniformViscosity'
     namelist['sgs']['Smagorinsky'] = {}
     namelist['sgs']['Smagorinsky']['cs'] = 0.17
     namelist['sgs']['UniformViscosity'] = {}
@@ -1279,12 +1273,6 @@ def DCBLSoares():
     namelist['meta']['simname'] = 'DCBLSoares'
     namelist['meta']['casename'] = 'DCBLSoares'
 
-    namelist['restart'] = {}
-    namelist['restart']['output'] = False
-    namelist['restart']['init_from'] = False
-    namelist['restart']['input_path'] = './'
-    namelist['restart']['frequency'] = 600.0
-
     namelist['visualization'] = {}
     namelist['visualization']['frequency'] = 1800.0
 
@@ -1328,7 +1316,7 @@ def DCBLSoares_moist():
     namelist['microphysics']['scheme'] = 'None_SA'     # DCBL: 'None_Dry', Bomex: 'None_SA'; options: 'None_Dry' (no qt as Progn. Var.), 'None_SA', 'SB_Liquid'
 
     namelist['sgs'] = {}
-    namelist['sgs']['scheme'] = 'Smagorinsky'
+    namelist['sgs']['scheme'] = 'UniformViscosity'
     namelist['sgs']['Smagorinsky'] = {}
     namelist['sgs']['Smagorinsky']['cs'] = 0.17
     namelist['sgs']['UniformViscosity'] = {}
@@ -1382,15 +1370,6 @@ def DCBLSoares_moist():
     namelist['meta'] = {}
     namelist['meta']['simname'] = 'DCBLSoares_moist'
     namelist['meta']['casename'] = 'DCBLSoares_moist'
-
-    namelist['restart'] = {}
-    namelist['restart']['output'] = False
-    namelist['restart']['init_from'] = False
-    namelist['restart']['input_path'] = './'
-    namelist['restart']['frequency'] = 600.0
-
-    namelist['visualization'] = {}
-    namelist['visualization']['frequency'] = 1800.0
 
     return namelist
 
