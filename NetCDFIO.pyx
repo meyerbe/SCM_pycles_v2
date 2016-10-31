@@ -77,7 +77,7 @@ cdef class NetCDFIO_Stats:
         for var_name in M1.name_index.keys():
             print('Stats IO: write profile M1' + var_name)
             var_index = M1.name_index[var_name]
-            print(var_name, type(var_name), var_index, np.shape(M1.values[var_index,Gr.gw:Gr.gw+Gr.nz]), Gr.nz)
+            # print(var_name, type(var_name), var_index, np.shape(M1.values[var_index,Gr.gw:Gr.gw+Gr.nz]), Gr.nz)
             self.write_profile(var_name,M1.values[var_index,Gr.gw:Gr.gw+Gr.nz])
 
         # (2) Output the 2nd Order Momenta M2

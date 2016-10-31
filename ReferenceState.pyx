@@ -66,7 +66,8 @@ cdef class ReferenceState:
         # ((2)) Pressure Profile (Hydrostatic)
         # (2a) Construct arrays for integration points
         z = np.array(Gr.z[Gr.gw - 1:-Gr.gw + 1])
-        z_half = np.append([0.0], np.array(Gr.z_half[Gr.gw:-Gr.gw]))
+        # z_half = np.append([0.0], np.array(Gr.z_half[Gr.gw:-Gr.gw]))
+        z_half = np.array(Gr.z_half[Gr.gw-1:-Gr.gw+1])
 
         # (2b) Perform the integration of the hydrostatic equation to determine the reference pressure
         #       dp/dz = - rho*g --> dp/p = -g/(R*T) = RHS       (becomes more complicated for moist thermodynamics)
@@ -87,14 +88,17 @@ cdef class ReferenceState:
 
         #       (iii) Integrate for log(p)
         p[Gr.gw - 1:-Gr.gw +1] = odeint(rhs, p0, z, hmax=1.0)[:, 0]     # only unsaturated eos in DCBLSoares
-        p_half[Gr.gw:-Gr.gw] = odeint(rhs, p0, z_half, hmax=1.0)[1:, 0]     # only unsaturated eos in DCBLSoares
+        # p_half[Gr.gw:-Gr.gw] = odeint(rhs, p0, z_half, hmax=1.0)[1:, 0]     # only unsaturated eos in DCBLSoares
+        p_half[Gr.gw-1:-Gr.gw+1] = odeint(rhs, p0, z_half, hmax=1.0)[:, 0]     # only unsaturated eos in DCBLSoares
 
         # (2c) Set boundary conditions
         p[:Gr.gw - 1] = p[2 * Gr.gw - 2:Gr.gw - 1:-1]
         p[-Gr.gw + 1:] = p[-Gr.gw - 1:-2 * Gr.gw:-1]
 
-        p_half[:Gr.gw] = p_half[2 * Gr.gw - 1:Gr.gw - 1:-1]
-        p_half[-Gr.gw:] = p_half[-Gr.gw - 1:-2 * Gr.gw - 1:-1]
+        # p_half[:Gr.gw] = p_half[2 * Gr.gw - 1:Gr.gw - 1:-1]
+        # p_half[-Gr.gw:] = p_half[-Gr.gw - 1:-2 * Gr.gw - 1:-1]
+        p_half[:Gr.gw-1] = p_half[2 * Gr.gw - 2:Gr.gw - 1:-1]
+        p_half[-Gr.gw+1:] = p_half[-Gr.gw - 1:-2 * Gr.gw:-1]
 
         # (2d) compute p from log(p)
         p = np.exp(p)
@@ -158,9 +162,10 @@ cdef class ReferenceState:
         self.th0 = th
         self.th0_half = th_half
 
-        for k in xrange(1,Gr.nzg):
+        for k in xrange(1,Gr.nzg-1):
             self.dz_rho0[k] = 0.5*Gr.dzi*(self.rho0[k+1]-self.rho0[k-1])
-            self.dz_rho0_half[k] = 0.5*Gr.dzi*(self.rho0_half[k+1]-self.rho0_half[k-1])
+            self.dz_rho0_half[k] = Gr.dzi*(self.rho0_half[k+1]-self.rho0_half[k])
+            # self.dz_rho0_half[k] = 0.5*Gr.dzi*(self.rho0_half[k+1]-self.rho0_half[k-1])
 
         # Write reference profiles to StatsIO
         NS.add_reference_profile('alpha0', Gr)
