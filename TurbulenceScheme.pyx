@@ -62,6 +62,8 @@ cdef class TurbulenceBase:
         return
 
     cpdef initialize(self, Grid Gr, PrognosticVariables.MeanVariables M1):
+        self.tendencies_M1 = np.zeros((M1.nv,Gr.nzg),dtype=np.double,order='c')
+
         print('Initialize Turbulence Base')
         return
 
@@ -87,22 +89,26 @@ cdef class TurbulenceBase:
             double [:] alpha0 = Ref.alpha0
             double [:] rho0_half = Ref.rho0_half
             double [:,:] tendencies_M1 = self.tendencies_M1
+            double [:] temp = np.zeros(shape=alpha0.shape[0])
 
+        temp = tendencies_M1[2]
         # (1) vertical edd fluxes: in all prognostic variables
         for var in M1.name_index.keys():
             var_index = M1.name_index[var]
             if var=='u' or var=='v':
-                # turb = var + 'w'
                 m = M1.name_index[var]
                 n = M1.name_index['w']
             else:
-                # turb = 'w' + var
                 m = M1.name_index['w']
                 n = M1.name_index[var]
             print('Turb.udpate_M1: ', var, var_index, m, n)
-            for k in xrange(Gr.nzg-1):
+            for k in xrange(1,Gr.nzg-1):
+                # temp[k] = rho0_half[k+1]*M2.values[m,n,k+1]-rho0_half[k]*M2.values[m,n,k]
                 # M1.tendencies[m,k] -= alpha0[k]*dzi*(rho0_half[k+1]*M2.values[m,n,k+1]-rho0_half[k]*M2.values[m,n,k])
-                tendencies_M1[var_index,k] -= alpha0[k]*dzi*(rho0_half[k+1]*M2.values[m,n,k+1]-rho0_half[k]*M2.values[m,n,k])
+                tendencies_M1[var_index,k] -= alpha0[k]*dzi*(rho0_half[k+1]*M2.values[m,n,k+1]-rho0_half[k]*M2.values[m,n,k])       # correct
+                # tendencies_M1[var_index,k] -= alpha0[k]*dzi*(rho0_half[k]*M2.values[m,n,k]-rho0_half[k-1]*M2.values[m,n,k-1])
+
+            print(var, ': ', np.amax(M2.values[m,n,:]), np.amax(temp))
 
         self.plot_var('vertflux', tendencies_M1, Gr, Ref, TS, M1, M2)
         with nogil:
@@ -154,9 +160,9 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
         # (3) Pressure: ?
         # (4) Buoyancy
         # (5) Third and higher order terms (first guess set to zero)
-        M2.plot_tendencies('1_init',Gr,TS)
+        # M2.plot_tendencies('1_init',Gr,TS)
         self.advect_M2_local(Gr, Ref, TS, M1, M2)
-        M2.plot_tendencies('2_advect',Gr,TS)
+        # M2.plot_tendencies('2_advect',Gr,TS)
         # self.pressure_correlations_Andre(Gr, M1, M2)
         # M2.plot_tendencies('3_pressureAndre',Gr,TS)
         ## self.pressure_correlations_Cheng(Gr, M1, M2)
