@@ -88,8 +88,15 @@ cdef class TurbulenceBase:
             double dzi = Gr.dzi
             double [:] alpha0 = Ref.alpha0
             double [:] rho0_half = Ref.rho0_half
+            # double [:] rho0 = Ref.rho0
             double [:,:] tendencies_M1 = self.tendencies_M1
             double [:] temp = np.zeros(shape=alpha0.shape[0])
+
+        # problem: rho0_half[gw+nz] = rho0_half[gw+nz-1] --> gives tendencies[:,gw+nz-1] = 0
+        # --> changed in Reference State
+        # for k in xrange(Gr.gw):
+        #     rho0_half[Gr.gw+Gr.nz+k] = 0.5*(rho0[Gr.gw+Gr.nz+k] + rho0[Gr.gw+Gr.nz+k-1])
+        # rho0_half[Gr.gw+Gr.nz] = 0.5*(rho0[Gr.gw+Gr.nz] + rho0[Gr.gw+Gr.nz-1])
 
         temp = tendencies_M1[2]
         # (1) vertical edd fluxes: in all prognostic variables
