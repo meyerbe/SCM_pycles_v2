@@ -191,9 +191,8 @@ cdef class MeanVariables:
 
         return
 
-    #     def zero_all_tendencies(self):
-    #         self.tendencies[:] = 0.0
-    #         return
+
+
 
     # @cython.boundscheck(False)
     # @cython.wraparound(False)
@@ -239,14 +238,14 @@ cdef class MeanVariables:
             for k in xrange(gw):
                 for n in xrange(nv):
                     if (bcfactor[n] == 1):
-                        print(n, 'bcfactor=1', gw, k, kstart-1-k, kstart+k, bcfactor[n], values[n,kstart-1-k], values[n,kstart+k]*bcfactor[n])
+                        #print(n, 'bcfactor=1', gw, k, kstart-1-k, kstart+k, bcfactor[n], values[n,kstart-1-k], values[n,kstart+k]*bcfactor[n])
                         values[n,kstart-1-k] = values[n,kstart+k]*bcfactor[n]
                     else:
                         if k==0:
-                            print(n, 'bcfactor= -1, k=0', gw, k, kstart-1-k, kstart+k, bcfactor[n], 0.0)
+                            #print(n, 'bcfactor= -1, k=0', gw, k, kstart-1-k, kstart+k, bcfactor[n], 0.0)
                             values[n,kstart-1-k] = 0.0
                         else:
-                            print(n, 'bcfactor= -1', gw, k, kstart-1-k, kstart+k, bcfactor[n], values[n,kstart-1-k], values[n,kstart+k]*bcfactor[n])
+                            #print(n, 'bcfactor= -1', gw, k, kstart-1-k, kstart+k, bcfactor[n], values[n,kstart-1-k], values[n,kstart+k]*bcfactor[n])
                             values[n,kstart-1-k] = values[n,kstart+k]*bcfactor[n]
 
         plt.figure()
@@ -294,52 +293,7 @@ cdef class MeanVariables:
         # plt.show()
         return
 
-    # @cython.boundscheck(False)
-    # @cython.wraparound(False)
-    cpdef update_boundary_conditions_tendencies(self, Grid Gr):
-        print('Updating M1 Tendencies BCS')
-        cdef:
-            Py_ssize_t nv = self.nv
-            Py_ssize_t gw = Gr.gw
-            Py_ssize_t nzg = Gr.nzg
-            Py_ssize_t k, kstart
-        # cdef int ndof = self.ndof
-        # cdef int n = 0
-            double [:,:] values = self.tendencies
-            double [:] bcfactor = self.bc_type[:]
 
-            # Py_ssize_t nzl = Gr.nzl
-
-        # (1) set bottom boundary condition
-        # with nogil:
-        if 1==1:
-            kstart = gw
-            for k in xrange(gw):
-                for n in xrange(nv):
-                    if(bcfactor[n] == 1):
-                        values[kstart-1-k,n] = values[kstart+k,n] * bcfactor[n]
-                    else:
-                        if(k == 0):
-                            values[kstart-1-k,n] = 0.0
-                        else:
-                            values[kstart-1-k,n] = values[kstart+k-1,n] * bcfactor[n]
-
-
-        # (2) set top boundary condition
-        # with nogil:
-        if 1==1:
-            #This processor is at the top of the domain so need to set top boundary condition
-            kstart = nzg - gw
-            for k in xrange(gw):
-                for n in xrange(nv):
-                    if(bcfactor[n] == 1):
-                        values[kstart+k,n] = values[kstart-k-1,n] * bcfactor[n]
-                    else:
-                        if(k == 0):
-                            values[kstart+k,n] = 0.0
-                        else:
-                            values[kstart+k,n] = values[kstart-k,n] * bcfactor[n]
-        return
 
 
     cpdef plot(self, str message, Grid Gr, TimeStepping TS):
@@ -383,9 +337,11 @@ cdef class MeanVariables:
         plt.plot(values[u_varshift,gw+nz:nzg],Gr.z[gw+nz:nzg],'rx')
         # plt.xlim(-1e-5,1e-4)
         plt.title('u, max=' + np.str(np.round(np.amax(values[u_varshift,:]),2))+ ', ' + message, fontsize=10)
-        plt.savefig('./figs/M1_profiles_' + message + '_' + np.str(np.int(TS.t)) + '.pdf')
+        plt.savefig('./figs/M1/M1_profiles_' + message + '_' + np.str(np.int(TS.t)) + '.pdf')
         # plt.show()
         plt.close()
+
+
 
     cpdef plot_tendencies(self, str message, Grid Gr, TimeStepping TS):
 
@@ -425,7 +381,7 @@ cdef class MeanVariables:
         plt.plot(tendencies[u_varshift,gw+nz:nzg],Gr.z[gw+nz:nzg],'rx')
         # plt.title('u tend, '+message)
         plt.title('u tend, max=' + np.str(np.round(np.amax(tendencies[u_varshift,:]),2))+ ', ' + message, fontsize=10)
-        plt.savefig('./figs/M1_tendencies_' + message + '_' + np.str(np.int(TS.t)) + '.pdf')
+        plt.savefig('./figs/M1/M1_tendencies_' + message + '_' + np.str(np.int(TS.t)) + '.pdf')
         # plt.show()
         plt.close()
         return
@@ -576,6 +532,104 @@ cdef class SecondOrderMomenta:
         return
 
 
+    # @cython.boundscheck(False)
+    # @cython.wraparound(False)
+    cpdef update_boundary_conditions(self, Grid Gr):
+        print('Updating M2 BCS')
+        cdef:
+            Py_ssize_t nv = self.nv
+            Py_ssize_t gw = Gr.gw
+            Py_ssize_t nzg = Gr.nzg
+            Py_ssize_t k, kstart
+            double [:,:,:] values = self.values
+            # double [:,:] bcfactor = self.bc_type
+            double [:,:] bcfactor = np.ones((self.nv,self.nv))
+
+            # double [:,:,:] temp = self.values #np.zeros(shape=values.shape)
+
+    # (1) set bottom boundary condition
+    #     w_varshift = self.name_index['w']
+    #     plt.figure(figsize=(6,5))
+    #     plt.subplot(1,2,1)
+    #     # plt.plot(values[2,:],Gr.z,'-x')
+    #     plt.plot(values[w_varshift,:],Gr.z,'g-')
+    #     plt.plot(values[w_varshift,nzg-gw:nzg],Gr.z[nzg-gw:nzg],'rx')
+    #     plt.plot(values[w_varshift,0:gw],Gr.z[0:gw],'rx')
+    #     plt.title('w before BC changes')
+    #     plt.subplot(1,2,2)
+    #     plt.plot(values[0,:],Gr.z,'-x')
+    #     plt.plot(values[0,nzg-gw:nzg],Gr.z[nzg-gw:nzg],'rx')
+    #     plt.plot(values[0,0:gw],Gr.z[0:gw],'rx')
+    #     plt.title('u before BC changes')
+    #     plt.savefig('figs/M1_profiles_beforeBC.pdf')
+    #     # plt.show()
+    #     plt.close()
+
+        #     with nogil:
+        if 1 == 1:
+            kstart = gw
+            for k in xrange(gw):
+                for m in xrange(nv):
+                    for n in xrange(nv):
+                        if (bcfactor[m,n] == 1):
+                            #print(n, 'bcfactor=1', gw, k, kstart-1-k, kstart+k, bcfactor[n], values[n,kstart-1-k], values[n,kstart+k]*bcfactor[n])
+                            values[m,n,kstart-1-k] = values[m,n,kstart+k]*bcfactor[m,n]
+                        else:
+                            if k==0:
+                                #print(n, 'bcfactor= -1, k=0', gw, k, kstart-1-k, kstart+k, bcfactor[n], 0.0)
+                                values[m,n,kstart-1-k] = 0.0
+                            else:
+                                #print(n, 'bcfactor= -1', gw, k, kstart-1-k, kstart+k, bcfactor[n], values[n,kstart-1-k], values[n,kstart+k]*bcfactor[n])
+                                values[m,n,kstart-1-k] = values[m,n,kstart+k]*bcfactor[m,n]
+
+        # plt.figure()
+        # plt.subplot(1,2,1)
+        # plt.plot(Gr.z,values[2,:],'-x')
+        # plt.plot(Gr.z[nzg-gw:nzg],values[2,nzg-gw:nzg],'rx')
+        # plt.plot(Gr.z[0:gw],values[2,0:gw],'rx')
+        # plt.title('w after bottom BC changes')
+        # plt.subplot(1,2,2)
+        # plt.plot(Gr.z,values[0,:],'-x')
+        # plt.plot(Gr.z[nzg-gw:nzg],values[0,nzg-gw:nzg],'rx')
+        # plt.plot(Gr.z[0:gw],values[0,0:gw],'rx')
+        # plt.title('u after bottom BC changes')
+        # plt.savefig('figs/M1_profiles_afterbottomBC.pdf')
+        # # plt.show()
+        # plt.close()
+
+    # (2) set top boundary condition
+    #         with nogil:
+        if 1 == 1:
+            kstart = nzg - gw
+            for k in xrange(gw):
+                for m in xrange(nv):
+                    for n in xrange(nv):
+                        if(bcfactor[m,n] == 1):
+                            values[m,n,kstart+k] = values[m,n,kstart-k-1] * bcfactor[m,n]
+                        else:
+                            if(k == 0):
+                                values[n,kstart+k] = 0.0
+                            else:
+                                values[m,n,kstart+k] = values[m,n,kstart-k] * bcfactor[m,n]
+
+
+        # plt.figure()
+        # plt.subplot(1,2,1)
+        # plt.plot(Gr.z,values[2,:],'-x')
+        # plt.plot(Gr.z[nzg-gw:nzg],values[2,nzg-gw:nzg],'rx')
+        # plt.plot(Gr.z[0:gw],values[2,0:gw],'rx')
+        # plt.title('w after top BC changes')
+        # plt.subplot(1,2,2)
+        # plt.plot(Gr.z,values[0,:],'-x')
+        # plt.plot(Gr.z[nzg-gw:nzg],values[0,nzg-gw:nzg],'rx')
+        # plt.plot(Gr.z[0:gw],values[0,0:gw],'rx')
+        # plt.title('u after top BC changes')
+        # plt.savefig('figs/M1_profiles_aftertopBC.pdf')
+        # # plt.show()
+        return
+
+
+
     cpdef plot(self, str message, Grid Gr, TimeStepping TS):
         cdef:
             double [:,:,:] values = self.values
@@ -632,16 +686,24 @@ cdef class SecondOrderMomenta:
         plt.figure(2,figsize=(12,5))
         # plt.plot(values[s_varshift+Gr.gw:s_varshift+Gr.nzg-Gr.gw], Gr.z)
         plt.subplot(1,4,1)
-        plt.plot(tendencies[th_varshift,th_varshift,:], Gr.z)
+        plt.plot(tendencies[th_varshift,th_varshift,:], Gr.z, '-x')
+        plt.plot(tendencies[th_varshift,th_varshift,0:Gr.gw], Gr.z[0:Gr.gw], 'rx')
+        plt.plot(tendencies[th_varshift,th_varshift,Gr.gw+Gr.nz:Gr.nzg], Gr.z[Gr.gw+Gr.nz:Gr.nzg], 'rx')
         plt.title('thth tend')
         plt.subplot(1,4,2)
-        plt.plot(tendencies[w_varshift,w_varshift,:], Gr.z)
+        plt.plot(tendencies[w_varshift,w_varshift,:], Gr.z, '-x')
+        plt.plot(tendencies[w_varshift,w_varshift,0:Gr.gw], Gr.z[0:Gr.gw], 'rx')
+        plt.plot(tendencies[w_varshift,w_varshift,Gr.gw+Gr.nz:Gr.nzg], Gr.z[Gr.gw+Gr.nz:Gr.nzg], 'rx')
         plt.title('ww tend')
         plt.subplot(1,4,3)
-        plt.plot(tendencies[w_varshift,u_varshift,:], Gr.z)
+        plt.plot(tendencies[u_varshift,w_varshift,:], Gr.z, '-x')
+        plt.plot(tendencies[u_varshift,w_varshift,0:Gr.gw], Gr.z[0:Gr.gw], 'rx')
+        plt.plot(tendencies[u_varshift,w_varshift,Gr.gw+Gr.nz:Gr.nzg], Gr.z[Gr.gw+Gr.nz:Gr.nzg], 'rx')
         plt.title('wu tend')
         plt.subplot(1,4,4)
-        plt.plot(tendencies[w_varshift,th_varshift,:], Gr.z)
+        plt.plot(tendencies[w_varshift,th_varshift,:], Gr.z, '-x')
+        plt.plot(tendencies[w_varshift,th_varshift,0:Gr.gw], Gr.z[0:Gr.gw], 'rx')
+        plt.plot(tendencies[w_varshift,th_varshift,Gr.gw+Gr.nz:Gr.nzg], Gr.z[Gr.gw+Gr.nz:Gr.nzg], 'rx')
         plt.title('wth tend, '+message)
         plt.savefig('./figs/M2_tendencies_' + message + '_' + np.str(np.int(TS.t)) + '.pdf')
         # plt.show()

@@ -126,12 +126,13 @@ class Simulation1d:
             self.M1.plot_tendencies('3_after_Turb', self.Gr, self.TS)
 
             # (2) update second order momenta (M2) tendencies
-            # self.Turb.update_M2(self.Gr, self.Ref, self.TS, self.M1, self.M2)
+            self.M2.plot_tendencies('2_before_Turb',self.Gr,self.TS)
+            self.Turb.update_M2(self.Gr, self.Ref, self.TS, self.M1, self.M2)
             # self.Turb.plot('Turb', self.Gr, self.TS, self.M1, self.M2)
                     # # ??? update boundary conditions???
                     # # ??? pressure correlations ???
                     # # ??? surface fluxes ??? (--> in SGS or MD/SD scheme?)
-            # self.M2.plot_tendencies('2_after_Turb',self.Gr,self.TS)
+            self.M2.plot_tendencies('3_after_Turb',self.Gr,self.TS)
 
             self.M2.plot_tendencies('end', self.Gr, self.TS)
             self.M1.plot_tendencies('end', self.Gr, self.TS)
@@ -145,7 +146,7 @@ class Simulation1d:
             self.M1.plot('before_bcs', self.Gr, self.TS)
             self.M2.plot('before_bcs', self.Gr, self.TS)
             self.M1.update_boundary_conditions(self.Gr)
-            self.M1.update_boundary_conditions_tendencies(self.Gr)
+            # self.M2.update_boundary_conditions(self.Gr)
             self.M1.plot('end', self.Gr, self.TS)
             self.M1.plot_tendencies('end', self.Gr, self.TS)
             self.M2.plot('end', self.Gr, self.TS)

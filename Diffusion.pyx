@@ -187,7 +187,6 @@ cdef class Diffusion:
 
 
         time = TS.dt*np.ones(shape=Gr.z.shape[0])
-        print('shapes ', Gr.z.shape, time.shape)
         plt.figure(1,figsize=(13,15))
         # plt.plot(values[s_varshift+Gr.gw:s_varshift+Gr.nzg-Gr.gw], Gr.z)
         plt.subplot(3,4,1)
