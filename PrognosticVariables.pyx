@@ -210,24 +210,59 @@ cdef class MeanVariables:
     #     cdef int  _mpi_kdim = comm.nprocs[2]
             double [:,:] values = self.values
             double [:] bcfactor = self.bc_type
+            double [:,:] temp = self.values #np.zeros(shape=values.shape)
 
     #     cdef int kstart
     #     cdef int nzl = grid.nzl
 
     # (1) set bottom boundary condition
-    #     with nogil:
+        plt.figure()
+        plt.subplot(1,2,1)
+        plt.plot(Gr.z,values[2,:],'-x')
+        plt.plot(Gr.z[nzg-gw:nzg],values[2,nzg-gw:nzg],'rx')
+        plt.plot(Gr.z[0:gw],values[2,0:gw],'rx')
+        plt.title('w before BC changes')
+        plt.subplot(1,2,2)
+        plt.plot(Gr.z,values[0,:],'-x')
+        plt.plot(Gr.z[nzg-gw:nzg],values[0,nzg-gw:nzg],'rx')
+        plt.plot(Gr.z[0:gw],values[0,0:gw],'rx')
+        plt.title('u before BC changes')
+        plt.savefig('figs/M1_profiles_beforeBC.pdf')
+        # plt.show()
+        plt.close()
+
+        #     with nogil:
         if 1 == 1:
             kstart = gw
             for k in xrange(gw):
                 for n in xrange(nv):
                     if (bcfactor[n] == 1):
+                        print(n, 'bcfactor=1', gw, k, kstart-1-k, kstart+k, bcfactor[n], values[n,kstart-1-k], values[n,kstart+k]*bcfactor[n])
                         values[n,kstart-1-k] = values[n,kstart+k]*bcfactor[n]
                     else:
                         if k==0:
+                            print(n, 'bcfactor= -1, k=0', gw, k, kstart-1-k, kstart+k, bcfactor[n], 0.0)
                             values[n,kstart-1-k] = 0.0
                         else:
+                            print(n, 'bcfactor= -1', gw, k, kstart-1-k, kstart+k, bcfactor[n], values[n,kstart-1-k], values[n,kstart+k]*bcfactor[n])
                             values[n,kstart-1-k] = values[n,kstart+k]*bcfactor[n]
 
+        plt.figure()
+        plt.subplot(1,2,1)
+        plt.plot(Gr.z,values[2,:],'-x')
+        plt.plot(Gr.z[nzg-gw:nzg],values[2,nzg-gw:nzg],'rx')
+        plt.plot(Gr.z[0:gw],values[2,0:gw],'rx')
+        plt.title('w after bottom BC changes')
+        plt.subplot(1,2,2)
+        plt.plot(Gr.z,values[0,:],'-x')
+        plt.plot(Gr.z[nzg-gw:nzg],values[0,nzg-gw:nzg],'rx')
+        plt.plot(Gr.z[0:gw],values[0,0:gw],'rx')
+        plt.title('u after bottom BC changes')
+        plt.savefig('figs/M1_profiles_afterbottomBC.pdf')
+        # plt.show()
+        plt.close()
+
+        print('hoihoihoi, gw, nzg, nz', gw, nzg, Gr.nz)
     # (2) set top boundary condition
     #         with nogil:
         if 1 == 1:
@@ -242,6 +277,20 @@ cdef class MeanVariables:
                         else:
                             values[n,kstart+k] = values[n,kstart-k] * bcfactor[n]
 
+
+        plt.figure()
+        plt.subplot(1,2,1)
+        plt.plot(Gr.z,values[2,:],'-x')
+        plt.plot(Gr.z[nzg-gw:nzg],values[2,nzg-gw:nzg],'rx')
+        plt.plot(Gr.z[0:gw],values[2,0:gw],'rx')
+        plt.title('w after top BC changes')
+        plt.subplot(1,2,2)
+        plt.plot(Gr.z,values[0,:],'-x')
+        plt.plot(Gr.z[nzg-gw:nzg],values[0,nzg-gw:nzg],'rx')
+        plt.plot(Gr.z[0:gw],values[0,0:gw],'rx')
+        plt.title('u after top BC changes')
+        plt.savefig('figs/M1_profiles_aftertopBC.pdf')
+        # plt.show()
         return
 
     # @cython.boundscheck(False)
@@ -299,26 +348,42 @@ cdef class MeanVariables:
             Py_ssize_t w_varshift = self.name_index['w']
             Py_ssize_t v_varshift = self.name_index['v']
             Py_ssize_t u_varshift = self.name_index['u']
+            Py_ssize_t nzg = Gr.nzg
+            Py_ssize_t nz = Gr.nz
+            Py_ssize_t gw = Gr.gw
 
         if np.isnan(values).any():
             print('!!!!!', message, ' NAN in M1')
 
-        plt.figure(1,figsize=(12,6))
+        plt.figure(1,figsize=(12,5))
         # plt.plot(values[s_varshift+Gr.gw:s_varshift+Gr.nzg-Gr.gw], Gr.z)
         plt.subplot(1,4,1)
-        plt.plot(values[th_varshift,:], Gr.z)
-        plt.title('th')
+        plt.plot(values[th_varshift,:], Gr.z, '-x')
+        plt.plot(values[th_varshift,0:gw],Gr.z[0:gw],'rx')
+        plt.plot(values[th_varshift,gw+nz:nzg],Gr.z[gw+nz:nzg],'rx')
+        plt.title('th, max=' + np.str(np.round(np.amax(values[th_varshift,:]),2)), fontsize=10)
+        # plt.xlim(292.999,293.001)
         plt.subplot(1,4,2)
-        plt.plot(values[w_varshift,:], Gr.z, '-x')
-        plt.title('w')
+        # plt.plot(values[w_varshift,0:nz+2*gw-1], Gr.z[0:nz+2*gw-1], '-x')
+        plt.plot(values[w_varshift,0:nzg], Gr.z[0:nzg], '-x')
+        plt.plot(values[w_varshift,0:gw],Gr.z[0:gw],'rx')
+        plt.plot(values[w_varshift,gw+nz:nzg],Gr.z[gw+nz:nzg],'rx')
+        # plt.xlim(-1e-4,1e-4)
+        plt.title('w, max=' + np.str(np.round(np.amax(values[w_varshift,0:]),2)), fontsize=10)
         plt.subplot(1,4,3)
         plt.plot(values[v_varshift,:], Gr.z)
-        plt.title('v')
+        plt.plot(values[v_varshift,0:gw],Gr.z[0:gw],'rx')
+        plt.plot(values[v_varshift,gw+nz:nzg],Gr.z[gw+nz:nzg],'rx')
+        # plt.xlim(-1e-5,1e-4)
+        plt.title('v, max=' + np.str(np.round(np.amax(values[v_varshift,:]),2)), fontsize=10)
         plt.subplot(1,4,4)
         plt.plot(values[u_varshift,:], Gr.z, '-x')
-        plt.title('u, ' + message)
-        plt.savefig('./figs/M1_profiles_' + message + '_' + np.str(np.int(TS.t)) + '.png')
-        plt.show()
+        plt.plot(values[u_varshift,0:gw],Gr.z[0:gw],'rx')
+        plt.plot(values[u_varshift,gw+nz:nzg],Gr.z[gw+nz:nzg],'rx')
+        # plt.xlim(-1e-5,1e-4)
+        plt.title('u, max=' + np.str(np.round(np.amax(values[u_varshift,:]),2))+ ', ' + message, fontsize=10)
+        plt.savefig('./figs/M1_profiles_' + message + '_' + np.str(np.int(TS.t)) + '.pdf')
+        # plt.show()
         plt.close()
 
     cpdef plot_tendencies(self, str message, Grid Gr, TimeStepping TS):
@@ -329,6 +394,9 @@ cdef class MeanVariables:
             Py_ssize_t w_varshift = self.name_index['w']
             Py_ssize_t v_varshift = self.name_index['v']
             Py_ssize_t u_varshift = self.name_index['u']
+            Py_ssize_t nzg = Gr.nzg
+            Py_ssize_t nz = Gr.nz
+            Py_ssize_t gw = Gr.gw
         if np.isnan(tendencies).any():
             print('!!!!!', message, ' NAN in M1 tendencies')
 
@@ -336,18 +404,28 @@ cdef class MeanVariables:
         # plt.plot(values[s_varshift+Gr.gw:s_varshift+Gr.nzg-Gr.gw], Gr.z)
         plt.subplot(1,4,1)
         plt.plot(tendencies[th_varshift,:], Gr.z)
-        plt.title('th tend')
+        plt.plot(tendencies[th_varshift,0:gw],Gr.z[0:gw],'rx')
+        plt.plot(tendencies[th_varshift,gw+nz:nzg],Gr.z[gw+nz:nzg],'rx')
+        plt.title('th tend, max=' + np.str(np.round(np.amax(tendencies[th_varshift,:]),2)), fontsize=10)
         plt.subplot(1,4,2)
         plt.plot(tendencies[w_varshift,:], Gr.z, '-x')
-        plt.title('w tend')
+        plt.plot(tendencies[w_varshift,0:gw],Gr.z[0:gw],'rx')
+        plt.plot(tendencies[w_varshift,gw+nz:nzg],Gr.z[gw+nz:nzg],'rx')
+        # plt.xlim(-1e-4,1e-4)
+        plt.title('w tend, max=' + np.str(np.round(np.amax(tendencies[w_varshift,:]),2)), fontsize=10)
         plt.subplot(1,4,3)
-        plt.plot(tendencies[v_varshift,:], Gr.z)
-        plt.title('v tend')
+        plt.plot(tendencies[v_varshift,:], Gr.z, '-x')
+        plt.plot(tendencies[v_varshift,0:gw],Gr.z[0:gw],'rx')
+        plt.plot(tendencies[v_varshift,gw+nz:nzg],Gr.z[gw+nz:nzg],'rx')
+        plt.title('v tend, max=' + np.str(np.round(np.amax(tendencies[v_varshift,:]),2)), fontsize=10)
         plt.subplot(1,4,4)
-        plt.plot(tendencies[u_varshift,:], Gr.z)
-        plt.title('u tend, '+message)
-        plt.savefig('./figs/M1_tendencies_' + message + '_' + np.str(np.int(TS.t)) + '.png')
-        plt.show()
+        plt.plot(tendencies[u_varshift,:], Gr.z, '-x')
+        plt.plot(tendencies[u_varshift,0:gw],Gr.z[0:gw],'rx')
+        plt.plot(tendencies[u_varshift,gw+nz:nzg],Gr.z[gw+nz:nzg],'rx')
+        # plt.title('u tend, '+message)
+        plt.title('u tend, max=' + np.str(np.round(np.amax(tendencies[u_varshift,:]),2))+ ', ' + message, fontsize=10)
+        plt.savefig('./figs/M1_tendencies_' + message + '_' + np.str(np.int(TS.t)) + '.pdf')
+        # plt.show()
         plt.close()
         return
 
@@ -504,25 +582,36 @@ cdef class SecondOrderMomenta:
             Py_ssize_t w_varshift = self.var_index['w']
             Py_ssize_t v_varshift = self.var_index['v']
             Py_ssize_t u_varshift = self.var_index['u']
+            Py_ssize_t nzg = Gr.nzg
+            Py_ssize_t nz = Gr.nz
+            Py_ssize_t gw = Gr.gw
         if np.isnan(values).any():
             print('!!!!! NAN in M2')
 
-        plt.figure(1,figsize=(12,6))
+        plt.figure(1,figsize=(12,5))
         # plt.plot(values[s_varshift+Gr.gw:s_varshift+Gr.nzg-Gr.gw], Gr.z)
         plt.subplot(1,4,1)
         plt.plot(values[th_varshift,th_varshift,:], Gr.z)
-        plt.title('thth')
+        plt.plot(values[th_varshift,th_varshift,0:gw],Gr.z[0:gw],'rx')
+        plt.plot(values[th_varshift,th_varshift,gw+nz:nzg],Gr.z[gw+nz:nzg],'rx')
+        plt.title('thth, max:' + np.str(np.round(np.amax(values[th_varshift,th_varshift:]),2)), fontsize=10)
         plt.subplot(1,4,2)
         plt.plot(values[w_varshift,w_varshift,:], Gr.z)
-        plt.title('ww')
+        plt.plot(values[w_varshift,w_varshift,0:gw],Gr.z[0:gw],'rx')
+        plt.plot(values[w_varshift,w_varshift,gw+nz:nzg],Gr.z[gw+nz:nzg],'rx')
+        plt.title('ww, max:' + np.str(np.round(np.amax(values[w_varshift,w_varshift:]),2)), fontsize=10)
         plt.subplot(1,4,3)
         plt.plot(values[u_varshift,w_varshift,:], Gr.z)
-        plt.title('uw')
+        plt.plot(values[u_varshift,w_varshift,0:gw],Gr.z[0:gw],'rx')
+        plt.plot(values[u_varshift,w_varshift,gw+nz:nzg],Gr.z[gw+nz:nzg],'rx')
+        plt.title('uw, max:' + np.str(np.round(np.amax(values[u_varshift,w_varshift:]),2)), fontsize=10)
         plt.subplot(1,4,4)
         plt.plot(values[w_varshift,th_varshift,:], Gr.z)
-        plt.title('wth, '+message)
-        plt.savefig('./figs/M2_profiles_' + message + '_' + np.str(np.int(TS.t)) + '.png')
-        plt.show()
+        plt.plot(values[w_varshift,th_varshift,0:gw],Gr.z[0:gw],'rx')
+        plt.plot(values[w_varshift,th_varshift,gw+nz:nzg],Gr.z[gw+nz:nzg],'rx')
+        plt.title('wth, max:' + np.str(np.round(np.amax(values[w_varshift,th_varshift:]),2))+ ', ' + message, fontsize=10 )
+        plt.savefig('./figs/M2_profiles_' + message + '_' + np.str(np.int(TS.t)) + '.pdf')
+        # plt.show()
         plt.close()
 
         return
@@ -539,7 +628,7 @@ cdef class SecondOrderMomenta:
 
         if np.isnan(tendencies).any():
             print('!!!!! NAN in M2 tendencies')
-        plt.figure(2,figsize=(12,6))
+        plt.figure(2,figsize=(12,5))
         # plt.plot(values[s_varshift+Gr.gw:s_varshift+Gr.nzg-Gr.gw], Gr.z)
         plt.subplot(1,4,1)
         plt.plot(tendencies[th_varshift,th_varshift,:], Gr.z)
@@ -553,8 +642,8 @@ cdef class SecondOrderMomenta:
         plt.subplot(1,4,4)
         plt.plot(tendencies[w_varshift,th_varshift,:], Gr.z)
         plt.title('wth tend, '+message)
-        plt.savefig('./figs/M2_tendencies_' + message + '_' + np.str(np.int(TS.t)) + '.png')
-        plt.show()
+        plt.savefig('./figs/M2_tendencies_' + message + '_' + np.str(np.int(TS.t)) + '.pdf')
+        # plt.show()
         plt.close()
         return
 
