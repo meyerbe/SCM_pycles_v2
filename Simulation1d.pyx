@@ -106,7 +106,6 @@ class Simulation1d:
             self.M1.plot_tendencies('1_start', self.Gr, self.TS)
             self.M2.plot('1_start', self.Gr, self.TS)
             self.M2.plot_tendencies('1_start', self.Gr, self.TS)
-            # self.M1.update_boundary_conditions(self.Gr)
 
             # (0) update auxiliary fields
             self.SGS.update(self.Gr)       # --> compute diffusivity / viscosity for M1 and M2 (being the same at the moment)
@@ -132,26 +131,24 @@ class Simulation1d:
                     # # ??? update boundary conditions???
                     # # ??? pressure correlations ???
                     # # ??? surface fluxes ??? (--> in SGS or MD/SD scheme?)
-            # self.M2.plot_tendencies('Turb',self.Gr,self.TS)
+            # self.M2.plot_tendencies('2_after_Turb',self.Gr,self.TS)
 
             self.M2.plot_tendencies('end', self.Gr, self.TS)
-            # self.M1.update_boundary_conditions_tendencies(self.Gr)
             self.M1.plot_tendencies('end', self.Gr, self.TS)
 
             self.M1.update(self.Gr, self.TS)        # --> updating values by adding tendencies
             self.M2.update(self.Gr, self.TS)        # --> updating values by adding tendencies
-            # if np.mod(self.TS.t,60)==0:
-            #     self.M1.plot_tendencies('control', self.Gr, self.TS)
-            #     self.M2.plot_tendencies('control',self.Gr,self.TS)
 
-            self.M1.plot_tendencies('before_TS_update', self.Gr, self.TS)
+            self.M1.plot_tendencies('control', self.Gr, self.TS)
+            self.M2.plot_tendencies('control', self.Gr, self.TS)
             self.TS.update()
             self.M1.plot('before_bcs', self.Gr, self.TS)
+            self.M2.plot('before_bcs', self.Gr, self.TS)
             self.M1.update_boundary_conditions(self.Gr)
             self.M1.update_boundary_conditions_tendencies(self.Gr)
             self.M1.plot('end', self.Gr, self.TS)
             self.M1.plot_tendencies('end', self.Gr, self.TS)
-            # self.M2.plot('end', self.Gr, self.TS)
+            self.M2.plot('end', self.Gr, self.TS)
 
             # (3) IO
             print('statsio', self.StatsIO.last_output_time, self.StatsIO.frequency, self.TS.t)
