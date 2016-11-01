@@ -8,6 +8,7 @@ cdef class Diffusion:
         double [:,:] flux_M1
         double [:,:] tendencies_M1
         # Py_ssize_t n_fluxes
+        double [:,:] grad
 
     cpdef initialize(self, Grid Gr, PrognosticVariables.MeanVariables M1)
     cpdef update(self, Grid Gr, ReferenceState Ref, PrognosticVariables.MeanVariables M1, SGS)
