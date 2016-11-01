@@ -216,16 +216,19 @@ cdef class MeanVariables:
     #     cdef int nzl = grid.nzl
 
     # (1) set bottom boundary condition
-        plt.figure()
+        w_varshift = self.name_index['w']
+        print('hallo', w_varshift)
+        plt.figure(figsize=(6,5))
         plt.subplot(1,2,1)
-        plt.plot(Gr.z,values[2,:],'-x')
-        plt.plot(Gr.z[nzg-gw:nzg],values[2,nzg-gw:nzg],'rx')
-        plt.plot(Gr.z[0:gw],values[2,0:gw],'rx')
+        # plt.plot(values[2,:],Gr.z,'-x')
+        plt.plot(values[w_varshift,:],Gr.z,'g-')
+        plt.plot(values[w_varshift,nzg-gw:nzg],Gr.z[nzg-gw:nzg],'rx')
+        plt.plot(values[w_varshift,0:gw],Gr.z[0:gw],'rx')
         plt.title('w before BC changes')
         plt.subplot(1,2,2)
-        plt.plot(Gr.z,values[0,:],'-x')
-        plt.plot(Gr.z[nzg-gw:nzg],values[0,nzg-gw:nzg],'rx')
-        plt.plot(Gr.z[0:gw],values[0,0:gw],'rx')
+        plt.plot(values[0,:],Gr.z,'-x')
+        plt.plot(values[0,nzg-gw:nzg],Gr.z[nzg-gw:nzg],'rx')
+        plt.plot(values[0,0:gw],Gr.z[0:gw],'rx')
         plt.title('u before BC changes')
         plt.savefig('figs/M1_profiles_beforeBC.pdf')
         # plt.show()
@@ -262,7 +265,6 @@ cdef class MeanVariables:
         # plt.show()
         plt.close()
 
-        print('hoihoihoi, gw, nzg, nz', gw, nzg, Gr.nz)
     # (2) set top boundary condition
     #         with nogil:
         if 1 == 1:
@@ -400,7 +402,7 @@ cdef class MeanVariables:
         if np.isnan(tendencies).any():
             print('!!!!!', message, ' NAN in M1 tendencies')
 
-        plt.figure(2,figsize=(12,6))
+        plt.figure(2,figsize=(12,5))
         # plt.plot(values[s_varshift+Gr.gw:s_varshift+Gr.nzg-Gr.gw], Gr.z)
         plt.subplot(1,4,1)
         plt.plot(tendencies[th_varshift,:], Gr.z)
