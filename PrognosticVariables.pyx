@@ -217,7 +217,6 @@ cdef class MeanVariables:
 
     # (1) set bottom boundary condition
         w_varshift = self.name_index['w']
-        print('hallo', w_varshift)
         plt.figure(figsize=(6,5))
         plt.subplot(1,2,1)
         # plt.plot(values[2,:],Gr.z,'-x')

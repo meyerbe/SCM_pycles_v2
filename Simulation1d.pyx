@@ -63,8 +63,8 @@ class Simulation1d:
         self.PV.add_variable('phi', 'm/s', "velocity")      # self.PV.add_variable('phi', 'm/s', "sym", "velocity")
         self.M1.add_variable('u', 'm/s', "sym", "velocity")
         self.M1.add_variable('v', 'm/s', "sym", "velocity")
-        # self.M1.add_variable('w', 'm/s', "asym", "velocity")
-        self.M1.add_variable('w', 'm/s', "sym", "velocity")
+        self.M1.add_variable('w', 'm/s', "asym", "velocity")
+        # self.M1.add_variable('w', 'm/s', "sym", "velocity")
 
         # AuxillaryVariables(namelist, self.PV, self.DV, self.Pa)
         self.Th.initialize(self.Gr, self.M1, self.M2)        # adding prognostic thermodynamic variables
@@ -86,19 +86,10 @@ class Simulation1d:
         # self.M2.plot_tendencies('3', self.Gr, self.TS)
 
         print('Initialization completed!')
-        # self.plot()
-        # self.M2.plot_tendencies('4', self.Gr, self.TS)
-        # self.M2.plot_tendencies('5', self.Gr, self.TS)
         self.M1.plot_tendencies('init', self.Gr, self.TS)
-        # self.M2.plot_tendencies('6', self.Gr, self.TS)
         self.M2.plot_tendencies('init', self.Gr, self.TS)
-
         self.M1.plot('init', self.Gr, self.TS)
         self.M2.plot('init', self.Gr, self.TS)
-        # self.M2.plot_tendencies('7', self.Gr, self.TS)
-        # self.M2.plot_tendencies('10', self.Gr, self.TS)
-        # self.plot_M1('0','M1')
-
 
         self.StatsIO.update(self.Gr, self.TS, self.M1, self.M2)
         return
@@ -109,13 +100,13 @@ class Simulation1d:
         print('Sim: start run')
         print(self.TS.t, self.TS.t_max)
 
-        # self.M2.plot_tendencies('10',self.Gr,self.TS)
-        # self.M1.plot_tendencies('11',self.Gr,self.TS)
         while(self.TS.t < self.TS.t_max):
             print('time:', self.TS.t)
             self.M1.plot('1_start', self.Gr, self.TS)
+            self.M1.plot_tendencies('1_start', self.Gr, self.TS)
+            self.M2.plot('1_start', self.Gr, self.TS)
             self.M2.plot_tendencies('1_start', self.Gr, self.TS)
-            self.M1.update_boundary_conditions(self.Gr)
+            # self.M1.update_boundary_conditions(self.Gr)
 
             # (0) update auxiliary fields
             self.SGS.update(self.Gr)       # --> compute diffusivity / viscosity for M1 and M2 (being the same at the moment)
@@ -123,49 +114,44 @@ class Simulation1d:
 
             # (1) update mean field (M1) tendencies
             self.Th.update()        # --> does nothing, since mean buoyancy approximated to be zero (do buoyancy update; add to w-tend (so far no coupling btw. thermodynamics and dynamics))
-            # self.M1.plot_tendencies('1_after_Th', self.Gr, self.TS)
             # self.MA.update_M1_2nd(self.Gr, self.Ref, self.M1)       # self.MA.update(self.Gr, self.Ref, self.M1)
             # self.SA.update_M1_2nd(self.Gr, self.Ref, self.M1)       # self.SA.update(self.Gr, self.Ref, self.M1)
             ## self.MA.plot(self.Gr, self.TS, self.M1)
             ## self.SA.plot(self.Gr, self.TS, self.M1)
 
-
             self.Diff.update_M1(self.Gr, self.Ref, self.M1, self.SGS)
-            self.Diff.plot(self.Gr, self.TS)
+            self.Diff.plot(self.Gr, self.TS, self.M1)
             self.M1.plot_tendencies('2_after_Diffusion', self.Gr, self.TS)
-            self.M2.plot('2_after_Diffusion', self.Gr, self.TS)
 
             self.Turb.update_M1(self.Gr, self.Ref, self.TS, self.M1, self.M2)                         # --> add turbulent flux divergence to mean field tendencies: dz<w'phi'>
-                    # ??? surface fluxes ??? (--> in SGS or MD/SD scheme?)
-                    # ??? update boundary conditions ???
             self.M1.plot_tendencies('3_after_Turb', self.Gr, self.TS)
-            # self.M1.plot('Turb_M1', self.Gr, self.TS)
-
 
             # (2) update second order momenta (M2) tendencies
-            self.Turb.update_M2(self.Gr, self.Ref, self.TS, self.M1, self.M2)
-            self.Turb.plot('Turb', self.Gr, self.TS, self.M1, self.M2)
+            # self.Turb.update_M2(self.Gr, self.Ref, self.TS, self.M1, self.M2)
+            # self.Turb.plot('Turb', self.Gr, self.TS, self.M1, self.M2)
                     # # ??? update boundary conditions???
                     # # ??? pressure correlations ???
                     # # ??? surface fluxes ??? (--> in SGS or MD/SD scheme?)
-            self.M2.plot_tendencies('Turb',self.Gr,self.TS)
+            # self.M2.plot_tendencies('Turb',self.Gr,self.TS)
 
+            self.M2.plot_tendencies('end', self.Gr, self.TS)
+            # self.M1.update_boundary_conditions_tendencies(self.Gr)
             self.M1.plot_tendencies('end', self.Gr, self.TS)
-            # self.M2.plot_tendencies('end', self.Gr, self.TS)
 
             self.M1.update(self.Gr, self.TS)        # --> updating values by adding tendencies
             self.M2.update(self.Gr, self.TS)        # --> updating values by adding tendencies
+            # if np.mod(self.TS.t,60)==0:
+            #     self.M1.plot_tendencies('control', self.Gr, self.TS)
+            #     self.M2.plot_tendencies('control',self.Gr,self.TS)
 
-            if np.mod(self.TS.t,60)==0:
-                self.M1.plot_tendencies('control', self.Gr, self.TS)
-                self.M2.plot_tendencies('control',self.Gr,self.TS)
-            # self.M1.update_boundary_conditions_tendencies(self.Gr)
+            self.M1.plot_tendencies('before_TS_update', self.Gr, self.TS)
             self.TS.update()
             self.M1.plot('before_bcs', self.Gr, self.TS)
             self.M1.update_boundary_conditions(self.Gr)
             self.M1.update_boundary_conditions_tendencies(self.Gr)
             self.M1.plot('end', self.Gr, self.TS)
-            self.M2.plot('end', self.Gr, self.TS)
+            self.M1.plot_tendencies('end', self.Gr, self.TS)
+            # self.M2.plot('end', self.Gr, self.TS)
 
             # (3) IO
             print('statsio', self.StatsIO.last_output_time, self.StatsIO.frequency, self.TS.t)
