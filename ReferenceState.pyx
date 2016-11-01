@@ -162,10 +162,20 @@ cdef class ReferenceState:
         self.th0 = th
         self.th0_half = th_half
 
-        for k in xrange(1,Gr.nzg-1):
-            self.dz_rho0[k] = 0.5*Gr.dzi*(self.rho0[k+1]-self.rho0[k-1])
-            self.dz_rho0_half[k] = Gr.dzi*(self.rho0_half[k+1]-self.rho0_half[k])
+        # --------
+        # problem: rho0_half[gw+nz] = rho0_half[gw+nz-1] --> gives tendencies[:,gw+nz-1] = 0 in TurblenceScheme.update_M1
+        for k in xrange(Gr.gw):
+            self.rho0_half[Gr.gw+Gr.nz+k] = 0.5*(self.rho0[Gr.gw+Gr.nz+k] + self.rho0[Gr.gw+Gr.nz+k-1])
+
+        # for k in xrange(1,Gr.nzg-1):
+        #     self.dz_rho0[k] = 0.5*Gr.dzi*(self.rho0[k+1]-self.rho0[k-1])
+        #     self.dz_rho0_half[k] = Gr.dzi*(self.rho0_half[k+1]-self.rho0_half[k-1])
+        for k in xrange(Gr.nzg-1):
+            self.dz_rho0[k] = Gr.dzi*(self.rho0_half[k+1]-self.rho0_half[k])
+        for k in xrange(1,Gr.nzg):
+            self.dz_rho0_half[k] = Gr.dzi*(self.rho0[k]-self.rho0[k-1])
             # self.dz_rho0_half[k] = 0.5*Gr.dzi*(self.rho0_half[k+1]-self.rho0_half[k-1])
+        # --------
 
         # Write reference profiles to StatsIO
         NS.add_reference_profile('alpha0', Gr)
