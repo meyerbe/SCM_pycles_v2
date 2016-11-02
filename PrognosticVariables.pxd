@@ -60,10 +60,11 @@ cdef class SecondOrderMomenta:
         Py_ssize_t nv_scalars
         Py_ssize_t nv_velocities
         long [:] var_type
+        double [:,:] bc_type
 
         double [:,:,:] values
         double [:,:,:] tendencies
-    cpdef add_variable(self,name,units,var_type,n,m)
+    cpdef add_variable(self,name,units,bc_type,var_type,n,m)
     # cpdef add_variables(self)
     cpdef initialize(self, Grid Gr, MeanVariables M1, NetCDFIO_Stats NS)
     cpdef update(self, Grid Gr, TimeStepping TS)

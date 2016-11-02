@@ -428,14 +428,27 @@ cdef class SecondOrderMomenta:
         self.nv_scalars = 0
         self.nv_velocities = 0
         self.var_type = np.array([],dtype=np.int,order='c')
+        self.bc_type = np.expand_dims(np.array([0],dtype=np.double,order='c'),axis=1,)
         return
 
 
-    cpdef add_variable(self,name,units,var_type,n,m):
+    cpdef add_variable(self,name,units,bc_type,var_type,m,n):
         # Store names and units
-        self.name_index[name] = [n,m]
+        self.name_index[name] = [m,n]
         self.index_name.append(name)
         self.units[name] = units
+
+        s = self.bc_type.shape[0]
+        if np.maximum(n,m)>(s-1):
+            self.bc_type = np.append(self.bc_type,np.zeros((s,1)),axis=1)
+            self.bc_type = np.append(self.bc_type,np.zeros((1,s+1)),axis=0)
+
+        if bc_type == "sym":
+            self.bc_type[m,n] = 1.0
+        elif bc_type =="asym":
+            self.bc_type[m,n] = -1.0
+        else:
+            print("Not a valid bc_type.")
 
         #Set the type of the variable being added
         # 0=velocity*velocity; 1=scalars*scalar or velocity*scalar; 2=pressure correlation
@@ -468,15 +481,15 @@ cdef class SecondOrderMomenta:
             for n in xrange(m,M1.nv_velocities):
                 var2 = M1.index_name[n]
                 # print('!!!', var1,n,var2,m)
-                self.add_variable(var1+var2,'(m/s)^2',"velocity",m,n)
+                self.add_variable(var1+var2,'(m/s)^2',"sym","velocity",m,n)
             '''Scalar Fluxes: wth, wqt'''
             for m in xrange(M1.nv_scalars):
                 var2 = M1.index_name[M1.nv_velocities + m]
                 unit = '(m/1)'+ M1.units[var2]
-                self.add_variable(var1+var2,unit,"scalar",n,m)
+                self.add_variable(var1+var2,unit,"sym","scalar",n,m)
             '''Pressure Correlation'''
             m = M1.nv
-            self.add_variable(var1+'p','(m/s)(N/m)',"pressure",n,m)
+            self.add_variable(var1+'p','(m/s)(N/m)',"sym","pressure",n,m)
 
         '''Scalar Variances and Covariances: thth, thqt, qtqt'''
         for n in xrange(M1.nv_scalars):
@@ -486,9 +499,9 @@ cdef class SecondOrderMomenta:
             for m in xrange(n,M1.nv_scalars):
                 var2 = M1.index_name[M1.nv_velocities + m]
                 unit = M1.units[var1] + M1.units[var2]
-                self.add_variable(var1+var2,unit,"scalar",n,m)
+                self.add_variable(var1+var2,unit,"sym","scalar",n,m)
             m = M1.nv
-            self.add_variable(var1+'p','(m/s)(N/m)',"pressure",n,m)
+            self.add_variable(var1+'p','(m/s)(N/m)',"sym","pressure",n,m)
         self.var_index['p'] = self.nv
         self.nv = len(self.var_index.keys())
 
@@ -572,14 +585,14 @@ cdef class SecondOrderMomenta:
                 for m in xrange(nv):
                     for n in xrange(nv):
                         if (bcfactor[m,n] == 1):
-                            #print(n, 'bcfactor=1', gw, k, kstart-1-k, kstart+k, bcfactor[n], values[n,kstart-1-k], values[n,kstart+k]*bcfactor[n])
+                            print(n, 'bcfactor=1', gw, k, kstart-1-k, kstart+k, bcfactor[m,n], values[m,n,kstart-1-k], values[m,n,kstart+k]*bcfactor[m,n])
                             values[m,n,kstart-1-k] = values[m,n,kstart+k]*bcfactor[m,n]
                         else:
                             if k==0:
-                                #print(n, 'bcfactor= -1, k=0', gw, k, kstart-1-k, kstart+k, bcfactor[n], 0.0)
+                                print(n, 'bcfactor= -1, k=0', gw, k, kstart-1-k, kstart+k, bcfactor[n], 0.0)
                                 values[m,n,kstart-1-k] = 0.0
                             else:
-                                #print(n, 'bcfactor= -1', gw, k, kstart-1-k, kstart+k, bcfactor[n], values[n,kstart-1-k], values[n,kstart+k]*bcfactor[n])
+                                print(n, 'bcfactor= -1', gw, k, kstart-1-k, kstart+k, bcfactor[m,n], values[m,n,kstart-1-k], values[m,n,kstart+k]*bcfactor[m,n])
                                 values[m,n,kstart-1-k] = values[m,n,kstart+k]*bcfactor[m,n]
 
         # plt.figure()
