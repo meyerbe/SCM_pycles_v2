@@ -585,7 +585,7 @@ cdef class SecondOrderMomenta:
             kstart = gw
             for k in xrange(gw):
                 for m in xrange(nv):
-                    for n in xrange(nv):
+                    for n in xrange(m,nv):
                         if (bcfactor[m,n] == 1):
                             print(n, 'bcfactor=1', gw, k, bcfactor[m,n], values[m,n,kstart-1-k], values[m,n,kstart+k]*bcfactor[m,n], m, n)
                             values[m,n,kstart-1-k] = values[m,n,kstart+k]*bcfactor[m,n]
