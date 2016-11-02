@@ -481,7 +481,10 @@ cdef class SecondOrderMomenta:
             for n in xrange(m,M1.nv_velocities):
                 var2 = M1.index_name[n]
                 # print('!!!', var1,n,var2,m)
-                self.add_variable(var1+var2,'(m/s)^2',"sym","velocity",m,n)
+                if m==2 or (m==0 and n==2):
+                    self.add_variable(var1+var2,'(m/s)^2',"asym","velocity",m,n)
+                else:
+                    self.add_variable(var1+var2,'(m/s)^2',"sym","velocity",m,n)
             '''Scalar Fluxes: wth, wqt'''
             for n in xrange(M1.nv_scalars):
                 var2 = M1.index_name[M1.nv_velocities + n]
@@ -587,14 +590,14 @@ cdef class SecondOrderMomenta:
                 for m in xrange(nv):
                     for n in xrange(m,nv):
                         if (bcfactor[m,n] == 1):
-                            print('m,n:',m,n, 'bcfactor=1', gw, k, bcfactor[m,n], values[m,n,kstart-1-k], values[m,n,kstart+k]*bcfactor[m,n])
+                            # print('m,n:',m,n, 'bcfactor=1', gw, k, bcfactor[m,n], values[m,n,kstart-1-k], values[m,n,kstart+k]*bcfactor[m,n])
                             values[m,n,kstart-1-k] = values[m,n,kstart+k]*bcfactor[m,n]
                         else:
                             if k==0:
-                                print('m,n:',m,n, 'bcfactor= -1, k=0', gw, k, bcfactor[m,n], 0.0)
+                                # print('m,n:',m,n, 'bcfactor= -1, k=0', gw, k, bcfactor[m,n], 0.0)
                                 values[m,n,kstart-1-k] = 0.0
                             else:
-                                print('m,n:',m,n, 'bcfactor= -1', gw, k, bcfactor[m,n], values[m,n,kstart-1-k], values[m,n,kstart+k]*bcfactor[m,n])
+                                # print('m,n:',m,n, 'bcfactor= -1', gw, k, bcfactor[m,n], values[m,n,kstart-1-k], values[m,n,kstart+k]*bcfactor[m,n])
                                 values[m,n,kstart-1-k] = values[m,n,kstart+k]*bcfactor[m,n]
 
         # plt.figure()
@@ -661,22 +664,22 @@ cdef class SecondOrderMomenta:
         plt.figure(1,figsize=(12,5))
         # plt.plot(values[s_varshift+Gr.gw:s_varshift+Gr.nzg-Gr.gw], Gr.z)
         plt.subplot(1,4,1)
-        plt.plot(values[th_varshift,th_varshift,:], Gr.z)
+        plt.plot(values[th_varshift,th_varshift,:], Gr.z,'-x')
         plt.plot(values[th_varshift,th_varshift,0:gw],Gr.z[0:gw],'rx')
         plt.plot(values[th_varshift,th_varshift,gw+nz:nzg],Gr.z[gw+nz:nzg],'rx')
         plt.title('thth, max:' + np.str(np.round(np.amax(values[th_varshift,th_varshift:]),2)), fontsize=10)
         plt.subplot(1,4,2)
-        plt.plot(values[w_varshift,w_varshift,:], Gr.z)
+        plt.plot(values[w_varshift,w_varshift,:],Gr.z, '-x')
         plt.plot(values[w_varshift,w_varshift,0:gw],Gr.z[0:gw],'rx')
         plt.plot(values[w_varshift,w_varshift,gw+nz:nzg],Gr.z[gw+nz:nzg],'rx')
         plt.title('ww, max:' + np.str(np.round(np.amax(values[w_varshift,w_varshift:]),2)), fontsize=10)
         plt.subplot(1,4,3)
-        plt.plot(values[u_varshift,w_varshift,:], Gr.z)
+        plt.plot(values[u_varshift,w_varshift,:],Gr.z, '-x')
         plt.plot(values[u_varshift,w_varshift,0:gw],Gr.z[0:gw],'rx')
         plt.plot(values[u_varshift,w_varshift,gw+nz:nzg],Gr.z[gw+nz:nzg],'rx')
         plt.title('uw, max:' + np.str(np.round(np.amax(values[u_varshift,w_varshift:]),2)), fontsize=10)
         plt.subplot(1,4,4)
-        plt.plot(values[w_varshift,th_varshift,:], Gr.z)
+        plt.plot(values[w_varshift,th_varshift,:], Gr.z, '-x')
         plt.plot(values[w_varshift,th_varshift,0:gw],Gr.z[0:gw],'rx')
         plt.plot(values[w_varshift,th_varshift,gw+nz:nzg],Gr.z[gw+nz:nzg],'rx')
         plt.title('wth, max:' + np.str(np.round(np.amax(values[w_varshift,th_varshift:]),2))+ ', ' + message, fontsize=10 )

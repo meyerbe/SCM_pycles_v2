@@ -113,9 +113,6 @@ cdef class TurbulenceBase:
                 # temp[k] = rho0_half[k+1]*M2.values[m,n,k+1]-rho0_half[k]*M2.values[m,n,k]
                 # M1.tendencies[m,k] -= alpha0[k]*dzi*(rho0_half[k+1]*M2.values[m,n,k+1]-rho0_half[k]*M2.values[m,n,k])
                 tendencies_M1[var_index,k] -= alpha0[k]*dzi*(rho0_half[k+1]*M2.values[m,n,k+1]-rho0_half[k]*M2.values[m,n,k])       # correct
-                # tendencies_M1[var_index,k] -= alpha0[k]*dzi*(rho0_half[k]*M2.values[m,n,k]-rho0_half[k-1]*M2.values[m,n,k-1])
-
-            print(var, ': ', np.amax(M2.values[m,n,:]), np.amax(temp))
 
         self.plot_var('vertflux', tendencies_M1, Gr, Ref, TS, M1, M2)
         with nogil:
@@ -167,20 +164,20 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
         # (3) Pressure: ?
         # (4) Buoyancy
         # (5) Third and higher order terms (first guess set to zero)
-        # M2.plot_tendencies('1_init',Gr,TS)
+        M2.plot_tendencies('01_init',Gr,TS)
         self.advect_M2_local(Gr, Ref, TS, M1, M2)
-        # M2.plot_tendencies('2_advect',Gr,TS)
+        M2.plot_tendencies('02_advect',Gr,TS)
         # self.pressure_correlations_Andre(Gr, M1, M2)
-        # M2.plot_tendencies('3_pressureAndre',Gr,TS)
+        # M2.plot_tendencies('03_pressureAndre',Gr,TS)
         ## self.pressure_correlations_Cheng(Gr, M1, M2)
         ## self.pressure_correlations_Mironov(Gr, M1, M2)
         # self.buoyancy_update(Gr, Ref, TS, M1, M2)
-        # M2.plot_tendencies('4_buoyancy',Gr,TS)
+        # M2.plot_tendencies('04_buoyancy',Gr,TS)
         return
 
 
     cpdef advect_M2_local(self, Grid Gr, ReferenceState Ref, TimeStepping TS, PrognosticVariables.MeanVariables M1, PrognosticVariables.SecondOrderMomenta M2):
-        print('Turb update: advect M2 local')
+        print('Turb update: advect M2 local!')
         # implemented for staggered grid
 
         cdef:
@@ -194,7 +191,8 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
             double [:] w = M1.values[w_index,:]
             double [:] th = M1.values[th_index,:]
 
-            double [:] flux = np.zeros(Gr.nzg,dtype=np.double,order='c')
+            # double [:] flux = np.zeros(Gr.nzg,dtype=np.double,order='c')
+            double [:,:,:] flux = np.zeros((M2.nv,M2.nv,Gr.nzg),dtype=np.double,order='c')
             double [:,:,:] aux = np.zeros((M2.nv,M2.nv,Gr.nzg),dtype=np.double,order='c')
             # double [:,:,:] tendencies = M2.tendencies
             double [:,:,:] tendencies = self.tendencies_M2
@@ -209,31 +207,39 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
             Py_ssize_t m, n, k, var_shift
 
 
-        print('')
+        print('aaaaaaaaaaa')
         # (i) advection by mean vertical velocity
         #       (interpolate only M2 in fluxes (w on staggered grid))
         for m in xrange(M2.nv):
             for n in xrange(m,M2.nv):
-                for k in xrange(Gr.nzg):
-                    flux[k] = rho0[k]*w[k]*0.5*(M2.values[m,n,k]+M2.values[m,n,k-1])
-                for k in xrange(gw,Gr.nzg-gw):
+                for k in xrange(Gr.nzg-1):
+                    # flux[k] = rho0[k]*w[k]*0.5*(M2.values[m,n,k+1]+M2.values[m,n,k])
+                    flux[m,n,k] = rho0[k]*w[k]*0.5*(M2.values[m,n,k+1]+M2.values[m,n,k])
+                for k in xrange(1,Gr.nzg-1):
                     # aux[m,n,k] += rho0_half[k]*0.5*(w[k+1]-w[k])*M2.values[m,n,k]*dzi2*(rho0_half[k+1]-rho0_half[k-1])
                     # aux[m,n,k] += dzi2*(rho0_half[k+1]-rho0_half[k-1])
                     # aux[m,n,k] += 0.5*(w[k+1]+w[k])
 
                     # tendencies[m,n,k] += rho0_half[k]*0.5*(w[k+1]+w[k])*dzi2*(rho0_half[k+1]*M2.values[m,n,k+1]-rho0_half[k-1]*M2.values[m,n,k-1])
                     # aux[m,n,k] += - alpha0_half[k]*0.5*(w[k+1]+w[k])*dzi2*(rho0_half[k+1]*M2.values[m,n,k+1]-rho0_half[k-1]*M2.values[m,n,k-1])
-                    aux[m,n,k] += - 0.5*(w[k+1]+w[k])*dzi2*(M2.values[m,n,k+1]-M2.values[m,n,k-1])
-                    tendencies[m,n,k] += - alpha0_half[k]*dzi*(flux[k+1]-flux[k])
+                    # aux[m,n,k] += - 0.5*(w[k+1]+w[k])*dzi2*(M2.values[m,n,k+1]-M2.values[m,n,k-1])
+                    # tendencies[m,n,k] += - alpha0_half[k]*dzi*(flux[k]-flux[k-1])
+                    tendencies[m,n,k] += - alpha0_half[k]*dzi*(flux[m,n,k]-flux[m,n,k-1])
 
+        M2.plot_tendencies('02a_advect',Gr,TS)      # M2.tend = 0
+        print('setting M2.tend to zero')
         for m in xrange(M2.nv):
             for n in xrange(m,M2.nv):
                 for k in xrange(Gr.nzg):
-                    # M2.tendencies[m,n,k] += tendencies[m,n,k]
-                    M2.tendencies[m,n,k] = 0.0
+                    M2.tendencies[m,n,k] += tendencies[m,n,k]
+                    # M2.tendencies[m,n,k] = 0.0
+
+        M2.plot_tendencies('02b_advect',Gr,TS)
 
         print('---- M2 advection tendencies:', np.amax(np.abs(tendencies)), np.amax(np.abs(self.tendencies_M2)) )
-        self.plot_var('advection', aux[2,:,:], Gr, Ref, TS, M1, M2)
+        self.plot_var2('advection_ww', 2,2,flux[2,2,:], tendencies[2,2,:], Gr, Ref, TS, M1, M2)
+        # self.plot_var2('advection_uw', 0,2,flux[0,2,:], tendencies[0,2,:], Gr, Ref, TS, M1, M2)
+        # self.plot_var2('advection_wth', 2,3,flux[2,3,:], tendencies[2,3,:], Gr, Ref, TS, M1, M2)
         # self.plot_var('advection', tendencies[2,:,:], Gr, Ref, TS, M1, M2)
         for m in xrange(M2.nv):
             for n in xrange(m,M2.nv):
@@ -243,49 +249,49 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
 
 
 
-        # (ii) advection by M2
-        #     w: on w-grid
-        #     u,v,{s,qt}: on phi-grid
-        #     —> dz ws, dz wqt on phi-grid      —> ws, wqt on w-grid   -> compare to scalar advection for gradients
-        #     —> dz wu, dz wv on phi-grid       —> wu, wv on w-grid    -> compare to scalar advection for gradients
-        #     —> dz ww on w-grid                —> ww on phi-grid      -> compare to momentum advection for gradients
+        # # (ii) advection by M2
+        # #     w: on w-grid
+        # #     u,v,{s,qt}: on phi-grid
+        # #     —> dz ws, dz wqt on phi-grid      —> ws, wqt on w-grid   -> compare to scalar advection for gradients
+        # #     —> dz wu, dz wv on phi-grid       —> wu, wv on w-grid    -> compare to scalar advection for gradients
+        # #     —> dz ww on w-grid                —> ww on phi-grid      -> compare to momentum advection for gradients
+        # #
+        # #     wu on w-grid --> interpolate ww; u_mean ok;  wu ok; interpolate w_mean
+        # #     wv on w-grid --> interpolate ww; v_mean ok; wv ok; interpolate w_mean
+        # #     ww on phi-grid --> ww ok; w ok
+        # #     ws on w-grid --> interpolate ww; s_mean ok; ws ok; interpolate w_mean
+        # for k in xrange(gw,Gr.nzg-gw):
+        #     tendencies[u_index, u_index, k] += -2*values[u_index,w_index,k] * (u[k+1]-u[k])*dzi
+        #     tendencies[v_index, v_index, k] += -2*values[v_index,w_index,k] * (v[k+1]-v[k])*dzi
+        #     tendencies[u_index, w_index, k] += -values[w_index,w_index,k]*(u[k+1]-u[k])*dzi - values[u_index,w_index,k]*(w[k+1]-w[k])*dzi
+        #     tendencies[v_index, w_index, k] += -values[w_index,w_index,k]*(v[k+1]-v[k])*dzi - values[v_index,w_index,k]*(w[k+1]-w[k])*dzi
+        #     tendencies[w_index, w_index, k] += -2*values[w_index,w_index,k]*(w[k+1]-w[k])*dzi
+        #     tendencies[u_index, th_index, k] += -values[w_index,th_index,k]*(u[k+1]-u[k])*dzi - values[u_index,w_index,k]*(th[k+1]-th[k])*dzi
+        #     tendencies[v_index, th_index, k] += -values[w_index,th_index,k]*(v[k+1]-v[k])*dzi - values[v_index,w_index,k]*(th[k+1]-th[k])*dzi
+        #     tendencies[w_index, th_index, k] += -values[w_index,th_index,k]*(w[k+1]-w[k])*dzi - values[w_index,w_index,k]*(th[k+1]-th[k])*dzi
+        #     tendencies[th_index, th_index, k] += -2*values[w_index,th_index,k]*(th[k+1]-th[k])*dzi
         #
-        #     wu on w-grid --> interpolate ww; u_mean ok;  wu ok; interpolate w_mean
-        #     wv on w-grid --> interpolate ww; v_mean ok; wv ok; interpolate w_mean
-        #     ww on phi-grid --> ww ok; w ok
-        #     ws on w-grid --> interpolate ww; s_mean ok; ws ok; interpolate w_mean
-        for k in xrange(gw,Gr.nzg-gw):
-            tendencies[u_index, u_index, k] += -2*values[u_index,w_index,k] * (u[k+1]-u[k])*dzi
-            tendencies[v_index, v_index, k] += -2*values[v_index,w_index,k] * (v[k+1]-v[k])*dzi
-            tendencies[u_index, w_index, k] += -values[w_index,w_index,k]*(u[k+1]-u[k])*dzi - values[u_index,w_index,k]*(w[k+1]-w[k])*dzi
-            tendencies[v_index, w_index, k] += -values[w_index,w_index,k]*(v[k+1]-v[k])*dzi - values[v_index,w_index,k]*(w[k+1]-w[k])*dzi
-            tendencies[w_index, w_index, k] += -2*values[w_index,w_index,k]*(w[k+1]-w[k])*dzi
-            tendencies[u_index, th_index, k] += -values[w_index,th_index,k]*(u[k+1]-u[k])*dzi - values[u_index,w_index,k]*(th[k+1]-th[k])*dzi
-            tendencies[v_index, th_index, k] += -values[w_index,th_index,k]*(v[k+1]-v[k])*dzi - values[v_index,w_index,k]*(th[k+1]-th[k])*dzi
-            tendencies[w_index, th_index, k] += -values[w_index,th_index,k]*(w[k+1]-w[k])*dzi - values[w_index,w_index,k]*(th[k+1]-th[k])*dzi
-            tendencies[th_index, th_index, k] += -2*values[w_index,th_index,k]*(th[k+1]-th[k])*dzi
-
-        if 'qt' in M1.index_name:
-            qt_index = M1.name_index['qt']
-            qt = M1.values[qt_index,:]
-            for k in xrange(gw,Gr.nzg-gw):
-                tendencies[u_index, qt_index, k] += -values[w_index,qt_index,k]*(u[k+1]-u[k])*dzi - values[u_index,w_index,k]*(qt[k+1]-qt[k])*dzi
-                tendencies[v_index, qt_index, k] += -values[w_index,qt_index,k]*(v[k+1]-v[k])*dzi - values[v_index,w_index,k]*(qt[k+1]-qt[k])*dzi
-                tendencies[w_index, qt_index, k] += -values[w_index,qt_index,k]*(w[k+1]-w[k])*dzi - values[w_index,w_index,k]*(qt[k+1]-qt[k])*dzi
-                tendencies[qt_index, qt_index, k] += -2*values[w_index,qt_index,k]*(qt[k+1]-qt[k])*dzi
-
-        for m in xrange(M2.nv):
-            for n in xrange(m,M2.nv):
-                for k in xrange(Gr.nzg):
-                    M2.tendencies[m,n,k] += tendencies[m,n,k]
-                    # tendencies[m,n,k] = 0.0
-        print('---- M2 advection tendencies:', np.amax(np.abs(tendencies)), np.amax(np.abs(self.tendencies_M2)) )
-        self.plot_var('advection2', tendencies[2,:,:], Gr, Ref, TS, M1, M2)
-        for m in xrange(M2.nv):
-            for n in xrange(m,M2.nv):
-                for k in xrange(Gr.nzg):
-                    # M2.tendencies[m,n,k] += tendencies[m,n,k]
-                    tendencies[m,n,k] = 0.0
+        # if 'qt' in M1.index_name:
+        #     qt_index = M1.name_index['qt']
+        #     qt = M1.values[qt_index,:]
+        #     for k in xrange(gw,Gr.nzg-gw):
+        #         tendencies[u_index, qt_index, k] += -values[w_index,qt_index,k]*(u[k+1]-u[k])*dzi - values[u_index,w_index,k]*(qt[k+1]-qt[k])*dzi
+        #         tendencies[v_index, qt_index, k] += -values[w_index,qt_index,k]*(v[k+1]-v[k])*dzi - values[v_index,w_index,k]*(qt[k+1]-qt[k])*dzi
+        #         tendencies[w_index, qt_index, k] += -values[w_index,qt_index,k]*(w[k+1]-w[k])*dzi - values[w_index,w_index,k]*(qt[k+1]-qt[k])*dzi
+        #         tendencies[qt_index, qt_index, k] += -2*values[w_index,qt_index,k]*(qt[k+1]-qt[k])*dzi
+        #
+        # for m in xrange(M2.nv):
+        #     for n in xrange(m,M2.nv):
+        #         for k in xrange(Gr.nzg):
+        #             M2.tendencies[m,n,k] += tendencies[m,n,k]
+        #             # tendencies[m,n,k] = 0.0
+        # print('---- M2 advection tendencies:', np.amax(np.abs(tendencies)), np.amax(np.abs(self.tendencies_M2)) )
+        # self.plot_var('advection2', tendencies[2,:,:], Gr, Ref, TS, M1, M2)
+        # for m in xrange(M2.nv):
+        #     for n in xrange(m,M2.nv):
+        #         for k in xrange(Gr.nzg):
+        #             # M2.tendencies[m,n,k] += tendencies[m,n,k]
+        #             tendencies[m,n,k] = 0.0
 
         return
 
@@ -617,11 +623,7 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
 
 
 
-
-
-
-
-    def plot_var(self, str message, double [:,:] var, Grid Gr, ReferenceState Ref, TimeStepping TS, MeanVariables M1, SecondOrderMomenta M2):
+    def plot_var(self, str message, var, Grid Gr, ReferenceState Ref, TimeStepping TS, MeanVariables M1, SecondOrderMomenta M2):
         cdef:
             Py_ssize_t th_varshift = M1.name_index['th']
             Py_ssize_t w_varshift = M1.name_index['w']
@@ -659,6 +661,69 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
         plt.plot(Ref.rho0_half,Gr.z,label='rho0_half')
         plt.title('aux')
         plt.legend(fontsize=8)
+        plt.savefig('./figs/Turb_' + message + '_' + np.str(np.int(TS.t)) + '.png')
+        plt.close()
+
+        return
+
+
+
+
+    def plot_var2(self, str message, n1,n2, var1, var2, Grid Gr, ReferenceState Ref, TimeStepping TS, MeanVariables M1, SecondOrderMomenta M2):
+        cdef:
+            Py_ssize_t th_varshift = M1.name_index['th']
+            Py_ssize_t w_varshift = M1.name_index['w']
+            Py_ssize_t v_varshift = M1.name_index['v']
+            Py_ssize_t u_varshift = M1.name_index['u']
+            double [:] rho0_half = Ref.rho0_half
+            double [:] alpha0_half = Ref.alpha0_half
+
+        v1 = M1.index_name[n1]
+        v2 = M1.index_name[n2]
+        print('plot_var2: ',  n1, v1, n2, v2)
+
+        if np.isnan(var1).any():
+            print('plot var1: ', message, ' NAN in variable 1')
+
+        plt.figure(1,figsize=(18,5))
+        plt.subplot(1,5,1)
+        plt.plot(Ref.alpha0_half,Gr.z,'-x',label='rho')
+        plt.plot(Ref.alpha0_half[0:Gr.gw],Gr.z[0:Gr.gw], 'rx')
+        plt.plot(Ref.alpha0_half[Gr.nz+Gr.gw:Gr.nzg],Gr.z[Gr.nz+Gr.gw:Gr.nzg],'rx')
+        plt.title('alpha0_half')
+        plt.subplot(1,5,2)
+        # plt.plot(M2.tendencies[w_varshift,w_varshift,:], Gr.z, label='M2.tend(ww)')
+        # plt.plot(M2.tendencies[w_varshift,w_varshift,0:Gr.gw],Gr.z[0:Gr.gw],'rx')
+        plt.plot(M2.values[n1,n2,:],Gr.z,'-x',label='M2.'+ v1+v2)
+        plt.plot(M2.values[n1,n2,0:Gr.gw],Gr.z[0:Gr.gw],'rx')
+        plt.plot(M2.values[n1,n2,Gr.nz+Gr.gw:Gr.nzg],Gr.z[Gr.nz+Gr.gw:Gr.nzg],'rx')
+        plt.title('M2.values ' + v1+v2)
+        plt.legend(fontsize=8)
+        plt.subplot(1,5,3)
+        plt.plot(M1.values[w_varshift,:],Gr.z,'-x',label='M1.w')
+        plt.plot(M1.values[w_varshift,0:Gr.gw],Gr.z[0:Gr.gw],'rx')
+        plt.plot(M1.values[w_varshift,Gr.nz+Gr.gw:Gr.nzg],Gr.z[Gr.nz+Gr.gw:Gr.nzg],'rx')
+        plt.legend(fontsize=8)
+        plt.title('M1.values w')
+        plt.subplot(1,5,4)
+        plt.plot(var1[:],Gr.z,'-x',label='var1: '+v1+v2)
+        plt.plot(var1[0:Gr.gw],Gr.z[0:Gr.gw],'rx')
+        plt.plot(var1[Gr.nz+Gr.gw:Gr.nzg],Gr.z[Gr.nz+Gr.gw:Gr.nzg],'rx')
+        plt.legend(fontsize=8)
+        plt.title('flux '+v1+v2)
+        plt.subplot(1,5,5)
+        plt.plot(var2[:],Gr.z,'-x',label='var2:'+v1+v2)
+        # plt.plot(var2[0:Gr.gw],Gr.z[0:Gr.gw],'rx')
+        plt.plot(M2.tendencies[n1,n2,:], Gr.z, 'g-', label='M2.tend('+v1+v2+')')
+        plt.plot(M2.tendencies[n1,n2,0:Gr.gw],Gr.z[0:Gr.gw],'rx')
+        plt.plot(M2.tendencies[n1,n2,Gr.nz+Gr.gw:Gr.nzg],Gr.z[Gr.nz+Gr.gw:Gr.nzg],'rx')
+        # plt.plot(np.multiply(al0_half[:],np.multiply(M1.values[w_varshift,:],M2.values[w_varshift,w_varshift,:])), Gr.z, label='1/rho*M1.w*M2.ww')
+        plt.legend(loc=4,fontsize=8)
+        plt.title('tendency ' + v1+v2)
+        # plt.subplot(1,4,4)
+        # # plt.plot(var[w_varshift,:], Gr.z)
+        # plt.title('aux')
+        # plt.legend(fontsize=8)
         plt.savefig('./figs/Turb_' + message + '_' + np.str(np.int(TS.t)) + '.png')
         plt.close()
 

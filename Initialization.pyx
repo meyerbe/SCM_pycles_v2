@@ -262,7 +262,7 @@ cdef class InitTest(InitializationBase):
         Ref.Pg = 1.0e5      # Pressure at ground (Soares)
         Ref.Tg = 300.0      # Temperature at ground (Soares)
         Ref.qtg = 5e-3      # Total water mixing ratio at surface: qt = 5 g/kg (Soares)
-        Ref.u0 = 0.01       # velocities removed in Galilean transformation (Soares: u = 0.01 m/s, IOP: 0.0 m/s)
+        Ref.u0 = 0.0       # velocities removed in Galilean transformation (Soares: u = 0.01 m/s, IOP: 0.0 m/s)
         Ref.v0 = 0.0        # (Soares: v = 0.0 m/s)
 
         Ref.initialize(Gr, NS)
@@ -295,14 +295,11 @@ cdef class InitTest(InitializationBase):
             M1.values[v_index,k] = 0.0
             M1.values[w_index,k] = 0.0
 
-        plt.figure()
-        plt.plot(M1.values[w_index,:],Gr.z[:])
-        plt.show()
-
         for k in xrange(Gr.nzg):
-            M1.values[u_index,k] = 0.002 * (Gr.z[k])
-            M1.values[w_index,k] = 0.0
-            M1.values[th_index,k] = 293.0 + 0.1 * (Gr.z[k])
+            pass
+            # M1.values[u_index,k] = 0.002 * (Gr.z[k])
+            # M1.values[w_index,k] = 0.0
+            # M1.values[th_index,k] = 293.0 + 0.1 * (Gr.z[k])
             # if Gr.z[k] <= 200.0:
             #     # print('0.1:', Gr.nzg, k, Gr.z[k])
             #     M1.values[w_index,k] = 0.001 * (Gr.z[k])
@@ -331,6 +328,33 @@ cdef class InitTest(InitializationBase):
             for var2 in xrange(var1,M2.nv):
                 for k in xrange(Gr.nzg):
                     M2.values[var1,var2,k] = 0.1
-        M2.plot('initialization',Gr, TS)
+                    # M2.values[var1,var2,k] = 0.0
+        # M2.plot('initialization',Gr, TS)
+
+
+        plt.figure(figsize=(9,6))
+        plt.subplot(1,2,1)
+        plt.plot(Ref.rho0_half, Gr.z_half, '-o', label='rho0_half')
+        plt.plot(Ref.rho0_half[0:Gr.gw], Gr.z_half[0:Gr.gw], 'ro')
+        plt.plot(Ref.rho0_half[Gr.nzg-Gr.gw:Gr.nzg], Gr.z_half[Gr.nzg-Gr.gw:Gr.nzg], 'ro')
+        plt.plot(Ref.rho0, Gr.z, '-x', label='rho0')
+        plt.plot(Ref.rho0[0:Gr.gw], Gr.z[0:Gr.gw], 'rx')
+        plt.plot(Ref.rho0[Gr.nzg-Gr.gw:Gr.nzg], Gr.z[Gr.nzg-Gr.gw:Gr.nzg], 'rx')
+        plt.title('rho0')
+        plt.xlabel('rho0')
+        plt.ylabel('height z')
+        plt.legend(loc=3)
+        plt.subplot(1,2,2)
+        plt.plot(Ref.dz_rho0_half, Gr.z_half, '-o', label='dz rho0 half')
+        plt.plot(Ref.dz_rho0_half[0:Gr.gw], Gr.z_half[0:Gr.gw], 'ro')
+        plt.plot(Ref.dz_rho0_half[Gr.nzg-Gr.gw:Gr.nzg], Gr.z_half[Gr.nzg-Gr.gw:Gr.nzg], 'ro')
+        plt.plot(Ref.dz_rho0, Gr.z,'-x', label='dz rho0')
+        plt.plot(Ref.dz_rho0[0:Gr.gw], Gr.z[0:Gr.gw], 'rx')
+        plt.plot(Ref.dz_rho0[Gr.nzg-Gr.gw:Gr.nzg], Gr.z[Gr.nzg-Gr.gw:Gr.nzg], 'rx')
+        # plt.legend(loc=2)
+        plt.ylabel('height z')
+        plt.xlabel('dz rho0')
+        plt.title('dz rho0')
+        plt.savefig('figs/Ref_rho0.pdf')
 
         return
