@@ -587,14 +587,14 @@ cdef class SecondOrderMomenta:
                 for m in xrange(nv):
                     for n in xrange(m,nv):
                         if (bcfactor[m,n] == 1):
-                            print(n, 'bcfactor=1', gw, k, bcfactor[m,n], values[m,n,kstart-1-k], values[m,n,kstart+k]*bcfactor[m,n], m, n)
+                            print('m,n:',m,n, 'bcfactor=1', gw, k, bcfactor[m,n], values[m,n,kstart-1-k], values[m,n,kstart+k]*bcfactor[m,n])
                             values[m,n,kstart-1-k] = values[m,n,kstart+k]*bcfactor[m,n]
                         else:
                             if k==0:
-                                print(n, 'bcfactor= -1, k=0', gw, k, bcfactor[m,n], 0.0, m, n)
+                                print('m,n:',m,n, 'bcfactor= -1, k=0', gw, k, bcfactor[m,n], 0.0)
                                 values[m,n,kstart-1-k] = 0.0
                             else:
-                                print(n, 'bcfactor= -1', gw, k, bcfactor[m,n], values[m,n,kstart-1-k], values[m,n,kstart+k]*bcfactor[m,n], m, n)
+                                print('m,n:',m,n, 'bcfactor= -1', gw, k, bcfactor[m,n], values[m,n,kstart-1-k], values[m,n,kstart+k]*bcfactor[m,n])
                                 values[m,n,kstart-1-k] = values[m,n,kstart+k]*bcfactor[m,n]
 
         # plt.figure()
