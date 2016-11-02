@@ -146,13 +146,13 @@ class Simulation1d:
             self.M1.plot('before_bcs', self.Gr, self.TS)
             self.M2.plot('before_bcs', self.Gr, self.TS)
             self.M1.update_boundary_conditions(self.Gr)
-            # self.M2.update_boundary_conditions(self.Gr)
+            self.M2.update_boundary_conditions(self.Gr)
             self.M1.plot('end', self.Gr, self.TS)
             self.M1.plot_tendencies('end', self.Gr, self.TS)
             self.M2.plot('end', self.Gr, self.TS)
 
             # (3) IO
-            print('statsio', self.StatsIO.last_output_time, self.StatsIO.frequency, self.TS.t)
+            # print('statsio', self.StatsIO.last_output_time, self.StatsIO.frequency, self.TS.t)
             if self.StatsIO.last_output_time + self.StatsIO.frequency == self.TS.t:
                 print('do StatsIO.update')
                 self.StatsIO.update(self.Gr, self.TS, self.M1, self.M2)

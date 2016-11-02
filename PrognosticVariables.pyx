@@ -146,7 +146,7 @@ cdef class MeanVariables:
         else:
             print("Not a valid var_type. Killing simulation now!")
             sys.exit()
-        print('adding Variable ', name, self.nv)
+        print('adding M1 Variable ', name, self.nv)
         # print('u', self.name_index['u'])
         return
 
@@ -433,6 +433,7 @@ cdef class SecondOrderMomenta:
 
 
     cpdef add_variable(self,name,units,bc_type,var_type,m,n):
+        print('adding M2 Variable ', name, bc_type, var_type, units, m,n)
         # Store names and units
         self.name_index[name] = [m,n]
         self.index_name.append(name)
@@ -472,9 +473,8 @@ cdef class SecondOrderMomenta:
         # self.nv = len(self.var_index.keys())
 
         '''Local Covariances'''
-
-        '''Momentum (Co)Variances: uu, uv, uw, vv, vw, ww'''
         for m in xrange(M1.nv_velocities):
+            '''Momentum (Co)Variances: uu, uv, uw, vv, vw, ww'''
             var1 = M1.index_name[m]
             self.var_index[var1] = self.nv
             self.nv = len(self.var_index.keys())
@@ -483,29 +483,28 @@ cdef class SecondOrderMomenta:
                 # print('!!!', var1,n,var2,m)
                 self.add_variable(var1+var2,'(m/s)^2',"sym","velocity",m,n)
             '''Scalar Fluxes: wth, wqt'''
-            for m in xrange(M1.nv_scalars):
-                var2 = M1.index_name[M1.nv_velocities + m]
+            for n in xrange(M1.nv_scalars):
+                var2 = M1.index_name[M1.nv_velocities + n]
                 unit = '(m/1)'+ M1.units[var2]
-                self.add_variable(var1+var2,unit,"sym","scalar",n,m)
+                print('adding scalar fluxes: ', var1, var2, m, n+M1.nv_velocities)
+                self.add_variable(var1+var2,unit,"sym","scalar",m,n+M1.nv_velocities)
             '''Pressure Correlation'''
-            m = M1.nv
-            self.add_variable(var1+'p','(m/s)(N/m)',"sym","pressure",n,m)
+            n = M1.nv
+            self.add_variable(var1+'p','(m/s)(N/m)',"sym","pressure",m,n)
 
         '''Scalar Variances and Covariances: thth, thqt, qtqt'''
-        for n in xrange(M1.nv_scalars):
-            var1 = M1.index_name[M1.nv_velocities + n]
+        for m in xrange(M1.nv_scalars):
+            var1 = M1.index_name[M1.nv_velocities + m]
             self.var_index[var1] = self.nv
             self.nv = len(self.var_index.keys())
-            for m in xrange(n,M1.nv_scalars):
-                var2 = M1.index_name[M1.nv_velocities + m]
+            for n in xrange(m,M1.nv_scalars):
+                var2 = M1.index_name[M1.nv_velocities + n]
                 unit = M1.units[var1] + M1.units[var2]
-                self.add_variable(var1+var2,unit,"sym","scalar",n,m)
-            m = M1.nv
-            self.add_variable(var1+'p','(m/s)(N/m)',"sym","pressure",n,m)
+                self.add_variable(var1+var2,unit,"sym","scalar",m+M1.nv_velocities,n+M1.nv_velocities)
+            n = M1.nv
+            self.add_variable(var1+'p','(m/s)(N/m)',"sym","pressure",m+M1.nv_velocities,n)
         self.var_index['p'] = self.nv
         self.nv = len(self.var_index.keys())
-
-
 
         print('M2: nv=', self.nv, 'M1: nv=', M1.nv)
         print(self.var_index)
@@ -529,6 +528,9 @@ cdef class SecondOrderMomenta:
             print('M2: adding stats profiles', var_name)
             # Add mean profile
             NS.add_profile(var_name, Gr)
+
+        print('M2.bc_type')
+        print(np.array(self.bc_type))
         return
 
 
@@ -555,8 +557,8 @@ cdef class SecondOrderMomenta:
             Py_ssize_t nzg = Gr.nzg
             Py_ssize_t k, kstart
             double [:,:,:] values = self.values
-            # double [:,:] bcfactor = self.bc_type
-            double [:,:] bcfactor = np.ones((self.nv,self.nv))
+            double [:,:] bcfactor = self.bc_type
+            # double [:,:] bcfactor = np.ones((self.nv,self.nv))
 
             # double [:,:,:] temp = self.values #np.zeros(shape=values.shape)
 
@@ -585,14 +587,14 @@ cdef class SecondOrderMomenta:
                 for m in xrange(nv):
                     for n in xrange(nv):
                         if (bcfactor[m,n] == 1):
-                            print(n, 'bcfactor=1', gw, k, kstart-1-k, kstart+k, bcfactor[m,n], values[m,n,kstart-1-k], values[m,n,kstart+k]*bcfactor[m,n])
+                            print(n, 'bcfactor=1', gw, k, bcfactor[m,n], values[m,n,kstart-1-k], values[m,n,kstart+k]*bcfactor[m,n], m, n)
                             values[m,n,kstart-1-k] = values[m,n,kstart+k]*bcfactor[m,n]
                         else:
                             if k==0:
-                                print(n, 'bcfactor= -1, k=0', gw, k, kstart-1-k, kstart+k, bcfactor[n], 0.0)
+                                print(n, 'bcfactor= -1, k=0', gw, k, bcfactor[m,n], 0.0, m, n)
                                 values[m,n,kstart-1-k] = 0.0
                             else:
-                                print(n, 'bcfactor= -1', gw, k, kstart-1-k, kstart+k, bcfactor[m,n], values[m,n,kstart-1-k], values[m,n,kstart+k]*bcfactor[m,n])
+                                print(n, 'bcfactor= -1', gw, k, bcfactor[m,n], values[m,n,kstart-1-k], values[m,n,kstart+k]*bcfactor[m,n], m, n)
                                 values[m,n,kstart-1-k] = values[m,n,kstart+k]*bcfactor[m,n]
 
         # plt.figure()
