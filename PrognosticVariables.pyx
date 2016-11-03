@@ -232,7 +232,7 @@ cdef class MeanVariables:
                 for n in xrange(nv):
                     if (bcfactor[n] == 1):
                         #print(n, 'bcfactor=1', gw, k, kstart-1-k, kstart+k, bcfactor[n], values[n,kstart-1-k], values[n,kstart+k]*bcfactor[n])
-                        values[n,kstart-1-k] = values[n,kstart+k]*bcfactor[n]
+                        values[n,kstart-k] = values[n,kstart+k]*bcfactor[n]
                     else:
                         if k==0:
                             #print(n, 'bcfactor= -1, k=0', gw, k, kstart-1-k, kstart+k, bcfactor[n], 0.0)
@@ -559,6 +559,7 @@ cdef class SecondOrderMomenta:
             double [:,:,:] values = self.values
             double [:,:] bcfactor = self.bc_type
 
+    # (1) set bottom boundary condition
         #     with nogil:
         if 1 == 1:
             kstart = gw-1
@@ -567,7 +568,7 @@ cdef class SecondOrderMomenta:
                     for n in xrange(m,nv):
                         if (bcfactor[m,n] == 1):
                             # print('m,n:',m,n, 'bcfactor=1', gw, k, bcfactor[m,n], values[m,n,kstart-1-k], values[m,n,kstart+k]*bcfactor[m,n])
-                            values[m,n,kstart-1-k] = values[m,n,kstart+k]*bcfactor[m,n]
+                            values[m,n,kstart-k] = values[m,n,kstart+k]*bcfactor[m,n]
                         else:
                             if k==0:
                                 print('m,n:',m,n, 'bcfactor= -1, k=0', gw, k, bcfactor[m,n], 0.0)
