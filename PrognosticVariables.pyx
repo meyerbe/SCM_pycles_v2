@@ -203,16 +203,9 @@ cdef class MeanVariables:
             Py_ssize_t gw = Gr.gw
             Py_ssize_t nzg = Gr.nzg
             Py_ssize_t k, kstart
-    #     cdef int ndof = self.ndof
-    #     cdef int n = 0
-    #     cdef int  _coords = comm.cart_comm.Get_coords(_rank)[2]
-    #     cdef int  _mpi_kdim = comm.nprocs[2]
             double [:,:] values = self.values
             double [:] bcfactor = self.bc_type
             double [:,:] temp = self.values #np.zeros(shape=values.shape)
-
-    #     cdef int kstart
-    #     cdef int nzl = grid.nzl
 
     # (1) set bottom boundary condition
         w_varshift = self.name_index['w']
@@ -234,7 +227,7 @@ cdef class MeanVariables:
 
         #     with nogil:
         if 1 == 1:
-            kstart = gw
+            kstart = gw-1
             for k in xrange(gw):
                 for n in xrange(nv):
                     if (bcfactor[n] == 1):
@@ -243,10 +236,10 @@ cdef class MeanVariables:
                     else:
                         if k==0:
                             #print(n, 'bcfactor= -1, k=0', gw, k, kstart-1-k, kstart+k, bcfactor[n], 0.0)
-                            values[n,kstart-1-k] = 0.0
+                            values[n,kstart] = 0.0
                         else:
                             #print(n, 'bcfactor= -1', gw, k, kstart-1-k, kstart+k, bcfactor[n], values[n,kstart-1-k], values[n,kstart+k]*bcfactor[n])
-                            values[n,kstart-1-k] = values[n,kstart+k]*bcfactor[n]
+                            values[n,kstart-k] = values[n,kstart+k]*bcfactor[n]
 
         plt.figure()
         plt.subplot(1,2,1)
@@ -273,7 +266,7 @@ cdef class MeanVariables:
                         values[n,kstart+k] = values[n,kstart-k-1] * bcfactor[n]
                     else:
                         if(k == 0):
-                            values[n,kstart+k] = 0.0
+                            values[n,kstart] = 0.0
                         else:
                             values[n,kstart+k] = values[n,kstart-k] * bcfactor[n]
 
@@ -482,7 +475,8 @@ cdef class SecondOrderMomenta:
             for n in xrange(m,M1.nv_velocities):
                 var2 = M1.index_name[n]
                 # print('!!!', var1,n,var2,m)
-                if m==2 or (m==0 and n==2):
+                if m==7:
+                # if m==2 or (m==0 and n==2):
                 # if m==2:
                     self.add_variable(var1+var2,'(m/s)^2',"asym","velocity",m,n)
                 else:
@@ -567,7 +561,7 @@ cdef class SecondOrderMomenta:
 
         #     with nogil:
         if 1 == 1:
-            kstart = gw
+            kstart = gw-1
             for k in xrange(gw):
                 for m in xrange(nv):
                     for n in xrange(m,nv):
@@ -577,10 +571,10 @@ cdef class SecondOrderMomenta:
                         else:
                             if k==0:
                                 print('m,n:',m,n, 'bcfactor= -1, k=0', gw, k, bcfactor[m,n], 0.0)
-                                values[m,n,kstart-1-k] = 0.0
+                                values[m,n,kstart] = 0.0
                             else:
                                 # print('m,n:',m,n, 'bcfactor= -1', gw, k, bcfactor[m,n], values[m,n,kstart-1-k], values[m,n,kstart+k]*bcfactor[m,n])
-                                values[m,n,kstart-1-k] = values[m,n,kstart+k]*bcfactor[m,n]
+                                values[m,n,kstart-k] = values[m,n,kstart+k]*bcfactor[m,n]
 
 
     # (2) set top boundary condition
@@ -765,6 +759,9 @@ cdef class SecondOrderMomenta:
         # plt.show()
         plt.close()
         return
+
+
+
 
 
     cpdef get_variable_array(self,name,Grid Gr):
