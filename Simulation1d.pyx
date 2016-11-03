@@ -61,9 +61,11 @@ class Simulation1d:
 
         # Add new prognostic variables
         self.PV.add_variable('phi', 'm/s', "velocity")      # self.PV.add_variable('phi', 'm/s', "sym", "velocity")
+        # self.M1.add_variable('u', 'm/s', "asym", "velocity")
+        # self.M1.add_variable('v', 'm/s', "asym", "velocity")
+        # self.M1.add_variable('w', 'm/s', "asym", "velocity")
         self.M1.add_variable('u', 'm/s', "sym", "velocity")
         self.M1.add_variable('v', 'm/s', "sym", "velocity")
-        # self.M1.add_variable('w', 'm/s', "asym", "velocity")
         self.M1.add_variable('w', 'm/s', "sym", "velocity")
 
         # AuxillaryVariables(namelist, self.PV, self.DV, self.Pa)
