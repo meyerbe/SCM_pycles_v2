@@ -231,14 +231,14 @@ cdef class MeanVariables:
             for k in xrange(gw):
                 for n in xrange(nv):
                     if (bcfactor[n] == 1):
-                        #print(n, 'bcfactor=1', gw, k, kstart-1-k, kstart+k, bcfactor[n], values[n,kstart-1-k], values[n,kstart+k]*bcfactor[n])
+                        # print(n, 'bcfactor=1', gw, k, bcfactor[n], values[n,kstart-k], values[n,kstart+k+1]*bcfactor[n])
                         values[n,kstart-k] = values[n,kstart+k+1]*bcfactor[n]
                     else:
                         if k==0:
-                            #print(n, 'bcfactor= -1, k=0', gw, k, kstart-1-k, kstart+k, bcfactor[n], 0.0)
+                            #print(n, 'bcfactor= -1, k=0', gw, k, bcfactor[n], 0.0)
                             values[n,kstart] = 0.0
                         else:
-                            #print(n, 'bcfactor= -1', gw, k, kstart-1-k, kstart+k, bcfactor[n], values[n,kstart-1-k], values[n,kstart+k]*bcfactor[n])
+                            #print(n, 'bcfactor= -1', gw, k, bcfactor[n], values[n,kstart-1-k], values[n,kstart+k]*bcfactor[n])
                             values[n,kstart-k] = values[n,kstart+k]*bcfactor[n]
 
         plt.figure()
@@ -574,7 +574,7 @@ cdef class SecondOrderMomenta:
                                 print('m,n:',m,n, 'bcfactor= -1, k=0', gw, k, bcfactor[m,n], 0.0)
                                 values[m,n,kstart] = 0.0
                             else:
-                                # print('m,n:',m,n, 'bcfactor= -1', gw, k, bcfactor[m,n], values[m,n,kstart-1-k], values[m,n,kstart+k]*bcfactor[m,n])
+                                print('m,n:',m,n, 'bcfactor= -1', gw, k, bcfactor[m,n], values[m,n,kstart-1-k], values[m,n,kstart+k]*bcfactor[m,n])
                                 values[m,n,kstart-k] = values[m,n,kstart+k]*bcfactor[m,n]
 
 
@@ -589,7 +589,7 @@ cdef class SecondOrderMomenta:
                             values[m,n,kstart+k] = values[m,n,kstart-k-1] * bcfactor[m,n]
                         else:
                             if(k == 0):
-                                values[n,kstart+k] = 0.0
+                                values[m,n,kstart] = 0.0
                             else:
                                 values[m,n,kstart+k] = values[m,n,kstart-k] * bcfactor[m,n]
 
@@ -702,22 +702,22 @@ cdef class SecondOrderMomenta:
         plt.plot(tendencies[th_varshift,th_varshift,0:kmax], Gr.z[0:kmax], '-x')
         plt.plot(tendencies[th_varshift,th_varshift,0:Gr.gw], Gr.z[0:Gr.gw], 'rx')
         plt.plot(tendencies[th_varshift,th_varshift,Gr.gw+Gr.nz:kmax], Gr.z[Gr.gw+Gr.nz:kmax], 'rx')
-        plt.title('thth tend, '+np.str(np.amax(tendencies[th_varshift,th_varshift,:])),fontsize=10)
+        plt.title('thth tend, '+np.str(np.round(np.amax(tendencies[th_varshift,th_varshift,:]),6)),fontsize=10)
         plt.subplot(1,4,2)
         plt.plot(tendencies[w_varshift,w_varshift,0:kmax], Gr.z[0:kmax], '-x')
         plt.plot(tendencies[w_varshift,w_varshift,0:Gr.gw], Gr.z[0:Gr.gw], 'rx')
         plt.plot(tendencies[w_varshift,w_varshift,Gr.gw+Gr.nz:kmax], Gr.z[Gr.gw+Gr.nz:kmax], 'rx')
-        plt.title('ww tend,'+np.str(np.amax(tendencies[w_varshift,w_varshift,:])),fontsize=10)
+        plt.title('ww tend,'+np.str(np.round(np.amax(tendencies[w_varshift,w_varshift,:]),6)),fontsize=10)
         plt.subplot(1,4,3)
         plt.plot(tendencies[u_varshift,w_varshift,0:kmax], Gr.z[0:kmax], '-x')
         plt.plot(tendencies[u_varshift,w_varshift,0:Gr.gw], Gr.z[0:Gr.gw], 'rx')
         plt.plot(tendencies[u_varshift,w_varshift,Gr.gw+Gr.nz:kmax], Gr.z[Gr.gw+Gr.nz:kmax], 'rx')
-        plt.title('uw tend,'+np.str(np.amax(tendencies[u_varshift,w_varshift,:])),fontsize=10)
+        plt.title('uw tend,'+np.str(np.round(np.amax(tendencies[u_varshift,w_varshift,:]),6)),fontsize=10)
         plt.subplot(1,4,4)
         plt.plot(tendencies[w_varshift,th_varshift,0:kmax], Gr.z[0:kmax], '-x')
         plt.plot(tendencies[w_varshift,th_varshift,0:Gr.gw], Gr.z[0:Gr.gw], 'rx')
         plt.plot(tendencies[w_varshift,th_varshift,Gr.gw+Gr.nz:kmax], Gr.z[Gr.gw+Gr.nz:kmax], 'rx')
-        plt.title('wth tend,'+np.str(np.amax(tendencies[w_varshift,th_varshift,:])),fontsize=10)
+        plt.title('wth tend,'+np.str(np.round(np.amax(tendencies[w_varshift,th_varshift,:]),6)),fontsize=10)
         plt.savefig('./figs/M2_tendencies_' + message + '_' + np.str(np.int(TS.t)) + '.pdf')
         # plt.show()
         plt.close()

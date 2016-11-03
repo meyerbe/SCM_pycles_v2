@@ -40,5 +40,5 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
     cpdef pressure_correlations_Cheng(self, Grid Gr, PrognosticVariables.MeanVariables M1, PrognosticVariables.SecondOrderMomenta M2)
     cpdef buoyancy_update(self, Grid Gr, ReferenceState Ref, TimeStepping TS, PrognosticVariables.MeanVariables M1, PrognosticVariables.SecondOrderMomenta M2)
     cpdef stats_io(self)
-    cpdef plot(self, str message, Grid Gr, TimeStepping TS, MeanVariables M1, SecondOrderMomenta M2)
     cpdef plot_tendencies(self, str message, Grid Gr, TimeStepping TS, MeanVariables M1, SecondOrderMomenta M2)
+    cpdef plot_all(self, str message, Grid Gr, TimeStepping TS, MeanVariables M1, SecondOrderMomenta M2, double [:] var, int n1, int n2)
