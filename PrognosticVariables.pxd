@@ -70,7 +70,9 @@ cdef class SecondOrderMomenta:
     cpdef update(self, Grid Gr, TimeStepping TS)
     cpdef update_boundary_conditions(self, Grid Gr)
     cpdef plot(self, str message, Grid Gr, TimeStepping TS)
+    cpdef plot_nogw(self, str message, Grid Gr, TimeStepping TS)
     cpdef plot_tendencies(self, str message, Grid Gr, TimeStepping TS)
+    cpdef plot_nogw_tendencies(self, str message, Grid Gr, TimeStepping TS)
     cpdef get_variable_array(self,name,Grid Gr)
     cpdef get_tendency_array(self,name,Grid Gr)
     cdef inline Py_ssize_t get_nv(self, str variable_name):
