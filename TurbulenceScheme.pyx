@@ -379,27 +379,27 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
         #     print('PPPPP: epsilon is nan')
 
         # (3) Momentum Fluxes: generation rate and tendency
-        for n in xrange(M1.nv_velocities):
-            for k in xrange(1,nzg):
-                P[n,w_index,k] = alpha*g*(M2_values[n,th_index,k])
-            for k in xrange(1,Gr.nzg-1):
-                # M2.tendencies[n,n,k] += 2/3*( c4*epsilon[k] + c5*P_tke[k])
-                tendencies[n,n,k] += 2/3*( c4*epsilon[k] + c5*P_tke[k])
-
-            # if np.isnan(M2.tendencies[n,n,:]).any():
-            #     print('PPPPP: M2.tend[n,n] is nan', n)
-
+        # (3a) diagnoal elements
         for m in xrange(n_vel):
-            for n in xrange(i,n_vel):
+            print('m', m)
+            for k in xrange(nzg):
+                P[m,w_index,k] = alpha*g*(M2_values[m,th_index,k])
+                P[w_index,m,k] = alpha*g*(M2_values[m,th_index,k])
+            for k in xrange(nzg):
+                # M2.tendencies[n,n,k] += 2/3*( c4*epsilon[k] + c5*P_tke[k])
+                tendencies[m,m,k] += 2./3.*( c4*epsilon[k] + c5*P_tke[k] )
+        # (3b) off-diagnoal elements
+            for n in xrange(m,n_vel):
+                print('n',n)
                 for k in xrange(1,nzg-1):
-                    P[m,n,k] -= M2.values[m,w_index,k]*(M1.values[n,k]-M1.values[j,k-1])*dzi \
-                                + M2.values[n,w_index,k]*(M1.values[m,k]-M1.values[m,k-1])*dzi
-                    if np.isnan(P[m,n,k]):
-                        print('....... P is nan, ', m,n,k)
+                    P[m,n,k] -= M2_values[m,w_index,k]*(M1.values[n,k]-M1.values[n,k-1])*dzi \
+                                + M2_values[n,w_index,k]*(M1.values[m,k]-M1.values[m,k-1])*dzi
+                    # if np.isnan(P[m,n,k]):
+                    #     print('....... P is nan, ', m,n,k)
                 for k in xrange(1,nzg-1):
                     if tke[k] > 0:
                         # M2.tendencies[m,n,k] += -c4*epsilon[k]/tke[k]*M2.values[m,n,k] - c5*P[m,n,k]
-                        tendencies[m,n,k] += -c4*epsilon[k]/tke[k]*M2.values[m,n,k] - c5*P[m,n,k]
+                        tendencies[m,n,k] += -c4*epsilon[k]/tke[k]*M2_values[m,n,k] - c5*P[m,n,k]
                     else:
                         # M2.tendencies[m,n,k] -= c5*P[m,n,k]     # c5=0
                         tendencies[m,n,k] -= c5*P[m,n,k]     # c5=0
@@ -421,11 +421,15 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
                         tendencies[n,th_index,k] += -c6*epsilon[k]/tke[k]*M2.values[n,th_index,k] - c7*P[n,th_index,k]
                     else:
                         # M2.tendencies[i,th_index,k] -= c7*P[i,th_index,k]
-                        tendencies[i,th_index,k] -= c7*P[i,th_index,k]
-        # if np.isnan(P).any():
-        #     print('PPPPP: P is nan after (4)')
-        # if np.isnan(M2.tendencies).any():
-        #     print('PPPPP: M2.tend is nan after (4)')
+                        tendencies[n,th_index,k] -= c7*P[n,th_index,k]
+        if np.isnan(P).any():
+            print('PPPPP: P is nan after')
+        if np.isnan(P_tke).any():
+            print('PPPPP: P_tke is nan')
+        if np.isnan(tke).any():
+            print('PPPPP: tke is nan')
+        if np.isnan(tendencies).any():
+            print('PPPPP: tendencies is nan')
 
         # (5) Moisture Flux generation rate and tendency
         if 'qt' in M1.name_index:
