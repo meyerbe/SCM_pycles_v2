@@ -174,12 +174,16 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
         M2.plot_tendencies('01_init',Gr,TS)
         self.advect_M2_local(Gr, Ref, TS, M1, M2)
         M2.plot_tendencies('02_advect',Gr,TS)
+        # self.plot_all('uw', Gr, TS, M1, M2, temp[0,2,:], 0, 2)
+        # self.plot_all('vw', Gr, TS, M1, M2, temp[1,2,:], 1, 2)
+        # self.plot_all('ww', Gr, TS, M1, M2, temp[2,2,:], 2, 2)
+        # self.plot_all('wth', Gr, TS, M1, M2, temp[2,3,:], 2, 3)
+        self.pressure_correlations_Andre(Gr, M1, M2)
+        M2.plot_tendencies('03_pressureAndre',Gr,TS)
         self.plot_all('uw', Gr, TS, M1, M2, temp[0,2,:], 0, 2)
         self.plot_all('vw', Gr, TS, M1, M2, temp[1,2,:], 1, 2)
         self.plot_all('ww', Gr, TS, M1, M2, temp[2,2,:], 2, 2)
         self.plot_all('wth', Gr, TS, M1, M2, temp[2,3,:], 2, 3)
-        # self.pressure_correlations_Andre(Gr, M1, M2)
-        # M2.plot_tendencies('03_pressureAndre',Gr,TS)
         ## self.pressure_correlations_Cheng(Gr, M1, M2)
         ## self.pressure_correlations_Mironov(Gr, M1, M2)
         # self.buoyancy_update(Gr, Ref, TS, M1, M2)
@@ -196,6 +200,7 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
             Py_ssize_t v_index = M1.name_index['v']
             Py_ssize_t w_index = M1.name_index['w']
             Py_ssize_t th_index = M1.name_index['th']
+            Py_ssize_t qt_index
 
             double [:] u = M1.values[u_index,:]
             double [:] v = M1.values[v_index,:]
@@ -232,7 +237,7 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
 
 
 
-        print('---- M2 advection tendencies:', np.amax(np.abs(tendencies)), np.amax(np.abs(self.tendencies_M2)) )
+        print('M2 advection tendencies:', np.amax(np.abs(tendencies)), np.amax(np.abs(self.tendencies_M2)) )
         self.plot_var2('advection_ww', 2,2,flux[2,2,:], tendencies[2,2,:], Gr, Ref, TS, M1, M2)
         self.plot_var2('advection_uw', 0,2,flux[0,2,:], tendencies[0,2,:], Gr, Ref, TS, M1, M2)
         self.plot_var2('advection_wth', 2,3,flux[2,3,:], tendencies[2,3,:], Gr, Ref, TS, M1, M2)
@@ -285,6 +290,145 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
 
         return
 
+
+
+
+
+
+    cpdef pressure_correlations_Andre(self, Grid Gr, PrognosticVariables.MeanVariables M1, PrognosticVariables.SecondOrderMomenta M2):
+        # '''following André (1978), based on Launder (1975) and Rotta (1951)'''
+        # !!! only dry thermodynamics !!!
+        # !!! only expression for vertical moisture flux (no horizontal fluxes) !!!
+        print('Turb update: pressure correlations André')
+
+        # time = 0
+
+        cdef:
+            Py_ssize_t u_index = M1.name_index['u']
+            Py_ssize_t v_index = M1.name_index['v']
+            Py_ssize_t w_index = M1.name_index['w']
+            Py_ssize_t th_index = M1.name_index['th']
+            double [:] u = M1.values[u_index,:]
+            double [:] v = M1.values[v_index,:]
+            double [:,:,:] M2_values = M2.values
+
+            double [:,:,:] P = np.zeros(shape=(M1.nv,M1.nv,Gr.nzg),dtype=np.double,order='c')
+            double [:] P_tke = np.zeros((Gr.nzg),dtype=np.double,order='c')
+            double [:] tke = np.zeros((Gr.nzg),dtype=np.double,order='c')
+
+            double lb=0.0
+            double ld=0.0
+            double l0, karman, c1
+            double [:] l = np.zeros((Gr.nzg),dtype=np.double,order='c')
+            double [:] epsilon = np.zeros((Gr.nzg),dtype=np.double,order='c')
+
+            Py_ssize_t i,j,k,n
+            Py_ssize_t n_vel = M1.nv_velocities
+            double dzi2 = 0.5*Gr.dzi
+            double dzi = Gr.dzi
+            Py_ssize_t nzg = Gr.nzg
+
+            double alpha = 1/285    # thermal expansion coefficient
+            double c4 = 4.5
+            double c5 = 0.0
+            double c6 = 4.85
+            double c7 = 1.0-0.125*c6
+
+
+        # (1) TKE and TKE generation rate
+        for k in xrange(1,Gr.nzg):
+            # Kinetic Energy ---> Diagnostic Variable (needed elsewhere?!?!)
+            tke[k] = np.sqrt(M2_values[0,0,k] + M2_values[1,1,k] + M2_values[2,2,k])
+            # tke[k] = np.sqrt(M2.values[0,0,k] + M2.values[1,1,k] + M2.values[2,2,k])
+            # TKE generation rate
+            P_tke[k] = alpha*g*M2_values[w_index,th_index,k] \
+                        - M2_values[u_index,w_index,k]*(u[k]-u[k-1])*dzi \
+                        - M2_values[v_index,w_index,k]*(v[k]-v[k-1])*dzi
+            # P_tke[k] = alpha*g*M2.values[w_index,th_index,k] \
+            #        - M2.values[u_index,w_index,k]*(M1.values[u_index,k]-M1.values[u_index,k-1])*dzi \
+            #        - M2.values[v_index,w_index,k]*(M1.values[v_index,k]-M1.values[v_index,k-1])*dzi
+        if np.isnan(tke).any():
+            print('PPPPP: tke is nan')
+        if np.isnan(P_tke).any():
+            print('PPPPP: P_tke is nan')
+
+
+        # (2) Energy Dissipation
+        # lb: Mixing length  for neutral and unstable conditions (Blackadar, 1962)
+        # ld: characteristic lengthfor stable stratification
+        karman = 0.35           # von Karman constant
+        l0 = 15           # mixing length far above the ground, take 15m (Jieliu, 2011)
+        if np.amin(tke)>0:
+            for k in xrange(1,nzg):
+                lb = karman*k/(1+karman*k/l0)
+                ld = 0.75/(np.sqrt(tke[k]))*1/np.sqrt(alpha*g*(M1.values[th_index,k+1]-M1.values[th_index,k])*dzi)
+                l[k] = np.minimum(lb,ld)
+                c1 = 0.019+0.051*l[k]/lb
+                epsilon[k] = c1/np.sqrt(tke[k]*tke[k]*tke[k])
+        if np.isnan(epsilon).any():
+            print('PPPPP: epsilon is nan')
+
+        # (3) Momentum Fluxes: generation rate and tendency
+        for n in xrange(M1.nv_velocities):
+            for k in xrange(1,nzg):
+                P[n,w_index,k] = alpha*g*(M2_values[n,th_index,k])
+                # P[w_index,n,k] = alpha*g*(M2.values[th_index,n,k])
+            for k in xrange(1,Gr.nzg-1):
+                M2.tendencies[n,n,k] += 2/3*( c4*epsilon[k] + c5*P_tke[k])
+
+            if np.isnan(M2.tendencies[n,n,:]).any():
+                print('PPPPP: M2.tend[n,n] is nan', n)
+
+        for i in xrange(n_vel):
+            for j in xrange(i,n_vel):
+                for k in xrange(1,nzg-1):
+                    P[i,j,k] -= M2.values[i,w_index,k]*(M1.values[j,k]-M1.values[j,k-1])*dzi \
+                                + M2.values[j,w_index,k]*(M1.values[i,k]-M1.values[i,k-1])*dzi
+                    if np.isnan(P[i,j,k]):
+                        print('....... P is nan, ', i,j,k)
+                for k in xrange(1,nzg-1):
+                    # M2.tendencies[i,j,k] += -c4*epsilon[k]/tke[k]*M2.values[i,j,k] - c5*P[i,j,k]
+                    if tke[k] > 0:
+                        M2.tendencies[i,j,k] += -c4*epsilon[k]/tke[k]*M2.values[i,j,k] - c5*P[i,j,k]
+                    else:
+                        M2.tendencies[i,j,k] -= c5*P[i,j,k]     # c5=0
+        if np.isnan(P).any():
+            print('PPPPP: P is nan')
+        if np.isnan(M2.tendencies).any():
+            print('PPPPP: M2.tend is nan')
+        # print('epsilon', np.isnan(epsilon).any(), np.isnan(M2.values).any(), np.isnan(P).any())
+        # print('tke', np.isnan(tke).any(), np.amin(tke), np.amax(tke))
+
+        for i in xrange(n_vel):
+        # (4) Heat Flux generation rate and tendency
+            for k in xrange(1,nzg):
+                P[i,th_index,k] = alpha*g*M2_values[w_index,th_index,k] \
+                                  - M2_values[u_index,w_index,k]*(u[k]-u[k-1])*dzi \
+                                  - M2_values[v_index,w_index,k]*(v[k]-v[k-1])*dzi
+            for k in xrange(Gr.nzg-1):
+                if tke[k] > 0:
+                    M2.tendencies[i,th_index,k] += -c6*epsilon[k]/tke[k]*M2.values[i,th_index,k] - c7*P[i,th_index,k]
+                else:
+                    M2.tendencies[i,th_index,k] -= c7*P[i,th_index,k]
+        if np.isnan(P).any():
+            print('PPPPP: P is nan after (4)')
+        if np.isnan(M2.tendencies).any():
+            print('PPPPP: M2.tend is nan after (4)')
+
+        # (5) Moisture Flux generation rate and tendency
+        if 'qt' in M1.name_index:
+            qt_index = M1.name_index['qt']
+            for k in xrange(Gr.nzg-1):
+                if th_index < qt_index:
+                    P[i,qt_index,k] = alpha*g*M2.values[th_index,qt_index,k]
+                else:
+                    P[i,qt_index,k] = alpha*g*M2.values[qt_index,th_index,k]
+            for k in xrange(Gr.nzg-1):
+                M2.tendencies[w_index,qt_index,k] = -c6*epsilon[k]/tke[k]*M2.values[w_index,qt_index,k] \
+                                                    - c7*P[w_index,qt_index,k]
+
+        # time += 1
+        return
 
 
     cpdef pressure_correlations_Mironov(self, Grid Gr, PrognosticVariables.MeanVariables M1, PrognosticVariables.SecondOrderMomenta M2):
@@ -406,124 +550,6 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
         # '''
 
         return
-
-
-    cpdef pressure_correlations_Andre(self, Grid Gr, PrognosticVariables.MeanVariables M1, PrognosticVariables.SecondOrderMomenta M2):
-        # '''following André (1978), based on Launder (1975) and Rotta (1951)'''
-        # !!! only dry thermodynamics !!!
-        # !!! only expression for vertical moisture flux (no horizontal fluxes) !!!
-        print('Turb update: pressure correlations André')
-
-        time = 0
-
-        cdef:
-            Py_ssize_t u_index = M1.name_index['u']
-            Py_ssize_t v_index = M1.name_index['v']
-            Py_ssize_t w_index = M1.name_index['w']
-            Py_ssize_t th_index = M1.name_index['th']
-
-            # double [:] u = M1.values[u_index,:]
-            # double [:] v = M1.values[v_index,:]
-
-            double [:,:,:] P = np.zeros(shape=(M1.nv,M1.nv,Gr.nzg),dtype=np.double,order='c')
-            double [:] P_tke = np.zeros((Gr.nzg),dtype=np.double,order='c')
-            double [:] tke = np.zeros((Gr.nzg),dtype=np.double,order='c')
-
-            double lb=0.0
-            double ld=0.0
-            double l0, karman, c1
-            double [:] l = np.zeros((Gr.nzg),dtype=np.double,order='c')
-            double [:] epsilon = np.zeros((Gr.nzg),dtype=np.double,order='c')
-
-            Py_ssize_t i,j,k
-            double dzi2 = 0.5*Gr.dzi
-            double dzi = Gr.dzi
-
-            double alpha = 1/285    # thermal expansion coefficient
-            double c4 = 4.5
-            double c5 = 0.0
-            double c6 = 4.85
-            double c7 = 1.0-0.125*c6
-
-
-        # (1) TKE and TKE generation rate
-        for k in xrange(Gr.nzg):
-            # Kinetic Energy ---> Diagnostic Variable (needed elsewhere?!?!)
-            tke[k] = np.sqrt(M2.values[0,0,k] + M2.values[1,1,k] + M2.values[2,2,k])
-            # TKE generation rate
-            P_tke[k] = alpha*g*M2.values[w_index,th_index,k] \
-                       - M2.values[u_index,w_index,k]*(M1.values[u_index,k+1]-M1.values[u_index,k])*dzi \
-                       - M2.values[v_index,w_index,k]*(M1.values[v_index,k+1]-M1.values[v_index,k])*dzi
-
-
-        # (2) Energy Dissipation
-        # lb: Mixing length  for neutral and unstable conditions (Blackadar, 1962)
-        # ld: characteristic lengthfor stable stratification
-        karman = 0.35           # von Karman constant
-        l0 = 15           # mixing length far above the ground, take 15m (Jieliu, 2011)
-        if np.amin(tke)>0:
-            for k in xrange(Gr.nzg-1):
-                lb = karman*k/(1+karman*k/l0)
-                ld = 0.75/(np.sqrt(tke[k]))*1/np.sqrt(alpha*g*(M1.values[th_index,k+1]-M1.values[th_index,k])*dzi)
-                l[k] = np.min(lb,ld)
-                c1 = 0.019+0.051*l[k]/lb
-                epsilon[k] = c1/np.sqrt(tke[k]*tke[k]*tke[k])
-
-
-        # (3) Momentum Fluxes: generation rate and tendency
-        for i in xrange(M1.nv_velocities):
-            for k in xrange(Gr.nzg):
-                P[i,w_index,k] = alpha*g*(M2.values[i,th_index,k])
-                P[w_index,i,k] = alpha*g*(M2.values[th_index,i,k])
-            for k in xrange(Gr.nzg-1):
-                M2.tendencies[i,i,k] += 2/3*( c4*epsilon[k] + c5*P_tke[k])
-
-        for i in xrange(M1.nv_velocities):
-            for j in xrange(i,M1.nv_velocities):
-                for k in xrange(Gr.nzg-1):
-                    P[i,j,k] -= M2.values[i,w_index,k]*(M1.values[j,k+1]-M1.values[j,k])*dzi \
-                                + M2.values[j,w_index,k]*(M1.values[i,k+1]-M1.values[i,k])*dzi
-                    if np.isnan(P[i,j,k]):
-                        print('....... P is nan, ', i,j,k)
-                for k in xrange(Gr.nzg-1):
-                    # M2.tendencies[i,j,k] += -c4*epsilon[k]/tke[k]*M2.values[i,j,k] - c5*P[i,j,k]
-                    if tke[k] > 0:
-                        M2.tendencies[i,j,k] += -c4*epsilon[k]/tke[k]*M2.values[i,j,k] - c5*P[i,j,k]
-                    else:
-                        M2.tendencies[i,j,k] -= c5*P[i,j,k]     # c5=0
-
-        print('epsilon', np.isnan(epsilon).any(), np.isnan(M2.values).any(), np.isnan(P).any())
-        print('tke', np.isnan(tke).any(), np.amin(tke), np.amax(tke))
-
-        for i in xrange(M1.nv_velocities):
-        # (4) Heat Flux generation rate and tendency
-            for k in xrange(Gr.nzg-1):
-                P[i,th_index,k] = alpha*g*M2.values[w_index,th_index,k] \
-                                  - M2.values[u_index,w_index,k]*(M1.values[u_index,k+1]-M1.values[u_index,k])*dzi \
-                                  - M2.values[v_index,w_index,k]*(M1.values[v_index,k+1]-M1.values[v_index,k])*dzi
-            for k in xrange(Gr.nzg-1):
-                if tke[k] > 0:
-                    M2.tendencies[i,th_index,k] += -c6*epsilon[k]/tke[k]*M2.values[i,th_index,k] - c7*P[i,th_index,k]
-                else:
-                    M2.tendencies[i,th_index,k] -= c7*P[i,th_index,k]
-
-
-        # (5) Moisture Flux generation rate and tendency
-        if 'qt' in M1.name_index:
-            qt_index = M1.name_index['qt']
-
-            for k in xrange(Gr.nzg-1):
-                if th_index < qt_index:
-                    P[i,qt_index,k] = alpha*g*M2.values[th_index,qt_index,k]
-                else:
-                    P[i,qt_index,k] = alpha*g*M2.values[qt_index,th_index,k]
-            for k in xrange(Gr.nzg-1):
-                M2.tendencies[w_index,qt_index,k] = -c6*epsilon[k]/tke[k]*M2.values[w_index,qt_index,k] \
-                                                    - c7*P[w_index,qt_index,k]
-
-        time += 1
-        return
-
 
     cpdef pressure_correlations_Cheng(self, Grid Gr, PrognosticVariables.MeanVariables M1, PrognosticVariables.SecondOrderMomenta M2):
         cdef:
