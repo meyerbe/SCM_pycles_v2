@@ -310,6 +310,7 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
             Py_ssize_t th_index = M1.name_index['th']
             double [:] u = M1.values[u_index,:]
             double [:] v = M1.values[v_index,:]
+            double [:] w = M1.values[w_index,:]
             double [:,:,:] M2_values = M2.values
 
             double [:,:,:] P = np.zeros(shape=(M1.nv,M1.nv,Gr.nzg),dtype=np.double,order='c')
@@ -339,19 +340,14 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
         for k in xrange(1,Gr.nzg):
             # Kinetic Energy ---> Diagnostic Variable (needed elsewhere?!?!)
             tke[k] = np.sqrt(M2_values[0,0,k] + M2_values[1,1,k] + M2_values[2,2,k])
-            # tke[k] = np.sqrt(M2.values[0,0,k] + M2.values[1,1,k] + M2.values[2,2,k])
             # TKE generation rate
             P_tke[k] = alpha*g*M2_values[w_index,th_index,k] \
                         - M2_values[u_index,w_index,k]*(u[k]-u[k-1])*dzi \
                         - M2_values[v_index,w_index,k]*(v[k]-v[k-1])*dzi
-            # P_tke[k] = alpha*g*M2.values[w_index,th_index,k] \
-            #        - M2.values[u_index,w_index,k]*(M1.values[u_index,k]-M1.values[u_index,k-1])*dzi \
-            #        - M2.values[v_index,w_index,k]*(M1.values[v_index,k]-M1.values[v_index,k-1])*dzi
-        if np.isnan(tke).any():
-            print('PPPPP: tke is nan')
-        if np.isnan(P_tke).any():
-            print('PPPPP: P_tke is nan')
-
+        # if np.isnan(tke).any():
+        #     print('PPPPP: tke is nan')
+        # if np.isnan(P_tke).any():
+        #     print('PPPPP: P_tke is nan')
 
         # (2) Energy Dissipation
         # lb: Mixing length  for neutral and unstable conditions (Blackadar, 1962)
@@ -365,19 +361,18 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
                 l[k] = np.minimum(lb,ld)
                 c1 = 0.019+0.051*l[k]/lb
                 epsilon[k] = c1/np.sqrt(tke[k]*tke[k]*tke[k])
-        if np.isnan(epsilon).any():
-            print('PPPPP: epsilon is nan')
+        # if np.isnan(epsilon).any():
+        #     print('PPPPP: epsilon is nan')
 
         # (3) Momentum Fluxes: generation rate and tendency
         for n in xrange(M1.nv_velocities):
             for k in xrange(1,nzg):
                 P[n,w_index,k] = alpha*g*(M2_values[n,th_index,k])
-                # P[w_index,n,k] = alpha*g*(M2.values[th_index,n,k])
             for k in xrange(1,Gr.nzg-1):
                 M2.tendencies[n,n,k] += 2/3*( c4*epsilon[k] + c5*P_tke[k])
 
-            if np.isnan(M2.tendencies[n,n,:]).any():
-                print('PPPPP: M2.tend[n,n] is nan', n)
+            # if np.isnan(M2.tendencies[n,n,:]).any():
+            #     print('PPPPP: M2.tend[n,n] is nan', n)
 
         for i in xrange(n_vel):
             for j in xrange(i,n_vel):
@@ -387,33 +382,31 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
                     if np.isnan(P[i,j,k]):
                         print('....... P is nan, ', i,j,k)
                 for k in xrange(1,nzg-1):
-                    # M2.tendencies[i,j,k] += -c4*epsilon[k]/tke[k]*M2.values[i,j,k] - c5*P[i,j,k]
                     if tke[k] > 0:
                         M2.tendencies[i,j,k] += -c4*epsilon[k]/tke[k]*M2.values[i,j,k] - c5*P[i,j,k]
                     else:
                         M2.tendencies[i,j,k] -= c5*P[i,j,k]     # c5=0
-        if np.isnan(P).any():
-            print('PPPPP: P is nan')
-        if np.isnan(M2.tendencies).any():
-            print('PPPPP: M2.tend is nan')
-        # print('epsilon', np.isnan(epsilon).any(), np.isnan(M2.values).any(), np.isnan(P).any())
-        # print('tke', np.isnan(tke).any(), np.amin(tke), np.amax(tke))
+        # if np.isnan(P).any():
+        #     print('PPPPP: P is nan')
+        # if np.isnan(M2.tendencies).any():
+        #     print('PPPPP: M2.tend is nan')
 
-        for i in xrange(n_vel):
         # (4) Heat Flux generation rate and tendency
-            for k in xrange(1,nzg):
-                P[i,th_index,k] = alpha*g*M2_values[w_index,th_index,k] \
-                                  - M2_values[u_index,w_index,k]*(u[k]-u[k-1])*dzi \
-                                  - M2_values[v_index,w_index,k]*(v[k]-v[k-1])*dzi
-            for k in xrange(Gr.nzg-1):
-                if tke[k] > 0:
-                    M2.tendencies[i,th_index,k] += -c6*epsilon[k]/tke[k]*M2.values[i,th_index,k] - c7*P[i,th_index,k]
-                else:
-                    M2.tendencies[i,th_index,k] -= c7*P[i,th_index,k]
-        if np.isnan(P).any():
-            print('PPPPP: P is nan after (4)')
-        if np.isnan(M2.tendencies).any():
-            print('PPPPP: M2.tend is nan after (4)')
+        with nogil:
+            for i in xrange(n_vel):
+                for k in xrange(1,nzg):
+                    P[i,th_index,k] = alpha*g*M2_values[w_index,th_index,k] \
+                                      - M2_values[u_index,w_index,k]*(u[k]-u[k-1])*dzi \
+                                      - M2_values[v_index,w_index,k]*(v[k]-v[k-1])*dzi
+                for k in xrange(Gr.nzg-1):
+                    if tke[k] > 0:
+                        M2.tendencies[i,th_index,k] += -c6*epsilon[k]/tke[k]*M2.values[i,th_index,k] - c7*P[i,th_index,k]
+                    else:
+                        M2.tendencies[i,th_index,k] -= c7*P[i,th_index,k]
+        # if np.isnan(P).any():
+        #     print('PPPPP: P is nan after (4)')
+        # if np.isnan(M2.tendencies).any():
+        #     print('PPPPP: M2.tend is nan after (4)')
 
         # (5) Moisture Flux generation rate and tendency
         if 'qt' in M1.name_index:
