@@ -335,7 +335,7 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
             double [:] l = np.zeros((Gr.nzg),dtype=np.double,order='c')
             double [:] epsilon = np.zeros((Gr.nzg),dtype=np.double,order='c')
 
-            Py_ssize_t i,j,k,n
+            Py_ssize_t k,m,n
             Py_ssize_t n_vel = M1.nv_velocities
             double dzi2 = 0.5*Gr.dzi
             double dzi = Gr.dzi
@@ -389,20 +389,20 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
             # if np.isnan(M2.tendencies[n,n,:]).any():
             #     print('PPPPP: M2.tend[n,n] is nan', n)
 
-        for i in xrange(n_vel):
-            for j in xrange(i,n_vel):
+        for m in xrange(n_vel):
+            for n in xrange(i,n_vel):
                 for k in xrange(1,nzg-1):
-                    P[i,j,k] -= M2.values[i,w_index,k]*(M1.values[j,k]-M1.values[j,k-1])*dzi \
-                                + M2.values[j,w_index,k]*(M1.values[i,k]-M1.values[i,k-1])*dzi
-                    if np.isnan(P[i,j,k]):
-                        print('....... P is nan, ', i,j,k)
+                    P[m,n,k] -= M2.values[m,w_index,k]*(M1.values[n,k]-M1.values[j,k-1])*dzi \
+                                + M2.values[n,w_index,k]*(M1.values[m,k]-M1.values[m,k-1])*dzi
+                    if np.isnan(P[m,n,k]):
+                        print('....... P is nan, ', m,n,k)
                 for k in xrange(1,nzg-1):
                     if tke[k] > 0:
-                        # M2.tendencies[i,j,k] += -c4*epsilon[k]/tke[k]*M2.values[i,j,k] - c5*P[i,j,k]
-                        tendencies[i,j,k] += -c4*epsilon[k]/tke[k]*M2.values[i,j,k] - c5*P[i,j,k]
+                        # M2.tendencies[m,n,k] += -c4*epsilon[k]/tke[k]*M2.values[m,n,k] - c5*P[m,n,k]
+                        tendencies[m,n,k] += -c4*epsilon[k]/tke[k]*M2.values[m,n,k] - c5*P[m,n,k]
                     else:
-                        # M2.tendencies[i,j,k] -= c5*P[i,j,k]     # c5=0
-                        tendencies[i,j,k] -= c5*P[i,j,k]     # c5=0
+                        # M2.tendencies[m,n,k] -= c5*P[m,n,k]     # c5=0
+                        tendencies[m,n,k] -= c5*P[m,n,k]     # c5=0
         # if np.isnan(P).any():
         #     print('PPPPP: P is nan')
         # if np.isnan(M2.tendencies).any():
@@ -410,15 +410,15 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
 
         # (4) Heat Flux generation rate and tendency
         with nogil:
-            for i in xrange(n_vel):
+            for n in xrange(n_vel):
                 for k in xrange(1,nzg):
-                    P[i,th_index,k] = alpha*g*M2_values[w_index,th_index,k] \
+                    P[n,th_index,k] = alpha*g*M2_values[w_index,th_index,k] \
                                       - M2_values[u_index,w_index,k]*(u[k]-u[k-1])*dzi \
                                       - M2_values[v_index,w_index,k]*(v[k]-v[k-1])*dzi
                 for k in xrange(Gr.nzg-1):
                     if tke[k] > 0:
-                        # M2.tendencies[i,th_index,k] += -c6*epsilon[k]/tke[k]*M2.values[i,th_index,k] - c7*P[i,th_index,k]
-                        tendencies[i,th_index,k] += -c6*epsilon[k]/tke[k]*M2.values[i,th_index,k] - c7*P[i,th_index,k]
+                        # M2.tendencies[n,th_index,k] += -c6*epsilon[k]/tke[k]*M2.values[n,th_index,k] - c7*P[n,th_index,k]
+                        tendencies[n,th_index,k] += -c6*epsilon[k]/tke[k]*M2.values[n,th_index,k] - c7*P[n,th_index,k]
                     else:
                         # M2.tendencies[i,th_index,k] -= c7*P[i,th_index,k]
                         tendencies[i,th_index,k] -= c7*P[i,th_index,k]
@@ -432,18 +432,18 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
             qt_index = M1.name_index['qt']
             for k in xrange(Gr.nzg-1):
                 if th_index < qt_index:
-                    P[i,qt_index,k] = alpha*g*M2.values[th_index,qt_index,k]
+                    P[w_index,qt_index,k] = alpha*g*M2.values[th_index,qt_index,k]
                 else:
-                    P[i,qt_index,k] = alpha*g*M2.values[qt_index,th_index,k]
+                    P[w_index,qt_index,k] = alpha*g*M2.values[qt_index,th_index,k]
             for k in xrange(Gr.nzg-1):
                 # M2.tendencies[w_index,qt_index,k] = -c6*epsilon[k]/tke[k]*M2.values[w_index,qt_index,k] \
                 #                                     - c7*P[w_index,qt_index,k]
                 tendencies[w_index,qt_index,k] = -c6*epsilon[k]/tke[k]*M2.values[w_index,qt_index,k] \
                                                     - c7*P[w_index,qt_index,k]
-        for i in xrange(n_vel):
-            for j in xrange(n_vel):
+        for m in xrange(n_vel):
+            for n in xrange(n_vel):
                 for k in xrange(1,nzg):
-                    M2.tendencies[i,j,k] += tendencies[i,j,k]
+                    M2.tendencies[m,n,k] += tendencies[m,n,k]
 
         self.plot_var2('pressure_ww', 2,2, tendencies[2,2,:], M2.tendencies[2,2,:], Gr, Ref, TS, M1, M2)
         self.plot_var2('pressure_uw', 0,2, tendencies[0,2,:], M2.tendencies[0,2,:], Gr, Ref, TS, M1, M2)
