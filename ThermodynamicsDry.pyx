@@ -23,8 +23,6 @@ cdef class ThermodynamicsDry:
         # self.Lambda_fp = LH.Lambda_fp
         # self.CC = ClausiusClapeyron()
         # self.CC.initialize(namelist,LH,Pa)
-
-
         return
 
     # cpdef initialize(self,Grid.Grid Gr,PrognosticVariables.PrognosticVariables PV, DiagnosticVariables.DiagnosticVariables DV, NetCDFIO_Stats NS):
