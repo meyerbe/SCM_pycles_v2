@@ -331,7 +331,7 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
 
             double lb=0.0
             double ld=0.0
-            double l0, karman, c1
+            double l0, karman, c1, delta
             double [:] l = np.zeros((Gr.nzg),dtype=np.double,order='c')
             double [:] epsilon = np.zeros((Gr.nzg),dtype=np.double,order='c')
 
@@ -350,6 +350,9 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
 
         print('Turb.update_M2 pressure', np.amax(tendencies))
 
+        print('eps 1: ', np.amax(epsilon), np.amin(epsilon))
+        print('tke 1: ', np.amax(tke), np.amin(tke), np.amax(tke[gw:nzg]), np.amin(tke[gw:nzg]))
+
         # (1) TKE and TKE generation rate
         # Note: for updating M1, the first upper ghost point of M2.values is required
         #       --> need to compute the generation rates on k\in[0,nz]
@@ -361,20 +364,40 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
                         - M2_values[u_index,w_index,k]*(u[k]-u[k-1])*dzi \
                         - M2_values[v_index,w_index,k]*(v[k]-v[k-1])*dzi
 
+        print('tke 2: ', np.amax(tke), np.amin(tke), np.amax(tke[gw:nzg]), np.amin(tke[gw:nzg]))
+        if np.isnan(tke).any():
+            print('tke 2: tke is nan')
+        # if np.isnan(P_tke).any():
+        #     print('PPPPP: P_tke is nan')
+
+
         # (2) Energy Dissipation
         # lb: Mixing length for neutral and unstable conditions (Blackadar, 1962)
         # ld: characteristic lengthfor stable stratification
         karman = 0.35           # von Karman constant
-        l0 = 15           # mixing length far above the ground, take 15m (Jieliu, 2011)
-        for k in xrange(gw,nzg):
-            lb = karman*k/(1+karman*k/l0)       # k>0 required
-            # delta = (M1.values[th_index,k+1]-M1.values[th_index,k])*dzi
-            ld = 0.75/(np.sqrt(tke[k]))*1/np.sqrt(alpha*g*(M1.values[th_index,k+1]-M1.values[th_index,k])*dzi)
-            l[k] = np.minimum(lb,ld)
+        l0 = 15                 # mixing length far above the ground, take 15m (Jieliu, 2011)
+        for k in xrange(gw,nzg-1):
+            lb = karman*k/(1+karman*k/l0)       # stable stratification; k>0 required
+            # print(k, 'lb', lb)
+            delta = (M1.values[th_index,k+1]-M1.values[th_index,k])*dzi
+            if delta > 0.0:
+                ld = 0.75*(np.sqrt(tke[k]))*1/np.sqrt(alpha*g*(M1.values[th_index,k+1]-M1.values[th_index,k])*dzi)      # neutral
+                l[k] = np.minimum(lb,ld)
+            else:
+                print(k, 'delta is zero', delta)
+                l[k] = lb
             c1 = 0.019+0.051*l[k]/lb
             epsilon[k] = c1*np.sqrt(tke[k]*tke[k]*tke[k])
-        print('epsepseps:', np.amax(epsilon), np.amin(epsilon))
-        print('tketketke:', np.amax(tke), np.amin(tke))
+            # if epsilon[k] == 0.0 or np.isnan(epsilon[k]):
+            #     print('epsilon is zero or nan', epsilon[k], k)
+            #     print('c1, lb, ld, l[k], tke[k]: ', c1, lb, ld, l[k], tke[k], k)
+            if epsilon[k] == - float('Inf'):
+                print('espilon is -infinity: k, eps', k, Gr.nz, gw, epsilon[k], c1, lb, ld, l[k], tke[k])
+
+        # if np.isnan(epsilon).any():
+        #     print('PPPPP: epsilon is nan')
+        print('eps 2:', np.amax(epsilon), np.amin(epsilon), np.isnan(epsilon).any())
+        print('tke 3:', np.amax(tke), np.amin(tke))
 
         # (3) Momentum Fluxes: generation rate and tendency
         # (3a) diagonal elements
@@ -734,7 +757,7 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
         # print('plot_var2: ',  n1, v1, n2, v2)
 
         kmin = 1
-        kmax = nzg
+        kmax = nzg-1
 
         plt.figure(1,figsize=(18,5))
         plt.subplot(1,5,1)
