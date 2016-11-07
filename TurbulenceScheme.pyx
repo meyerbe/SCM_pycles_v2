@@ -352,17 +352,20 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
 
         print('eps 1: ', np.amax(epsilon), np.amin(epsilon))
         print('tke 1: ', np.amax(tke), np.amin(tke), np.amax(tke[gw:nzg]), np.amin(tke[gw:nzg]))
+        print('M2.values: ', np.amin(M2.values[0:2,0:2,:]), np.isnan(M2.values).any())
 
         # (1) TKE and TKE generation rate
         # Note: for updating M1, the first upper ghost point of M2.values is required
         #       --> need to compute the generation rates on k\in[0,nz]
         for k in xrange(1,nzg):
             # (a) Kinetic Energy ---> Diagnostic Variable (needed elsewhere?!?!)
-            tke[k] = np.sqrt(M2_values[0,0,k] + M2_values[1,1,k] + M2_values[2,2,k])
+            tke[k] = 0.5*(M2_values[0,0,k] + M2_values[1,1,k] + M2_values[2,2,k])
             # (b) TKE generation rate
             P_tke[k] = alpha*g*M2_values[w_index,th_index,k] \
                         - M2_values[u_index,w_index,k]*(u[k]-u[k-1])*dzi \
                         - M2_values[v_index,w_index,k]*(v[k]-v[k-1])*dzi
+            if tke[k] < 0.0:
+                print(k, 'tke is negative', tke[k])
 
         print('tke 2: ', np.amax(tke), np.amin(tke), np.amax(tke[gw:nzg]), np.amin(tke[gw:nzg]), np.isnan(tke).any())
         if np.isnan(tke).any():
@@ -382,7 +385,7 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
             # print(k, 'lb', lb)
             delta = (M1.values[th_index,k+1]-M1.values[th_index,k])*dzi
             if delta > 0.0:
-                print(k, 'delta > 0.0', delta, alpha, g)
+                # print(k, 'delta > 0.0', delta)
                 ld = 0.75*(np.sqrt(tke[k]))*1/np.sqrt(alpha*g*delta)      # neutral
                 l[k] = np.minimum(lb,ld)
             else:
