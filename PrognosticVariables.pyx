@@ -693,31 +693,32 @@ cdef class SecondOrderMomenta:
             Py_ssize_t nz = Gr.nz
             Py_ssize_t kmax
 
-        kmax = nzg
+        kmin = 1
+        kmax = nzg-1
 
         if np.isnan(tendencies).any():
-            print('!!!!! NAN in M2 tendencies')
+            print('!!!!! NAN in M2 tendencies', message)
         plt.figure(2,figsize=(12,5))
         plt.subplot(1,4,1)
-        plt.plot(tendencies[th_varshift,th_varshift,0:kmax], Gr.z[0:kmax], '-x')
-        plt.plot(tendencies[th_varshift,th_varshift,0:Gr.gw], Gr.z[0:Gr.gw], 'rx')
+        plt.plot(tendencies[th_varshift,th_varshift,kmin:kmax], Gr.z[kmin:kmax], '-x')
+        plt.plot(tendencies[th_varshift,th_varshift,kmin:Gr.gw], Gr.z[kmin:Gr.gw], 'rx')
         plt.plot(tendencies[th_varshift,th_varshift,Gr.gw+Gr.nz:kmax], Gr.z[Gr.gw+Gr.nz:kmax], 'rx')
-        plt.title('thth tend, '+np.str(np.round(np.amax(tendencies[th_varshift,th_varshift,:]),6)),fontsize=10)
+        plt.title('thth tend, '+np.str(np.round(np.amax(tendencies[th_varshift,th_varshift,gw:gw+nz]),6)),fontsize=10)
         plt.subplot(1,4,2)
-        plt.plot(tendencies[w_varshift,w_varshift,0:kmax], Gr.z[0:kmax], '-x')
-        plt.plot(tendencies[w_varshift,w_varshift,0:Gr.gw], Gr.z[0:Gr.gw], 'rx')
+        plt.plot(tendencies[w_varshift,w_varshift,kmin:kmax], Gr.z[kmin:kmax], '-x')
+        plt.plot(tendencies[w_varshift,w_varshift,kmin:Gr.gw], Gr.z[kmin:Gr.gw], 'rx')
         plt.plot(tendencies[w_varshift,w_varshift,Gr.gw+Gr.nz:kmax], Gr.z[Gr.gw+Gr.nz:kmax], 'rx')
-        plt.title('ww tend,'+np.str(np.round(np.amax(tendencies[w_varshift,w_varshift,:]),6)),fontsize=10)
+        plt.title('ww tend,'+np.str(np.round(np.amax(tendencies[w_varshift,w_varshift,gw:gw+nz]),6)),fontsize=10)
         plt.subplot(1,4,3)
-        plt.plot(tendencies[u_varshift,w_varshift,0:kmax], Gr.z[0:kmax], '-x')
-        plt.plot(tendencies[u_varshift,w_varshift,0:Gr.gw], Gr.z[0:Gr.gw], 'rx')
+        plt.plot(tendencies[u_varshift,w_varshift,kmin:kmax], Gr.z[kmin:kmax], '-x')
+        plt.plot(tendencies[u_varshift,w_varshift,kmin:Gr.gw], Gr.z[kmin:Gr.gw], 'rx')
         plt.plot(tendencies[u_varshift,w_varshift,Gr.gw+Gr.nz:kmax], Gr.z[Gr.gw+Gr.nz:kmax], 'rx')
-        plt.title('uw tend,'+np.str(np.round(np.amax(tendencies[u_varshift,w_varshift,:]),6)),fontsize=10)
+        plt.title('uw tend,'+np.str(np.round(np.amax(tendencies[u_varshift,w_varshift,gw:gw+nz]),6)),fontsize=10)
         plt.subplot(1,4,4)
-        plt.plot(tendencies[w_varshift,th_varshift,0:kmax], Gr.z[0:kmax], '-x')
-        plt.plot(tendencies[w_varshift,th_varshift,0:Gr.gw], Gr.z[0:Gr.gw], 'rx')
+        plt.plot(tendencies[w_varshift,th_varshift,kmin:kmax], Gr.z[kmin:kmax], '-x')
+        plt.plot(tendencies[w_varshift,th_varshift,kmin:Gr.gw], Gr.z[kmin:Gr.gw], 'rx')
         plt.plot(tendencies[w_varshift,th_varshift,Gr.gw+Gr.nz:kmax], Gr.z[Gr.gw+Gr.nz:kmax], 'rx')
-        plt.title('wth tend,'+np.str(np.round(np.amax(tendencies[w_varshift,th_varshift,:]),6)),fontsize=10)
+        plt.title('wth tend,'+np.str(np.round(np.amax(tendencies[w_varshift,th_varshift,gw:gw+nz]),6)),fontsize=10)
         plt.savefig('./figs/M2_tendencies_' + message + '_' + np.str(np.int(TS.t)) + '.pdf')
         # plt.show()
         plt.close()
@@ -731,30 +732,33 @@ cdef class SecondOrderMomenta:
             Py_ssize_t w_varshift = self.var_index['w']
             Py_ssize_t v_varshift = self.var_index['v']
             Py_ssize_t u_varshift = self.var_index['u']
+            Py_ssize_t gw = Gr.gw
+            Py_ssize_t nzg = Gr.nzg
+            Py_ssize_t nz = Gr.nz
 
         if np.isnan(tendencies).any():
             print('!!!!! NAN in M2 tendencies')
         plt.figure(2,figsize=(12,5))
         # plt.plot(values[s_varshift+Gr.gw:s_varshift+Gr.nzg-Gr.gw], Gr.z)
         plt.subplot(1,4,1)
-        plt.plot(tendencies[th_varshift,th_varshift,0:Gr.nzg-1], Gr.z[0:Gr.nzg-1], '-x')
-        plt.plot(tendencies[th_varshift,th_varshift,0:Gr.gw], Gr.z[0:Gr.gw], 'rx')
-        plt.plot(tendencies[th_varshift,th_varshift,Gr.gw+Gr.nz:Gr.nzg-1], Gr.z[Gr.gw+Gr.nz:Gr.nzg-1], 'rx')
+        plt.plot(tendencies[th_varshift,th_varshift,gw:Gr.nzg-1], Gr.z[gw:Gr.nzg-gw], '-x')
+        plt.plot(tendencies[th_varshift,th_varshift,gw:Gr.gw], Gr.z[gw:Gr.gw], 'rx')
+        plt.plot(tendencies[th_varshift,th_varshift,Gr.gw+Gr.nz:Gr.nzg-1], Gr.z[Gr.gw+Gr.nz:Gr.nzg-gw], 'rx')
         plt.title('thth tend, '+np.str(np.amax(tendencies[th_varshift,th_varshift,:])),fontsize=10)
         plt.subplot(1,4,2)
-        plt.plot(tendencies[w_varshift,w_varshift,0:Gr.nzg-1], Gr.z[0:Gr.nzg-1], '-x')
-        plt.plot(tendencies[w_varshift,w_varshift,0:Gr.gw], Gr.z[0:Gr.gw], 'rx')
-        plt.plot(tendencies[w_varshift,w_varshift,Gr.gw+Gr.nz:Gr.nzg-1], Gr.z[Gr.gw+Gr.nz:Gr.nzg-1], 'rx')
+        plt.plot(tendencies[w_varshift,w_varshift,gw:Gr.nzg-1], Gr.z[gw:Gr.nzg-gw], '-x')
+        plt.plot(tendencies[w_varshift,w_varshift,gw:Gr.gw], Gr.z[gw:Gr.gw], 'rx')
+        plt.plot(tendencies[w_varshift,w_varshift,Gr.gw+Gr.nz:Gr.nzg-1], Gr.z[Gr.gw+Gr.nz:Gr.nzg-gw], 'rx')
         plt.title('ww tend,'+np.str(np.amax(tendencies[w_varshift,w_varshift,:])),fontsize=10)
         plt.subplot(1,4,3)
-        plt.plot(tendencies[u_varshift,w_varshift,0:Gr.nzg-1], Gr.z[0:Gr.nzg-1], '-x')
-        plt.plot(tendencies[u_varshift,w_varshift,0:Gr.gw], Gr.z[0:Gr.gw], 'rx')
-        plt.plot(tendencies[u_varshift,w_varshift,Gr.gw+Gr.nz:Gr.nzg-1], Gr.z[Gr.gw+Gr.nz:Gr.nzg-1], 'rx')
+        plt.plot(tendencies[u_varshift,w_varshift,gw:Gr.nzg-1], Gr.z[gw:Gr.nzg-gw], '-x')
+        plt.plot(tendencies[u_varshift,w_varshift,gw:Gr.gw], Gr.z[gw:Gr.gw], 'rx')
+        plt.plot(tendencies[u_varshift,w_varshift,Gr.gw+Gr.nz:Gr.nzg-1], Gr.z[Gr.gw+Gr.nz:Gr.nzg-gw], 'rx')
         plt.title('uw tend,'+np.str(np.amax(tendencies[u_varshift,w_varshift,:])),fontsize=10)
         plt.subplot(1,4,4)
-        plt.plot(tendencies[w_varshift,th_varshift,0:Gr.nzg-1], Gr.z[0:Gr.nzg-1], '-x')
-        plt.plot(tendencies[w_varshift,th_varshift,0:Gr.gw], Gr.z[0:Gr.gw], 'rx')
-        plt.plot(tendencies[w_varshift,th_varshift,Gr.gw+Gr.nz:Gr.nzg-1], Gr.z[Gr.gw+Gr.nz:Gr.nzg-1], 'rx')
+        plt.plot(tendencies[w_varshift,th_varshift,gw:Gr.nzg-1], Gr.z[gw:Gr.nzg-gw], '-x')
+        plt.plot(tendencies[w_varshift,th_varshift,gw:Gr.gw], Gr.z[gw:Gr.gw], 'rx')
+        plt.plot(tendencies[w_varshift,th_varshift,Gr.gw+Gr.nz:Gr.nzg-1], Gr.z[Gr.gw+Gr.nz:Gr.nzg-gw], 'rx')
         plt.title('wth tend,'+np.str(np.amax(tendencies[w_varshift,th_varshift,:])),fontsize=10)
         plt.savefig('./figs/M2_tendencies_nogw_' + message + '_' + np.str(np.int(TS.t)) + '.pdf')
         # plt.show()

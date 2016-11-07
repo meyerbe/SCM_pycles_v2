@@ -573,8 +573,8 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
         for k in xrange(nzg):
             th_v[k] = M1.values[th_index,k]
 
-        # (2) Energy Dissipation
-        #  (2a) compute eddy length scale
+        # (3) Energy Dissipation
+        #  (3a) compute eddy length scale
         for k in range(nzg):
             l_up[k] = 0.0
             sum = 0.0
@@ -593,7 +593,8 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
                 i -= 1
             # l_down[k] = k-i
             l[k] = np.sqrt(l_up[k]*l_down[k])
-        #  (2b) compute damping time scale
+
+        #  (3b) compute damping time scale
             if M2_values[2,2,k] >= 0.0:
                 tau[k] = l[k]/np.sqrt(M2_values[2,2,k])
                 if tau[k] > tau_max:
@@ -602,6 +603,10 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
                 tau[k] = tau_max
 
 
+        # (4) Momentum Fluxes
+
+
+        # (5) Scalar Fluxes
 
 
         # karman = 0.35           # von Karman constant
