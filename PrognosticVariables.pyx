@@ -571,10 +571,10 @@ cdef class SecondOrderMomenta:
                             values[m,n,kstart-k] = values[m,n,kstart+k+1]*bcfactor[m,n]
                         else:
                             if k==0:
-                                print('m,n:',m,n, 'bcfactor= -1, k=0', gw, k, bcfactor[m,n], 0.0)
+                                # print('m,n:',m,n, 'bcfactor= -1, k=0', gw, k, bcfactor[m,n], 0.0)
                                 values[m,n,kstart] = 0.0
                             else:
-                                print('m,n:',m,n, 'bcfactor= -1', gw, k, bcfactor[m,n], values[m,n,kstart-1-k], values[m,n,kstart+k]*bcfactor[m,n])
+                                # print('m,n:',m,n, 'bcfactor= -1', gw, k, bcfactor[m,n], values[m,n,kstart-1-k], values[m,n,kstart+k]*bcfactor[m,n])
                                 values[m,n,kstart-k] = values[m,n,kstart+k]*bcfactor[m,n]
 
 

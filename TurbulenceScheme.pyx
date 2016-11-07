@@ -341,7 +341,7 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
             Py_ssize_t nzg = Gr.nzg
             Py_ssize_t gw = Gr.gw
 
-            double alpha = 1/285    # thermal expansion coefficient
+            double alpha = 1./285    # thermal expansion coefficient
             double c4 = 4.5
             double c5 = 0.0
             double c6 = 4.85
@@ -364,9 +364,10 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
                         - M2_values[u_index,w_index,k]*(u[k]-u[k-1])*dzi \
                         - M2_values[v_index,w_index,k]*(v[k]-v[k-1])*dzi
 
-        print('tke 2: ', np.amax(tke), np.amin(tke), np.amax(tke[gw:nzg]), np.amin(tke[gw:nzg]))
+        print('tke 2: ', np.amax(tke), np.amin(tke), np.amax(tke[gw:nzg]), np.amin(tke[gw:nzg]), np.isnan(tke).any())
         if np.isnan(tke).any():
             print('tke 2: tke is nan')
+        print('P_tke:', np.amax(P_tke), np.amin(P_tke), np.isnan(P_tke).any())
         # if np.isnan(P_tke).any():
         #     print('PPPPP: P_tke is nan')
 
@@ -375,18 +376,21 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
         # lb: Mixing length for neutral and unstable conditions (Blackadar, 1962)
         # ld: characteristic lengthfor stable stratification
         karman = 0.35           # von Karman constant
-        l0 = 15                 # mixing length far above the ground, take 15m (Jieliu, 2011)
+        l0 = 15.                 # mixing length far above the ground, take 15m (Jieliu, 2011)
         for k in xrange(gw,nzg-1):
             lb = karman*k/(1+karman*k/l0)       # stable stratification; k>0 required
             # print(k, 'lb', lb)
             delta = (M1.values[th_index,k+1]-M1.values[th_index,k])*dzi
             if delta > 0.0:
-                ld = 0.75*(np.sqrt(tke[k]))*1/np.sqrt(alpha*g*(M1.values[th_index,k+1]-M1.values[th_index,k])*dzi)      # neutral
+                print(k, 'delta > 0.0', delta, alpha, g)
+                ld = 0.75*(np.sqrt(tke[k]))*1/np.sqrt(alpha*g*delta)      # neutral
                 l[k] = np.minimum(lb,ld)
             else:
                 print(k, 'delta is zero', delta)
                 l[k] = lb
+            # print('l[k]', l[k])
             c1 = 0.019+0.051*l[k]/lb
+            # print('c1', c1)
             epsilon[k] = c1*np.sqrt(tke[k]*tke[k]*tke[k])
             # if epsilon[k] == 0.0 or np.isnan(epsilon[k]):
             #     print('epsilon is zero or nan', epsilon[k], k)
@@ -397,7 +401,7 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
         # if np.isnan(epsilon).any():
         #     print('PPPPP: epsilon is nan')
         print('eps 2:', np.amax(epsilon), np.amin(epsilon), np.isnan(epsilon).any())
-        print('tke 3:', np.amax(tke), np.amin(tke))
+        print('tke 3:', np.amax(tke), np.amin(tke), np.isnan(tke).any())
 
         # (3) Momentum Fluxes: generation rate and tendency
         # (3a) diagonal elements
