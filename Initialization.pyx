@@ -205,10 +205,11 @@ cdef class InitSoares(InitializationBase):
         print('Initialize 2nd order momenta')
         for var1 in xrange(M2.nv):
             for var2 in xrange(var1,M2.nv):
-                if var1 == th_index and var2 == th_index:
-                    for k in xrange(Gr.nzg):
-                        if Gr.z[k] < 200.0:
-                            M2.values[var1,var2,k] = 1e-3
+                if var1 == w_index or var1 == th_index:
+                    if var2 == th_index:
+                        for k in xrange(Gr.nzg):
+                            if Gr.z[k] < 200.0:
+                                M2.values[var1,var2,k] = 1e-3
                 else:
                     for k in xrange(Gr.nzg):
                         M2.values[var1,var2,k] = 0.0
