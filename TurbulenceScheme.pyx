@@ -180,20 +180,20 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
         # self.plot_all('vw', Gr, TS, M1, M2, temp[1,2,:], 1, 2)
         # self.plot_all('ww', Gr, TS, M1, M2, temp[2,2,:], 2, 2)
         # self.plot_all('wth', Gr, TS, M1, M2, temp[2,3,:], 2, 3)
-        self.pressure_correlations_Andre(Gr,Ref,TS,M1, M2)
-        # temp3 = M2.tendencies
-        # temp4 = temp3-temp2
-        M2.plot_tendencies('03_pressureAndre',Gr,TS)
+        # self.pressure_correlations_Andre(Gr,Ref,TS,M1, M2)
+        # M2.plot_tendencies('03_pressureAndre',Gr,TS)
+        self.pressure_correlations_Golaz(Gr,Ref,TS,M1, M2)
+        M2.plot_tendencies('03_pressureGolaz',Gr,TS)
         # self.plot_var2('difference',0,0,M2.tendencies[0,0,:],temp4[0,0,:],Gr,Ref,TS,M1,M2)
         # self.plot_var2('difference',0,2,M2.tendencies[0,2,:],temp4[0,2,:],Gr,Ref,TS,M1,M2)
         # self.plot_var2('difference',2,2,M2.tendencies[2,2,:],temp4[2,2,:],Gr,Ref,TS,M1,M2)
         # self.plot_var2('difference',2,3,M2.tendencies[2,3,:],temp4[2,3,:],Gr,Ref,TS,M1,M2)
         # self.plot_var2('difference',3,3,M2.tendencies[3,3,:],temp4[3,3,:],Gr,Ref,TS,M1,M2)
 
-        # self.plot_all('uw', Gr, TS, M1, M2, temp[0,2,:], 0, 2)
-        # self.plot_all('vw', Gr, TS, M1, M2, temp[1,2,:], 1, 2)
-        # self.plot_all('ww', Gr, TS, M1, M2, temp[2,2,:], 2, 2)
-        # self.plot_all('wth', Gr, TS, M1, M2, temp[2,3,:], 2, 3)
+        self.plot_all('uw', Gr, TS, M1, M2, temp2[0,2,:], 0, 2)
+        self.plot_all('vw', Gr, TS, M1, M2, temp2[1,2,:], 1, 2)
+        self.plot_all('ww', Gr, TS, M1, M2, temp2[2,2,:], 2, 2)
+        self.plot_all('wth', Gr, TS, M1, M2, temp2[2,3,:], 2, 3)
         ## self.pressure_correlations_Cheng(Gr, M1, M2)
         ## self.pressure_correlations_Mironov(Gr, M1, M2)
         # self.buoyancy_update(Gr, Ref, TS, M1, M2)
@@ -515,7 +515,7 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
             # double [:] u = M1.values[u_index,:]
             # double [:] v = M1.values[v_index,:]
             # double [:] w = M1.values[w_index,:]
-            double [:] th_v = np.zeros((n_vel,Gr.nzg),dtype=np.double,order='c')
+            double [:] th_v = np.zeros((Gr.nzg),dtype=np.double,order='c')
             double [:,:,:] M2_values = M2.values
             double [:,:,:] tendencies = self.tendencies_M2
 
