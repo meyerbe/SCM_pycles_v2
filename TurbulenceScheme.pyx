@@ -1051,58 +1051,59 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
             Py_ssize_t nz = Gr.nz
             Py_ssize_t kmax
 
-        if n1<=n2:
-            v1 = M1.index_name[n1]
-            v2 = M1.index_name[n2]
-        else:
-            v1 = M1.index_name[n2]
-            v2 = M1.index_name[n1]
-        # print('plot_var2: ',  n1, v1, n2, v2)
+        if np.mod(TS.t,TS.plot_freq) < TS.dt:
+            if n1<=n2:
+                v1 = M1.index_name[n1]
+                v2 = M1.index_name[n2]
+            else:
+                v1 = M1.index_name[n2]
+                v2 = M1.index_name[n1]
+            # print('plot_var2: ',  n1, v1, n2, v2)
 
-        if np.isnan(var).any():
-            print('plot all: ', message, ' NAN in variable 1')
+            if np.isnan(var).any():
+                print('plot all: ', message, ' NAN in variable 1')
 
-        kmin = 1
-        kmax = nzg-1
+            kmin = 1
+            kmax = nzg-1
 
-        plt.figure(1,figsize=(20,5))
-        plt.subplot(1,5,1)
-        plt.plot(var[kmin:kmax],Gr.z[kmin:kmax],'-x',label='rho')
-        plt.plot(var[kmin:gw],Gr.z[kmin:gw], 'rx')
-        plt.plot(var[Gr.nz+gw:kmax],Gr.z[nz+gw:kmax],'rx')
-        plt.title('Tend before Turb: '+v1+v2+ ', '+ np.str(np.round(np.amax(var[gw:nzg-gw]),7)), fontsize=12)
-        plt.subplot(1,5,2)
-        plt.plot(M2.tendencies[n1,n2,kmin:kmax],Gr.z[kmin:kmax],'-x',label='M2.tend: '+ v1+v2)
-        plt.plot(M2.tendencies[n1,n2,kmin:gw],Gr.z[kmin:gw],'rx')
-        plt.plot(M2.tendencies[n1,n2,nz+gw:kmax],Gr.z[nz+gw:kmax],'rx')
-        plt.title('M2.tendency ' + v1+v2+ ', '+ np.str(np.round(np.amax(M2.tendencies[n1,n2,gw:nzg-gw]),7)), fontsize=12)
-        plt.legend(fontsize=8)
-        plt.subplot(1,5,3)
-        plt.plot(M2.values[n1,n2,kmin:kmax],Gr.z[kmin:kmax],'k-x',label='M2.val: ' + v1+v2)
-        plt.plot(M2.values[n1,n2,kmin:gw],Gr.z[kmin:gw],'rx')
-        plt.plot(M2.values[n1,n2,nz+gw:kmax],Gr.z[nz+gw:kmax],'rx')
-        plt.legend(fontsize=8)
-        plt.title('M2.values , '+v1+v2+ ', '+np.str(np.round(np.amax(M2.values[n1,n2,gw:nzg-gw]),6)), fontsize=12)
-        plt.subplot(1,5,4)
-        if n1==2:
-            n=n2
-            v=v2
-        else:
-            n=n1
-            v=v1
-        plt.plot(M1.tendencies[n,kmin:kmax],Gr.z[kmin:kmax],'-x',label='M1.tend '+v)
-        plt.plot(M1.tendencies[n,kmin:gw],Gr.z[kmin:gw],'rx')
-        plt.plot(M1.tendencies[n,nz+gw:kmax],Gr.z[nz+gw:kmax],'rx')
-        plt.legend(fontsize=8)
-        plt.title('M1.tendency '+v+', '+np.str(np.round(np.amax(M1.tendencies[n,gw:nzg-gw]),6)), fontsize=12)
-        plt.subplot(1,5,5)
-        plt.plot(M1.values[n,kmin:kmax],Gr.z[kmin:kmax],'k-x',label='M1.'+v)
-        plt.plot(M1.values[n,kmin:gw],Gr.z[kmin:gw],'rx')
-        plt.plot(M1.values[n,nz+gw:kmax],Gr.z[nz+gw:kmax],'rx')
-        plt.legend(fontsize=8)
-        plt.title('M1.values '+v+', '+np.str(np.round(np.amax(M1.values[n,gw:nzg-gw]),6)), fontsize=12)
-        plt.savefig('./figs/Turb_all_' + message + '_' + np.str(np.int(TS.t)) + '.pdf')
-        plt.close()
+            plt.figure(1,figsize=(20,5))
+            plt.subplot(1,5,1)
+            plt.plot(var[kmin:kmax],Gr.z[kmin:kmax],'-x',label='rho')
+            plt.plot(var[kmin:gw],Gr.z[kmin:gw], 'rx')
+            plt.plot(var[Gr.nz+gw:kmax],Gr.z[nz+gw:kmax],'rx')
+            plt.title('Tend before Turb: '+v1+v2+ ', '+ np.str(np.round(np.amax(var[gw:nzg-gw]),7)), fontsize=12)
+            plt.subplot(1,5,2)
+            plt.plot(M2.tendencies[n1,n2,kmin:kmax],Gr.z[kmin:kmax],'-x',label='M2.tend: '+ v1+v2)
+            plt.plot(M2.tendencies[n1,n2,kmin:gw],Gr.z[kmin:gw],'rx')
+            plt.plot(M2.tendencies[n1,n2,nz+gw:kmax],Gr.z[nz+gw:kmax],'rx')
+            plt.title('M2.tendency ' + v1+v2+ ', '+ np.str(np.round(np.amax(M2.tendencies[n1,n2,gw:nzg-gw]),7)), fontsize=12)
+            plt.legend(fontsize=8)
+            plt.subplot(1,5,3)
+            plt.plot(M2.values[n1,n2,kmin:kmax],Gr.z[kmin:kmax],'k-x',label='M2.val: ' + v1+v2)
+            plt.plot(M2.values[n1,n2,kmin:gw],Gr.z[kmin:gw],'rx')
+            plt.plot(M2.values[n1,n2,nz+gw:kmax],Gr.z[nz+gw:kmax],'rx')
+            plt.legend(fontsize=8)
+            plt.title('M2.values , '+v1+v2+ ', '+np.str(np.round(np.amax(M2.values[n1,n2,gw:nzg-gw]),6)), fontsize=12)
+            plt.subplot(1,5,4)
+            if n1==2:
+                n=n2
+                v=v2
+            else:
+                n=n1
+                v=v1
+            plt.plot(M1.tendencies[n,kmin:kmax],Gr.z[kmin:kmax],'-x',label='M1.tend '+v)
+            plt.plot(M1.tendencies[n,kmin:gw],Gr.z[kmin:gw],'rx')
+            plt.plot(M1.tendencies[n,nz+gw:kmax],Gr.z[nz+gw:kmax],'rx')
+            plt.legend(fontsize=8)
+            plt.title('M1.tendency '+v+', '+np.str(np.round(np.amax(M1.tendencies[n,gw:nzg-gw]),6)), fontsize=12)
+            plt.subplot(1,5,5)
+            plt.plot(M1.values[n,kmin:kmax],Gr.z[kmin:kmax],'k-x',label='M1.'+v)
+            plt.plot(M1.values[n,kmin:gw],Gr.z[kmin:gw],'rx')
+            plt.plot(M1.values[n,nz+gw:kmax],Gr.z[nz+gw:kmax],'rx')
+            plt.legend(fontsize=8)
+            plt.title('M1.values '+v+', '+np.str(np.round(np.amax(M1.values[n,gw:nzg-gw]),6)), fontsize=12)
+            plt.savefig('./figs/Turb_all_' + message + '_' + np.str(np.int(TS.t)) + '.pdf')
+            plt.close()
         return
 
 
@@ -1117,21 +1118,22 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
 
         if np.isnan(tendencies).any():
             print('!!!!!', message, ' NAN in M2 tendencies')
-        plt.figure(2,figsize=(12,6))
-        # plt.plot(values[s_varshift+Gr.gw:s_varshift+Gr.nzg-Gr.gw], Gr.z)
-        plt.subplot(1,4,1)
-        plt.plot(tendencies[th_varshift,th_varshift,:], Gr.z)
-        plt.title('thth tend')
-        plt.subplot(1,4,2)
-        plt.plot(tendencies[w_varshift,w_varshift,:], Gr.z)
-        plt.title('ww tend')
-        plt.subplot(1,4,3)
-        plt.plot(tendencies[w_varshift,u_varshift,:], Gr.z)
-        plt.title('wu tend')
-        plt.subplot(1,4,4)
-        plt.plot(tendencies[w_varshift,th_varshift,:], Gr.z)
-        plt.title('wth tend')
-        # plt.show()
-        plt.savefig('./figs/Turb_' + message + '_' + np.str(np.int(TS.t)) + '.png')
-        plt.close()
+        if np.mod(TS.t,TS.plot_freq) < TS.dt:
+            plt.figure(2,figsize=(12,6))
+            # plt.plot(values[s_varshift+Gr.gw:s_varshift+Gr.nzg-Gr.gw], Gr.z)
+            plt.subplot(1,4,1)
+            plt.plot(tendencies[th_varshift,th_varshift,:], Gr.z)
+            plt.title('thth tend')
+            plt.subplot(1,4,2)
+            plt.plot(tendencies[w_varshift,w_varshift,:], Gr.z)
+            plt.title('ww tend')
+            plt.subplot(1,4,3)
+            plt.plot(tendencies[w_varshift,u_varshift,:], Gr.z)
+            plt.title('wu tend')
+            plt.subplot(1,4,4)
+            plt.plot(tendencies[w_varshift,th_varshift,:], Gr.z)
+            plt.title('wth tend')
+            # plt.show()
+            plt.savefig('./figs/Turb_' + message + '_' + np.str(np.int(TS.t)) + '.png')
+            plt.close()
         return

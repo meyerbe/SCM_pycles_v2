@@ -12,6 +12,7 @@ cdef class TimeStepping:
         # double [:,:] value_copies
         # double [:,:] tendency_copies
         # public Py_ssize_t ts_type
+        public double plot_freq
 
 
     # cpdef initialize(self, namelist, PrognosticVariables.PrognosticVariables PV)

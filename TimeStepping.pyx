@@ -35,6 +35,11 @@ cdef class TimeStepping:
             print('t_max (time at end of simulation) not given in name list! Killing Simulation Now')
             sys.exit()
 
+        try:
+            self.plot_freq = namelist['visualisation']['frequency']
+        except:
+            self.plot_freq = 60.0
+
         # set time
         self.t = 0.0
         self.nstep = 0
@@ -64,7 +69,6 @@ cdef class TimeStepping:
         return
 
 
-    # cpdef update(self, Grid.Grid Gr, PrognosticVariables.PrognosticVariables PV):
     cpdef update(self):
         self.t += self.dt
     #     self.nstep += 1
