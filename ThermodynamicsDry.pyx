@@ -10,7 +10,7 @@ import numpy as np
 from Grid cimport Grid
 cimport PrognosticVariables
 # cimport Thermodynamics
-from thermodynamic_functions cimport thetas_c
+# from thermodynamic_functions cimport thetas_c
 import cython
 
 cdef extern from "entropies.h":

@@ -17,14 +17,14 @@ from ReferenceState cimport ReferenceState
 from TimeStepping cimport TimeStepping
 from PrognosticVariables cimport MeanVariables
 from PrognosticVariables cimport SecondOrderMomenta
-# cimport DiagnosticVariables
 
-# from thermodynamic_functions import entropy_from_tp
+
+from thermodynamic_functions cimport exner, qv_star_c
 # from thermodynamic_functions cimport exner, entropy_from_thetas_c, thetas_t_c, qv_star_c, thetas_c
+# from thermodynamic_functions import entropy_from_tp
 
 from libc.math cimport sqrt, fmin, cos, exp, fabs
 include 'parameters.pxi'
-
 
 
 def InitializationFactory(namelist):

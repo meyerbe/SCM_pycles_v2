@@ -12,7 +12,7 @@ from PrognosticVariables cimport MeanVariables
 from PrognosticVariables cimport SecondOrderMomenta
 # cimport DiagnosticVariables
 
-# from thermodynamic_functions cimport pd_c, pv_c
+from thermodynamic_functions cimport pd_c, pv_c
 # from entropies cimport sv_c, sd_c
 
 include 'parameters.pxi'

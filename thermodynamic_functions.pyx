@@ -11,6 +11,24 @@ from libc.math cimport sqrt, log, fabs,atan, exp, fmax, pow
 # - T(th_l, p, qt)
 
 
+'''Density'''
+cpdef double alpha_from_tp(double p0, double T, double  qt, double qv):
+    return (Rd * T)/p0 * (1.0 - qt + eps_vi * qv)
+# cpdef inline double alpha(const double p0, const double T, const double qt, const double qv) nogil:
+#     return alpha_c(p0, T, qt, qv)
+
+
+'''Pressure'''
+cpdef double pd_c(const double p0, const double qt, const double qv) nogil:
+    return p0*(1.0-qt)/(1.0 - qt + eps_vi * qv)
+#     # return pd_c(p0, qt, qv)
+
+cpdef double pv_c(double p0, double qt, double qv):
+    a = p0 * eps_vi * qv /(1.0 - qt + eps_vi * qv)
+    # print('pv_c: ', p0, qt, qv, a)
+    return p0 * eps_vi * qv /(1.0 - qt + eps_vi * qv)
+
+
 '''Potential Temperature'''
 cpdef double exner(const double p):
     return pow((p/p_tilde),kappa)
@@ -28,12 +46,15 @@ cpdef double thetali(const double p, const double T, const double qt, const doub
 cpdef double thetav(const double p, const double T, const double qt):
     return theta(p,T) * (1 + (Rv/Rd - 1)*qt)
 
+# # // Entropy potential temperature
+# cpdef inline double thetas(const double s, const double qt) nogil:
+#     return T_tilde*exp((s-(1.0-qt)*sd_tilde - qt*sv_tilde)/cpm_c(qt))
+#     # return thetas_c(s, qt)
 
 
 
 
-
-'''entropies'''
+'''Entropies'''
 cpdef double sd_c(double pd, double T):
     return sd_tilde + cpd*np.log(T/T_tilde) -Rd*np.log(pd/p_tilde)
 
@@ -63,23 +84,6 @@ cpdef double entropy_from_tp(double p0, double T, double qt, double ql, double q
 
 
 
-
-
-
-'''Density'''
-cpdef double alpha_from_tp(double p0, double T, double  qt, double qv):
-    return (Rd * T)/p0 * (1.0 - qt + eps_vi * qv)
-# cpdef inline double alpha(const double p0, const double T, const double qt, const double qv) nogil:
-#     return alpha_c(p0, T, qt, qv)
-
-
-'''Pressure'''
-cpdef double pv_c(double p0, double qt, double qv):
-    a = p0 * eps_vi * qv /(1.0 - qt + eps_vi * qv)
-    # print('pv_c: ', p0, qt, qv, a)
-    return p0 * eps_vi * qv /(1.0 - qt + eps_vi * qv)
-
-
 '''Clausius Clapeyron: Latent Heat, Saturation Pressure'''
 cpdef double latent_heat(double T):
     cdef double TC = T - 273.15
@@ -89,6 +93,10 @@ cpdef double pv_star(double T)   :
     #    Magnus formula
     cdef double TC = T - 273.15
     return 6.1094*exp((17.625*TC)/float(TC+243.04))*100
+
+cpdef double qv_star_c(const double p0, const double qt, const double pv):
+    return eps_v * (1.0 - qt) * pv / (p0 - pv)
+    # return qv_star_c(p0, qt, pv)
 
 
 
@@ -188,35 +196,26 @@ cpdef eos_struct eos(double p0, double qt, double prog):
 
 
 
-cpdef inline double pd(const double p0, const double qt, const double qv) nogil:
-    return pd_c(p0, qt, qv)
-
-# cpdef inline double pv(const double p0, const double qt, const double qv) nogil:
-#     return pv_c(p0, qt, qv)
-
-cpdef inline double density_temperature(const double T, const double qt, const double qv) nogil:
-    return density_temperature_c(T, qt, qv)
-
-cpdef inline double theta_rho(const double p0, const double T, const double qt, const double qv) nogil:
-    return theta_rho_c(p0, T, qt, qv)
-
-cpdef inline double cpm(const double qt) nogil:
-    return cpm_c(qt)
-
-cpdef inline double thetas(const double s, const double qt) nogil:
-    return thetas_c(s, qt)
-
-cpdef inline double thetas_t(const double p0, const double T, const double qt, const double qv,
-                      const double qc, const double L) nogil:
-    return thetas_t_c( p0,  T, qt, qv, qc, L)
-
-cpdef inline double entropy_from_thetas_(const double thetas, const double qt) nogil:
-    return entropy_from_thetas_c(thetas, qt)
-
-cpdef inline double buoyancy(const double alpha0, const double alpha) nogil:
-    return buoyancy_c(alpha0, alpha)
 
 
+# cpdef inline double density_temperature(const double T, const double qt, const double qv) nogil:
+#     return density_temperature_c(T, qt, qv)
+#
+# cpdef inline double theta_rho(const double p0, const double T, const double qt, const double qv) nogil:
+#     return theta_rho_c(p0, T, qt, qv)
+#
+# cpdef inline double cpm(const double qt) nogil:
+#     return cpm_c(qt)
+#
+# cpdef inline double thetas_t(const double p0, const double T, const double qt, const double qv,
+#                       const double qc, const double L) nogil:
+#     return thetas_t_c( p0,  T, qt, qv, qc, L)
+#
+# cpdef inline double entropy_from_thetas(const double thetas, const double qt) nogil:
+#     return cpm_c(qt) * log(thetas/T_tilde) + (1.0 - qt)*sd_tilde + qt * sv_tilde
+#     # return entropy_from_thetas_c(thetas, qt)
+#
+# cpdef inline double buoyancy(const double alpha0, const double alpha) nogil:
+#     return buoyancy_c(alpha0, alpha)
 
-cpdef inline double qv_star(const double p0, const double qt, const double pv) nogil:
-    return qv_star_c(p0, qt, pv)
+
