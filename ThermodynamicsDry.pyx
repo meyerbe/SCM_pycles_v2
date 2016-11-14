@@ -13,8 +13,8 @@ cimport PrognosticVariables
 # from thermodynamic_functions cimport thetas_c
 import cython
 
-cdef extern from "entropies.h":
-    inline double sd_c(double p0, double T) nogil
+# cdef extern from "entropies.h":
+#     inline double sd_c(double p0, double T) nogil
 
 cdef class ThermodynamicsDry:
     # def __init__(self,namelist,LatentHeat LH):

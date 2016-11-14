@@ -12,13 +12,14 @@ import numpy as np
 import cython
 from libc.math cimport fmax, fmin
 
-cdef extern from "entropies.h":
-    # Specific entropy of dry air
-    inline double sd_c(double pd, double T) nogil
-    # Specific entropy of water vapor
-    inline double sv_c(double pv, double T) nogil
-    # Specific entropy of condensed water
-    inline double sc_c(double L, double T) nogil
+
+# cdef extern from "entropies.h":
+#     # Specific entropy of dry air
+#     inline double sd_c(double pd, double T) nogil
+#     # Specific entropy of water vapor
+#     inline double sv_c(double pv, double T) nogil
+#     # Specific entropy of condensed water
+#     inline double sc_c(double L, double T) nogil
 
 
 
