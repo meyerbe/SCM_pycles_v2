@@ -83,6 +83,11 @@ cpdef double entropy_from_tp(double p0, double T, double qt, double ql, double q
     return ret
 
 
+'''Heat Capacities'''
+cpdef double cpm_c(const double qt) nogil:
+    # return cpm_c(qt)
+    return (1.0-qt) * cpd + qt * cpv
+
 
 '''Clausius Clapeyron: Latent Heat, Saturation Pressure'''
 cpdef double latent_heat(double T):
@@ -204,8 +209,6 @@ cpdef eos_struct eos(double p0, double qt, double prog):
 # cpdef inline double theta_rho(const double p0, const double T, const double qt, const double qv) nogil:
 #     return theta_rho_c(p0, T, qt, qv)
 #
-# cpdef inline double cpm(const double qt) nogil:
-#     return cpm_c(qt)
 #
 # cpdef inline double thetas_t(const double p0, const double T, const double qt, const double qv,
 #                       const double qc, const double L) nogil:

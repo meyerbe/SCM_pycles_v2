@@ -12,8 +12,10 @@ cdef class PrognosticVariables:
         Py_ssize_t nv_velocities
         long [:] var_type
         double [:] bc_type
-    cdef double [:] values
-    cdef double [:] tendencies
+        # double [:] values
+        # double [:] tendencies
+        double [:,:] values
+        double [:,:] tendencies
 
     cpdef add_variable(self,name,units,var_type)
     cpdef initialize(self, Grid Gr, NetCDFIO_Stats NS)

@@ -3,14 +3,16 @@ cdef struct eos_struct:
     double T
     double ql
 
+cpdef double pd_c(const double p0, const double qt, const double qv) nogil
+cpdef double pv_c(const double p0, const double qt, const double qv)
+
 cpdef double exner(const double p)# nogil
 cpdef double theta(const double p, const double T)
 cpdef double thetali(const double p, const double T, const double qt, const double ql, const double qi)
 cpdef double thetav(const double p, const double T, const double qt)
 # cpdef double thetas(const double s, const double qt)
 
-cpdef double pd_c(const double p0, const double qt, const double qv) nogil
-cpdef double pv_c(const double p0, const double qt, const double qv)
+cpdef double cpm_c(const double qt) nogil
 
 cpdef double qv_star_c(const double p0, const double qt, const double pv)
 

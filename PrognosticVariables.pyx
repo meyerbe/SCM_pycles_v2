@@ -74,8 +74,11 @@ cdef class PrognosticVariables:
 
     cpdef initialize(self, Grid Gr, NetCDFIO_Stats NS):
     # cpdef initialize(self, Grid Gr):
-        self.values = np.zeros((self.nv*Gr.nzg),dtype=np.double,order='c')
-        self.tendencies = np.zeros((self.nv*Gr.nzg),dtype=np.double,order='c')
+        # self.values = np.zeros((self.nv*Gr.nzg),dtype=np.double,order='c')
+        # self.tendencies = np.zeros((self.nv*Gr.nzg),dtype=np.double,order='c')
+        self.values = np.zeros(shape=(self.nv,Gr.nzg),dtype=np.double,order='c')
+        self.tendencies = np.zeros(shape=(self.nv,Gr.nzg),dtype=np.double,order='c')
+
         # Add prognostic variables to Statistics IO
         print('Setting up statistical output files for Prognostic Variables')
         for var_name in self.name_index.keys():
@@ -99,7 +102,8 @@ cdef class PrognosticVariables:
         for var in self.name_index.keys():
             var_shift = self.get_varshift(Gr, var)
             for k in xrange(0,kmax):
-                self.values[var_shift+k] += self.tendencies[var_shift+k] * TS.dt
+                # self.values[var_shift+k] += self.tendencies[var_shift+k] * TS.dt
+                self.values[var_shift,k] += self.tendencies[var_shift,k] * TS.dt
 
         return
 

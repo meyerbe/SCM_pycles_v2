@@ -83,14 +83,14 @@ cdef class InitializationBase:
     #     self.lhf = 0.0
     #     self.b_flux = 0.0
     #
-    #     NS.add_ts('uw_surface_mean', Gr)
-    #     NS.add_ts('vw_surface_mean', Gr)
-    #     NS.add_ts('s_flux_surface_mean', Gr)
-    #     NS.add_ts('shf_surface_mean', Gr)
-    #     NS.add_ts('lhf_surface_mean', Gr)
-    #     NS.add_ts('obukhov_length_mean', Gr)
-    #     NS.add_ts('friction_velocity_mean', Gr)
-    #     NS.add_ts('buoyancy_flux_surface_mean', Gr)
+    #     NS.add_ts('uw_surface', Gr)
+    #     NS.add_ts('vw_surface', Gr)
+    #     NS.add_ts('s_flux_surface', Gr)
+    #     NS.add_ts('shf_surface', Gr)
+    #     NS.add_ts('lhf_surface', Gr)
+    #     NS.add_ts('obukhov_length', Gr)
+    #     NS.add_ts('friction_velocity', Gr)
+    #     NS.add_ts('buoyancy_flux_surface', Gr)
         return
     cpdef initialize_io(self, NetCDFIO_Stats Stats):
         # Stats.add_ts('Tsurface')
