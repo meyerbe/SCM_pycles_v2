@@ -36,9 +36,10 @@ cdef class TimeStepping:
             sys.exit()
 
         try:
-            self.plot_freq = namelist['visualisation']['frequency']
+            self.plot_freq = namelist['visualization']['frequency']
         except:
             self.plot_freq = 60.0
+        print('plotting frequency is: ', self.plot_freq)
 
         # set time
         self.t = 0.0

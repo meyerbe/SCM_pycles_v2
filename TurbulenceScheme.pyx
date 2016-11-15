@@ -913,7 +913,7 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
                 else:
                     tendencies_M2[n_w,n,k] += g/th0[k]*self.buoyancy[n,k]
 
-        self.plot_var('buoyancy', self.buoyancy, Gr, TS, M1, M2)
+        self.plot_var('buoyancy', self.buoyancy, Gr, Ref, TS, M1, M2)
         # with nogil:
         #     for n in xrange(M2.nv):
         #         for k in xrange(Gr.nzg):
