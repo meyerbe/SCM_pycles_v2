@@ -112,9 +112,11 @@ cdef class SurfaceGabls(SurfaceBase):
     cpdef initialize(self, Grid Gr, ReferenceState Ref, NetCDFIO_Stats NS)
 #     cpdef update(self, Grid Gr, ReferenceState Ref, PrognosticVariables PV,DiagnosticVariables.DiagnosticVariables DV,
 #                   TimeStepping.TimeStepping TS)
-#     cpdef stats_io(self, Grid Gr, NetCDFIO_Stats NS)
-#
-#
+    cpdef update(self, Grid Gr, ReferenceState Ref, PrognosticVariables PV, MeanVariables M1,
+                  TimeStepping.TimeStepping TS)
+    cpdef stats_io(self, Grid Gr, NetCDFIO_Stats NS)
+
+
 # cdef class SurfaceDYCOMS_RF01(SurfaceBase):
 #     cdef:
 #         double lv
@@ -124,9 +126,6 @@ cdef class SurfaceGabls(SurfaceBase):
 #         double buoyancy_flux
 #         double gustiness
 #         double [:] windspeed
-#
-#
-#
 #
 #     cpdef initialize(self, Grid.Grid Gr, ReferenceState.ReferenceState Ref, NetCDFIO_Stats NS)
 #     cpdef update(self, Grid.Grid Gr, ReferenceState.ReferenceState Ref, PrognosticVariables.PrognosticVariables PV,
@@ -192,9 +191,9 @@ cdef class SurfaceGabls(SurfaceBase):
 #     cpdef update(self, Grid.Grid Gr, ReferenceState.ReferenceState Ref, PrognosticVariables.PrognosticVariables PV,
 #                  DiagnosticVariables.DiagnosticVariables DV, TimeStepping.TimeStepping TS)
 #     cpdef stats_io(self, Grid.Grid Gr, NetCDFIO_Stats NS)
-#
-#
-#
 
-#
-# cdef inline double compute_z0(double z1, double windspeed) nogil
+
+
+
+
+cdef inline double compute_z0(double z1, double windspeed) nogil

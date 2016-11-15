@@ -293,7 +293,7 @@ cdef class SurfaceSoares(SurfaceBase):
 #     @cython.boundscheck(False)  #Turn off numpy array index bounds checking
 #     @cython.wraparound(False)   #Turn off numpy array wrap around indexing
 #     @cython.cdivision(True)
-#     cpdef initialize(self, Grid.Grid Gr, ReferenceState.ReferenceState Ref, NetCDFIO_Stats NS):     # Sullivan
+#     cpdef initialize(self, Grid Gr, ReferenceState Ref, NetCDFIO_Stats NS):     # Sullivan
 #         SurfaceBase.initialize(self,Gr,Ref,NS)
 #
 #         # ### Bomex
@@ -325,7 +325,7 @@ cdef class SurfaceSoares(SurfaceBase):
 #     @cython.wraparound(False)   #Turn off numpy array wrap around indexing
 #     @cython.cdivision(True)
 # # # update adopted and modified from Sullivan + Bomex
-#     cpdef update(self, Grid.Grid Gr, ReferenceState.ReferenceState Ref, PrognosticVariables.PrognosticVariables PV, DiagnosticVariables.DiagnosticVariables DV, TimeStepping.TimeStepping TS):
+#     cpdef update(self, Grid Gr, ReferenceState Ref, PrognosticVariables.PrognosticVariables PV, DiagnosticVariables.DiagnosticVariables DV, TimeStepping.TimeStepping TS):
 #         # Since this case is completely dry, the computation of entropy flux from sensible heat flux is very simple
 #         cdef:
 #             Py_ssize_t i, j, ij, ijk
@@ -440,18 +440,9 @@ cdef class SurfaceSullivanPatton(SurfaceBase):
         self.windspeed = 1.0
 
         # Get the shear stresses
-        print('!!! Surface Scheme Sullivan: compute ustar !!!')
+        print('!!! Surface Scheme Sullivan: compute ustar / friction velocity !!!')
         # self.friction_velocity = compute_ustar(windspeed,self.buoyancy_flux,self.z0, Gr.dims.dz/2.0)
         self.friction_velocity = 1.0
-
-#             for i in xrange(1,imax-1):
-#                 for j in xrange(1,jmax-1):
-#                     ijk = i * istride + j * jstride + gw
-#                     ij = i * istride_2d + j
-#                     self.u_flux[ij] = -interp_2(self.friction_velocity[ij], self.friction_velocity[ij+istride_2d])**2/interp_2(windspeed[ij], windspeed[ij+istride_2d]) \
-#                                       * (PV.values[u_shift + ijk] + Ref.u0)
-#                     self.v_flux[ij] = -interp_2(self.friction_velocity[ij], self.friction_velocity[ij+1])**2/interp_2(windspeed[ij], windspeed[ij+1]) \
-#                                       * (PV.values[v_shift + ijk] + Ref.v0)
         self.u_flux = -self.friction_velocity**2 / windspeed * (PV.values[u_shift,gw] + Ref.u0)
         self.v_flux = -self.friction_velocity**2 / windspeed * (PV.values[v_shift,gw] + Ref.v0)
 
@@ -493,20 +484,16 @@ cdef class SurfaceBomex(SurfaceBase):
 
         cdef :
             Py_ssize_t gw = Gr.dims.gw
-#             Py_ssize_t temp_shift = DV.get_varshift(Gr, 'temperature')
+            # Py_ssize_t temp_shift = DV.get_varshift(Gr, 'temperature')
             Py_ssize_t th_shift = M1.get_varshift(Gr, 's')
             Py_ssize_t qt_shift = M1.get_varshift(Gr, 'qt')
-#             Py_ssize_t qv_shift = DV.get_varshift(Gr,'qv')
+            # Py_ssize_t qv_shift = DV.get_varshift(Gr,'qv')
 
-#         # Get the scalar flux
-#         with nogil:
-#             for i in xrange(imax):
-#                 for j in xrange(jmax):
-#                     ijk = i * istride + j * jstride + gw
-#                     ij = i * istride_2d + j
-#                     self.friction_velocity[ij] = self.ustar_
-#                     self.s_flux[ij] = entropyflux_from_thetaflux_qtflux(self.theta_flux, self.qt_flux[ij], Ref.p0_half[gw],
-#                                                                         DV.values[temp_shift+ijk], PV.values[qt_shift+ijk], DV.values[qv_shift+ijk])
+        # Get the scalar flux
+        print('Surface Scheme BOMEX: wrong flux - entropy instead of pot. temperature')
+        self.friction_velocity = self.ustar_
+        # self.s_flux[ij] = entropyflux_from_thetaflux_qtflux(self.theta_flux, self.qt_flux[ij], Ref.p0_half[gw],
+        #                     DV.values[temp_shift+ijk], PV.values[qt_shift+ijk], DV.values[qv_shift+ijk])
 
 
         print('!!! Surface Scheme BOMEX: wrong temperature & qv !!!')
@@ -525,7 +512,7 @@ cdef class SurfaceBomex(SurfaceBase):
             double windspeed = 0.0
 
         print('!!! Surface Scheme BOMEX: compute windspeed !!!')
-#         compute_windspeed(&Gr.dims, &PV.values[u_shift], &PV.values[v_shift], &windspeed[0], Ref.u0, Ref.v0, self.gustiness)
+        # compute_windspeed(&Gr.dims, &PV.values[u_shift], &PV.values[v_shift], &windspeed[0], Ref.u0, Ref.v0, self.gustiness)
         windspeed = 0.0
 
         # Get the shear stresses
@@ -555,87 +542,83 @@ cdef class SurfaceGabls(SurfaceBase):
         except:
             self.cooling_rate = 0.25
 
-#         self.L_fp = LH.L_fp
-#         self.Lambda_fp = LH.Lambda_fp
-#
+        # self.L_fp = LH.L_fp
+        # self.Lambda_fp = LH.Lambda_fp
+
         self.dry_case = True
 
         return
 
     cpdef initialize(self, Grid Gr, ReferenceState Ref, NetCDFIO_Stats NS):
-
         SurfaceBase.initialize(self,Gr,Ref,NS)
-
         return
 
 
-#     cpdef update(self, Grid.Grid Gr, ReferenceState.ReferenceState Ref, PrognosticVariables.PrognosticVariables PV,
+#     cpdef update(self, Grid Gr, ReferenceState Ref, PrognosticVariables PV,
 #                  DiagnosticVariables.DiagnosticVariables DV, TimeStepping.TimeStepping TS):
-#
-#         if Pa.sub_z_rank != 0:
-#             return
-#
-#         cdef:
-#             Py_ssize_t u_shift = PV.get_varshift(Gr, 'u')
-#             Py_ssize_t v_shift = PV.get_varshift(Gr, 'v')
-#             Py_ssize_t s_shift = PV.get_varshift(Gr, 's')
-#             Py_ssize_t t_shift = DV.get_varshift(Gr, 'temperature')
-#             Py_ssize_t th_shift = DV.get_varshift(Gr, 'theta')
-#             double [:] windspeed = np.zeros(Gr.dims.nlg[0]*Gr.dims.nlg[1], dtype=np.double, order='c')
-#
-#         compute_windspeed(&Gr.dims, &PV.values[u_shift], &PV.values[v_shift], &windspeed[0], Ref.u0, Ref.v0, self.gustiness)
-#
-#         cdef:
+    cpdef update(self, Grid Gr, ReferenceState Ref, PrognosticVariables PV, MeanVariables M1, TimeStepping.TimeStepping TS):
+        cdef:
+            Py_ssize_t u_shift = M1.get_varshift(Gr, 'u')
+            Py_ssize_t v_shift = M1.get_varshift(Gr, 'v')
+            # Py_ssize_t s_shift = M1.get_varshift(Gr, 's')
+            # Py_ssize_t t_shift = DV.get_varshift(Gr, 'temperature')
+            # Py_ssize_t th_shift = DV.get_varshift(Gr, 'theta')
+            Py_ssize_t th_shift = M1.get_varshift(Gr, 'theta')
+            double windspeed = 0.0
+
+        print('!!! Surface Scheme GABLS: compute windspeed wrong !!!')
+        # compute_windspeed(&Gr.dims, &PV.values[u_shift], &PV.values[v_shift], &windspeed[0], Ref.u0, Ref.v0, self.gustiness)
+
+        cdef:
 #             Py_ssize_t i,j, ijk, ij
-#             Py_ssize_t gw = Gr.dims.gw
+            Py_ssize_t gw = Gr.dims.gw
 #             Py_ssize_t imax = Gr.dims.nlg[0]
 #             Py_ssize_t jmax = Gr.dims.nlg[1]
 #             Py_ssize_t istride = Gr.dims.nlg[1] * Gr.dims.nlg[2]
 #             Py_ssize_t jstride = Gr.dims.nlg[2]
 #             Py_ssize_t istride_2d = Gr.dims.nlg[1]
-#
+
 #             double theta_rho_b, Nb2, Ri
-#             double zb = Gr.dims.dx[2] * 0.5
+            double zb = Gr.dims.dz * 0.5
 #             double [:] cm= np.zeros(Gr.dims.nlg[0]*Gr.dims.nlg[1], dtype=np.double, order='c')
-#             double ch=0.0
-#
-#
-#         self.T_surface = 265.0 - self.cooling_rate * TS.t/3600.0 # sst = theta_surface also
-#
-#
-#         cdef double theta_rho_g = theta_rho_c(Ref.Pg, self.T_surface, 0.0, 0.0)
-#         cdef double s_star = sd_c(Ref.Pg,self.T_surface)
-#
-#
-#         with nogil:
-#             for i in xrange(gw-1, imax-gw+1):
-#                 for j in xrange(gw-1,jmax-gw+1):
-#                     ijk = i * istride + j * jstride + gw
-#                     ij = i * istride_2d + j
-#                     theta_rho_b = DV.values[th_shift + ijk]
-#                     Nb2 = g/theta_rho_g*(theta_rho_b-theta_rho_g)/zb
-#                     Ri = Nb2 * zb* zb/(windspeed[ij] * windspeed[ij])
-#                     exchange_coefficients_byun(Ri,zb,self.z0, &cm[ij], &ch, &self.obukhov_length[ij])
-#                     self.s_flux[ij] = -ch * windspeed[ij] * (PV.values[s_shift+ijk] - s_star)
-#                     self.friction_velocity[ij] = sqrt(cm[ij]) * windspeed[ij]
-#             for i in xrange(gw, imax-gw):
-#                 for j in xrange(gw, jmax-gw):
-#                     ijk = i * istride + j * jstride + gw
-#                     ij = i * istride_2d + j
-#                     self.u_flux[ij] = -interp_2(cm[ij], cm[ij+istride_2d])*interp_2(windspeed[ij], windspeed[ij+istride_2d]) * (PV.values[u_shift + ijk] + Ref.u0)
-#                     self.v_flux[ij] = -interp_2(cm[ij], cm[ij+1])*interp_2(windspeed[ij], windspeed[ij+1]) * (PV.values[v_shift + ijk] + Ref.v0)
-#
-#         SurfaceBase.update(self, Gr, Ref, PV, DV, TS)
-#
-#         return
-#
-#
-#     cpdef stats_io(self, Grid.Grid Gr, NetCDFIO_Stats NS):
-#         SurfaceBase.stats_io(self, Gr, NS)
-#
-#         return
-#
-#
+            double cm = 0.0
+            double ch=0.0
+
+        self.T_surface = 265.0 - self.cooling_rate * TS.t/3600.0 # sst = theta_surface also
+
+        # cdef double theta_rho_g = theta_rho_c(Ref.Pg, self.T_surface, 0.0, 0.0)
+        # cdef double s_star = sd_c(Ref.Pg,self.T_surface)
+
+        # theta_rho_b = DV.values[th_shift + ijk]
+        # Nb2 = g/theta_rho_g*(theta_rho_b-theta_rho_g)/zb
+        # Ri = Nb2 * zb* zb/(windspeed[ij] * windspeed[ij])
+        # exchange_coefficients_byun(Ri,zb,self.z0, &cm[ij], &ch, &self.obukhov_length[ij])
+        # self.s_flux[ij] = -ch * windspeed[ij] * (PV.values[s_shift+ijk] - s_star)
+        # self.friction_velocity[ij] = sqrt(cm[ij]) * windspeed[ij]
+        theta_rho_b = M1.values[th_shift, gw]
+        # Nb2 = g/theta_rho_g*(theta_rho_b-theta_rho_g)/zb
+        # Ri = Nb2 * zb* zb/(windspeed * windspeed)
+        print('!!! Surface Scheme GABLS: compute exchange coefficienst by un !!!')
+        # exchange_coefficients_byun(Ri,zb,self.z0, &cm[ij], &ch, &self.obukhov_length[ij])
+        # self.s_flux[ij] = -ch * windspeed[ij] * (PV.values[s_shift+ijk] - s_star)
+        self.friction_velocity = sqrt(cm) * windspeed
+
+        # self.u_flux[ij] = -interp_2(cm[ij], cm[ij+istride_2d])*interp_2(windspeed[ij], windspeed[ij+istride_2d]) * (PV.values[u_shift + ijk] + Ref.u0)
+        # self.v_flux[ij] = -interp_2(cm[ij], cm[ij+1])*interp_2(windspeed[ij], windspeed[ij+1]) * (PV.values[v_shift + ijk] + Ref.v0)
+        self.u_flux = -cm * windspeed * (PV.values[u_shift,gw] + Ref.u0)
+        self.v_flux = -cm * windspeed * (PV.values[v_shift,gw] + Ref.v0)
+
+        # SurfaceBase.update(self, Gr, Ref, PV, DV, TS)
+        SurfaceBase.update(self, Gr, Ref, PV, M1, TS)
+
+        return
+
+
+    cpdef stats_io(self, Grid Gr, NetCDFIO_Stats NS):
+        SurfaceBase.stats_io(self, Gr, NS)
+        return
+
+
 # cdef class SurfaceDYCOMS_RF01(SurfaceBase):
 #     def __init__(self,namelist, LatentHeat LH):
 #         self.ft = 15.0
@@ -656,7 +639,7 @@ cdef class SurfaceGabls(SurfaceBase):
 #
 #         self.dry_case = False
 #
-#     cpdef initialize(self, Grid.Grid Gr, ReferenceState.ReferenceState Ref, NetCDFIO_Stats NS):
+#     cpdef initialize(self, Grid Gr, ReferenceState Ref, NetCDFIO_Stats NS):
 #         SurfaceBase.initialize(self,Gr,Ref,NS)
 #         self.windspeed = np.zeros(Gr.dims.nlg[0]*Gr.dims.nlg[1], dtype=np.double, order='c')
 #         self.T_surface = 292.5
@@ -664,7 +647,7 @@ cdef class SurfaceGabls(SurfaceBase):
 #         return
 #
 #
-#     cpdef update(self, Grid.Grid Gr, ReferenceState.ReferenceState Ref, PrognosticVariables.PrognosticVariables PV,
+#     cpdef update(self, Grid Gr, ReferenceState Ref, PrognosticVariables.PrognosticVariables PV,
 #                  DiagnosticVariables.DiagnosticVariables DV, TimeStepping.TimeStepping TS):
 #
 #         if Pa.sub_z_rank != 0:
@@ -720,7 +703,7 @@ cdef class SurfaceGabls(SurfaceBase):
 #         SurfaceBase.update(self, Gr, Ref, PV, DV,TS)
 #         return
 #
-#     cpdef stats_io(self, Grid.Grid Gr, NetCDFIO_Stats NS):
+#     cpdef stats_io(self, Grid Gr, NetCDFIO_Stats NS):
 #         SurfaceBase.stats_io(self, Gr, NS)
 #
 #         return
@@ -748,7 +731,7 @@ cdef class SurfaceGabls(SurfaceBase):
 #
 #         self.dry_case = False
 #
-#     cpdef initialize(self, Grid.Grid Gr, ReferenceState.ReferenceState Ref, NetCDFIO_Stats NS):
+#     cpdef initialize(self, Grid Gr, ReferenceState Ref, NetCDFIO_Stats NS):
 #         SurfaceBase.initialize(self,Gr,Ref,NS)
 #         self.windspeed = np.zeros(Gr.dims.nlg[0]*Gr.dims.nlg[1], dtype=np.double, order='c')
 #         self.T_surface = 292.5 # assuming same sst as DYCOMS RF01
@@ -756,7 +739,7 @@ cdef class SurfaceGabls(SurfaceBase):
 #         return
 #
 #
-#     cpdef update(self, Grid.Grid Gr, ReferenceState.ReferenceState Ref, PrognosticVariables.PrognosticVariables PV,
+#     cpdef update(self, Grid Gr, ReferenceState Ref, PrognosticVariables.PrognosticVariables PV,
 #                  DiagnosticVariables.DiagnosticVariables DV, TimeStepping.TimeStepping TS):
 #
 #         if Pa.sub_z_rank != 0:
@@ -817,7 +800,7 @@ cdef class SurfaceGabls(SurfaceBase):
 #
 #         return
 #
-#     cpdef stats_io(self, Grid.Grid Gr, NetCDFIO_Stats NS):
+#     cpdef stats_io(self, Grid Gr, NetCDFIO_Stats NS):
 #         SurfaceBase.stats_io(self, Gr, NS)
 #
 #         return
@@ -838,7 +821,7 @@ cdef class SurfaceGabls(SurfaceBase):
 #         return
 #
 #
-#     cpdef initialize(self, Grid.Grid Gr, ReferenceState.ReferenceState Ref, NetCDFIO_Stats NS):
+#     cpdef initialize(self, Grid Gr, ReferenceState Ref, NetCDFIO_Stats NS):
 #         SurfaceBase.initialize(self,Gr,Ref,NS)
 #
 #         self.cm = self.cm*(log(20.0/self.z0)/log(Gr.zl_half[Gr.dims.gw]/self.z0))**2
@@ -852,7 +835,7 @@ cdef class SurfaceGabls(SurfaceBase):
 #
 #         return
 #
-#     cpdef update(self, Grid.Grid Gr, ReferenceState.ReferenceState Ref, PrognosticVariables.PrognosticVariables PV,
+#     cpdef update(self, Grid Gr, ReferenceState Ref, PrognosticVariables.PrognosticVariables PV,
 #                  DiagnosticVariables.DiagnosticVariables DV, TimeStepping.TimeStepping TS):
 #
 #         if Pa.sub_z_rank != 0:
@@ -903,7 +886,7 @@ cdef class SurfaceGabls(SurfaceBase):
 #
 #
 #
-#     cpdef stats_io(self, Grid.Grid Gr, NetCDFIO_Stats NS):
+#     cpdef stats_io(self, Grid Gr, NetCDFIO_Stats NS):
 #         SurfaceBase.stats_io(self, Gr, NS)
 #         return
 #
@@ -938,7 +921,7 @@ cdef class SurfaceGabls(SurfaceBase):
 #
 #         return
 #
-#     cpdef initialize(self, Grid.Grid Gr, ReferenceState.ReferenceState Ref, NetCDFIO_Stats NS):
+#     cpdef initialize(self, Grid Gr, ReferenceState Ref, NetCDFIO_Stats NS):
 #         SurfaceBase.initialize(self,Gr,Ref,NS)
 #
 #         # Find the scalar transfer coefficient consistent with the vertical grid spacing
@@ -963,7 +946,7 @@ cdef class SurfaceGabls(SurfaceBase):
 #         return
 #
 #
-#     cpdef update(self, Grid.Grid Gr, ReferenceState.ReferenceState Ref, PrognosticVariables.PrognosticVariables PV,
+#     cpdef update(self, Grid Gr, ReferenceState Ref, PrognosticVariables.PrognosticVariables PV,
 #                  DiagnosticVariables.DiagnosticVariables DV, TimeStepping.TimeStepping TS):
 #
 #         if Pa.sub_z_rank != 0:
@@ -1026,7 +1009,7 @@ cdef class SurfaceGabls(SurfaceBase):
 #         return
 #
 #
-#     cpdef stats_io(self, Grid.Grid Gr, NetCDFIO_Stats NS):
+#     cpdef stats_io(self, Grid Gr, NetCDFIO_Stats NS):
 #         SurfaceBase.stats_io(self, Gr, NS)
 #
 #         return
@@ -1057,7 +1040,7 @@ cdef class SurfaceGabls(SurfaceBase):
 #
 #         return
 #
-#     cpdef initialize(self, Grid.Grid Gr, ReferenceState.ReferenceState Ref, NetCDFIO_Stats NS):
+#     cpdef initialize(self, Grid Gr, ReferenceState Ref, NetCDFIO_Stats NS):
 #         SurfaceBase.initialize(self,Gr,Ref,NS)
 #         # Set the initial sst value to the Fixed-SST case value (Tan et al 2016a, Table 1)
 #         if self.loc == 12:
@@ -1069,7 +1052,7 @@ cdef class SurfaceGabls(SurfaceBase):
 #         return
 #
 #
-#     cpdef update(self, Grid.Grid Gr, ReferenceState.ReferenceState Ref, PrognosticVariables.PrognosticVariables PV,
+#     cpdef update(self, Grid Gr, ReferenceState Ref, PrognosticVariables.PrognosticVariables PV,
 #                  DiagnosticVariables.DiagnosticVariables DV, TimeStepping.TimeStepping TS):
 #
 #         if Pa.sub_z_rank != 0:
@@ -1141,16 +1124,16 @@ cdef class SurfaceGabls(SurfaceBase):
 #         return
 #
 #
-#     cpdef stats_io(self, Grid.Grid Gr, NetCDFIO_Stats NS):
+#     cpdef stats_io(self, Grid Gr, NetCDFIO_Stats NS):
 #         SurfaceBase.stats_io(self, Gr, NS)
 #
 #         return
 #
 #
 
-# # Anderson, R. J., 1993: A Study of Wind Stress and Heat Flux over the Open
-# # Ocean by the Inertial-Dissipation Method. J. Phys. Oceanogr., 23, 2153--“2161.
-# # See also: ARPS documentation
-# cdef inline double compute_z0(double z1, double windspeed) nogil:
-#     cdef double z0 =z1*exp(-kappa/sqrt((0.4 + 0.079*windspeed)*1e-3))
-#     return z0
+# Anderson, R. J., 1993: A Study of Wind Stress and Heat Flux over the Open
+# Ocean by the Inertial-Dissipation Method. J. Phys. Oceanogr., 23, 2153--“2161.
+# See also: ARPS documentation
+cdef inline double compute_z0(double z1, double windspeed) nogil:
+    cdef double z0 =z1*exp(-kappa/sqrt((0.4 + 0.079*windspeed)*1e-3))
+    return z0
