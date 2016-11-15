@@ -124,9 +124,8 @@ cdef class TurbulenceBase:
         # (2) Buoyancy Flux: in w
         # --> mean buoyancy approximated as zero (accurate if <rho> agrees with the reference state)
 
-
-        # (3) Pressure ???
-        # ???
+        # (3) Pressure
+        # --> mean pressure gradient force is zero
 
         return
 
@@ -189,15 +188,14 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
         # self.plot_var2('difference',2,2,M2.tendencies[2,2,:],temp4[2,2,:],Gr,Ref,TS,M1,M2)
         # self.plot_var2('difference',2,3,M2.tendencies[2,3,:],temp4[2,3,:],Gr,Ref,TS,M1,M2)
         # self.plot_var2('difference',3,3,M2.tendencies[3,3,:],temp4[3,3,:],Gr,Ref,TS,M1,M2)
-
+        ## self.pressure_correlations_Cheng(Gr, M1, M2)
+        ## self.pressure_correlations_Mironov(Gr, M1, M2)
+        self.buoyancy_update(Gr, Ref, TS, M1, M2)
+        M2.plot_tendencies('04_buoyancy',Gr,TS)
         self.plot_all('uw', Gr, TS, M1, M2, temp2[0,2,:], 0, 2)
         self.plot_all('vw', Gr, TS, M1, M2, temp2[1,2,:], 1, 2)
         self.plot_all('ww', Gr, TS, M1, M2, temp2[2,2,:], 2, 2)
         self.plot_all('wth', Gr, TS, M1, M2, temp2[2,3,:], 2, 3)
-        ## self.pressure_correlations_Cheng(Gr, M1, M2)
-        ## self.pressure_correlations_Mironov(Gr, M1, M2)
-        # self.buoyancy_update(Gr, Ref, TS, M1, M2)
-        # M2.plot_tendencies('04_buoyancy',Gr,TS)
         return
 
 
@@ -875,30 +873,29 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
             double [:,:] M2_b = np.zeros((M1.nv,Gr.nzg),dtype=np.double,order='c')
             double [:,:,:] tendencies_M2 = self.tendencies_M2
 
-            int nth, nqt, m, k
-            int nw = M1.name_index['w']
+            int n_qt, m, k
+            int n_w = M1.name_index['w']
+            int n_th = M1.name_index['th']
             double L
             str var
 
         # Buoyancy Flux: in w
         if 'qt' in M1.name_index.keys():
-            nth = M1.name_index['th']
-            nqt = M1.name_index['qt']
+            n_qt = M1.name_index['qt']
             # nql = M1.name_index['qt'] --> !!
             # buoyancy[m,k] = <var'th_v'> + (1-ep)/ep*th_0*
             for var in M1.name_index.keys():
                 m = M1.name_index[var]
                 for k in xrange(Gr.nzg):
                     L = latent_heat(293.0)
-                    M2_b[m,k] = M2.values[m,nth,k] + (1-eps_v)/eps_v*th0[k]*M2.values[m,nqt,k] \
+                    M2_b[m,k] = M2.values[m,n_th,k] + (1-eps_v)/eps_v*th0[k]*M2.values[m,n_qt,k] \
                                     + ((L/cpd)*exner(p0[k]/p[k])**(Rd/cpd) - eps_vi*th0[k])*wql[k]
                     # ???? cpd correct in both cases ???
         else:
-            nth = M1.name_index['th']
             for var in M1.name_index.keys():
                 m = M1.name_index[var]
                 for k in xrange(Gr.nzg):
-                    M2_b[m,k] = M2.values[m,nth,k]
+                    M2_b[m,k] = M2.values[m,n_th,k]
 
         self.buoyancy = M2_b
 
@@ -909,21 +906,23 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
 
         for n in xrange(M2.nv):
             for k in xrange(Gr.nzg):
-                if n < nth:
-                    tendencies_M2[n,nw,k] -= g/th0[k]*self.buoyancy[n,k]
+                if n < n_w:
+                    tendencies_M2[n,n_w,k] += g/th0[k]*self.buoyancy[n,k]
+                elif n == n_w:
+                    tendencies_M2[n,n_w,k] += 2*g/th0[k]*self.buoyancy[n,k]
                 else:
-                    tendencies_M2[nw,n,k] -= g/th0[k]*self.buoyancy[n,k]
+                    tendencies_M2[n_w,n,k] += g/th0[k]*self.buoyancy[n,k]
 
         self.plot_var('buoyancy', self.buoyancy, Gr, TS, M1, M2)
         # with nogil:
         #     for n in xrange(M2.nv):
         #         for k in xrange(Gr.nzg):
-        #             if n < nth:
-        #                 M2.tendencies[n,nw,k] += tendencies_M2[n,nw,k]
-        #                 tendencies_M2[n,nw,k] = 0.0
+        #             if n < n_th:
+        #                 M2.tendencies[n,n_w,k] += tendencies_M2[n,n_w,k]
+        #                 tendencies_M2[n,n_w,k] = 0.0
         #             else:
-        #                 M2.tendencies[nw,n,k] += tendencies_M2[nw,n,k]
-        #                 tendencies_M2[nw,n,k] = 0.0
+        #                 M2.tendencies[n_w,n,k] += tendencies_M2[n_w,n,k]
+        #                 tendencies_M2[n_w,n,k] = 0.0
 
 
         return
