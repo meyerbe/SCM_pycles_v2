@@ -90,12 +90,10 @@ _ext = Extension('ThermodynamicsSA', ['ThermodynamicsSA.pyx'], include_dirs=incl
                  runtime_library_dirs=library_dirs)
 extensions.append(_ext)
 
-
 _ext = Extension('thermodynamic_functions', ['thermodynamic_functions.pyx'], include_dirs=include_path,
                  extra_compile_args=extra_compile_args, libraries=libraries, library_dirs=library_dirs,
                  runtime_library_dirs=library_dirs)
 extensions.append(_ext)
-
 
 _ext = Extension('ReferenceState', ['ReferenceState.pyx'], include_dirs=include_path,
                  extra_compile_args=extra_compile_args, libraries=libraries, library_dirs=library_dirs,
@@ -141,6 +139,22 @@ _ext = Extension('Damping', ['Damping.pyx'], include_dirs=include_path,
                  extra_compile_args=extra_compile_args, libraries=libraries, library_dirs=library_dirs,
                  runtime_library_dirs=library_dirs)
 extensions.append(_ext)
+
+_ext = Extension('Surface', ['Surface.pyx'], include_dirs=include_path,
+                 extra_compile_args=extra_compile_args, libraries=libraries, library_dirs=library_dirs,
+                 runtime_library_dirs=library_dirs)
+extensions.append(_ext)
+
+_ext = Extension('surface_functions', ['surface_functions.pyx'], include_dirs=include_path,
+                 extra_compile_args=extra_compile_args, libraries=libraries, library_dirs=library_dirs,
+                 runtime_library_dirs=library_dirs)
+extensions.append(_ext)
+
+# _ext = Extension('SurfaceBudget', ['SurfaceBudget.pyx'], include_dirs=include_path,
+#                  extra_compile_args=extra_compile_args, libraries=libraries, library_dirs=library_dirs,
+#                  runtime_library_dirs=library_dirs)
+# extensions.append(_ext)
+
 
 
 
@@ -208,21 +222,6 @@ extensions.append(_ext)
 #                  extra_compile_args=extra_compile_args, libraries=libraries, library_dirs=library_dirs,
 #                  runtime_library_dirs=library_dirs)
 # extensions.append(_ext)
-#
-
-#
-# _ext = Extension('Surface', ['Surface.pyx'], include_dirs=include_path,
-#                  extra_compile_args=extra_compile_args, libraries=libraries, library_dirs=library_dirs,
-#                  runtime_library_dirs=library_dirs)
-# extensions.append(_ext)
-#
-#
-# _ext = Extension('SurfaceBudget', ['SurfaceBudget.pyx'], include_dirs=include_path,
-#                  extra_compile_args=extra_compile_args, libraries=libraries, library_dirs=library_dirs,
-#                  runtime_library_dirs=library_dirs)
-# extensions.append(_ext)
-#
-
 #
 # _ext = Extension('Forcing', ['Forcing.pyx'], include_dirs=include_path,
 #                  extra_compile_args=extra_compile_args, libraries=libraries, library_dirs=library_dirs,
