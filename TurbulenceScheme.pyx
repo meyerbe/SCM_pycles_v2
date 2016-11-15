@@ -881,21 +881,33 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
 
         # Buoyancy Flux: in w
         if 'qt' in M1.name_index.keys():
+            print('!!! Turbulence buoyancy update: not correct ql-representation (wql wrong) !!!! ')
             n_qt = M1.name_index['qt']
             # nql = M1.name_index['qt'] --> !!
             # buoyancy[m,k] = <var'th_v'> + (1-ep)/ep*th_0*
             for var in M1.name_index.keys():
                 m = M1.name_index[var]
                 for k in xrange(Gr.nzg):
-                    L = latent_heat(293.0)
-                    M2_b[m,k] = M2.values[m,n_th,k] + (1-eps_v)/eps_v*th0[k]*M2.values[m,n_qt,k] \
-                                    + ((L/cpd)*exner(p0[k]/p[k])**(Rd/cpd) - eps_vi*th0[k])*wql[k]
+                    if m <= n_w:
+                        L = latent_heat(293.0)
+                        M2_b[m,k] = M2.values[m,n_th,k] + (1-eps_v)/eps_v*th0[k]*M2.values[m,n_qt,k] \
+                                    + ((L/cpd)*exner(p0[k]/p[k]) - eps_vi*th0[k])*wql[k]
+                    else:
+                        L = latent_heat(293.0)
+                        M2_b[m,k] = M2.values[n_th,m,k] + (1-eps_v)/eps_v*th0[k]*M2.values[m,n_qt,k] \
+                                    + ((L/cpd)*exner(p0[k]/p[k]) - eps_vi*th0[k])*wql[k]
                     # ???? cpd correct in both cases ???
         else:
             for var in M1.name_index.keys():
                 m = M1.name_index[var]
-                for k in xrange(Gr.nzg):
-                    M2_b[m,k] = M2.values[m,n_th,k]
+                if m <= n_w:
+                    print('buoyancy dry (a): ', m, n_th)
+                    for k in xrange(Gr.nzg):
+                        M2_b[m,k] = M2.values[m,n_th,k]
+                else:
+                    print('buoyancy dry (b): ', m, n_th)
+                    for k in xrange(Gr.nzg):
+                        M2_b[m,k] = M2.values[n_th,m,k]
 
         self.buoyancy = M2_b
 
