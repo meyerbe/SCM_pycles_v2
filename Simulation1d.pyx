@@ -22,6 +22,7 @@ cimport Diffusion
 cimport NetCDFIO
 from Thermodynamics import ThermodynamicsFactory
 from TurbulenceScheme import TurbulenceFactory
+from Surface import SurfaceFactory
 cimport Damping
 # # cimport TurbulenceScheme
 
@@ -47,6 +48,7 @@ class Simulation1d:
 
         self.SGS = SGSFactory(namelist)
         self.Diff = Diffusion.Diffusion()
+        self.Sur = SurfaceFactory(namelist)
 
         self.StatsIO = NetCDFIO.NetCDFIO_Stats()
         return
@@ -85,6 +87,7 @@ class Simulation1d:
 
         self.SGS.initialize(self.Gr, self.M1, self.M2)
         self.Diff.initialize(self.Gr, self.M1)
+        self.Sur.initialize(self.Gr, self.Ref, self.StatsIO)
         # self.M2.plot_tendencies('3', self.Gr, self.TS)
 
         print('Initialization completed!')

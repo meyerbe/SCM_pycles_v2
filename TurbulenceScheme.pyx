@@ -391,7 +391,7 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
                 # print(k, 'delta > 0.0', delta, lb, ld, l[k])
             else:
                 l[k] = lb
-                print(k, 'delta is zero', delta) #, lb, l[k])
+                # print(k, 'delta is zero', delta) #, lb, l[k])
             if lb != 0:
                 c1 = 0.019+0.051*l[k]/lb
             else:
