@@ -157,20 +157,16 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
 
     cpdef update_M2(self, Grid Gr, ReferenceState Ref, TimeStepping TS, PrognosticVariables.MeanVariables M1, PrognosticVariables.SecondOrderMomenta M2):
         print('Turbulence 2nd order: update')
-        cdef double [:,:,:] tend = self.tendencies_M2
+        cdef double [:,:,:] tendencies = self.tendencies_M2
         for m in xrange(M2.nv):
             for n in xrange(M2.nv):
                 for k in xrange(Gr.nzg):
-                    tend[m,n,k] = 0.0
+                    tendencies[m,n,k] = 0.0
         print('max M2.tend', np.amax(self.tendencies_M2))
 
         temp1 = M2.tendencies
 
         # (1) Advection
-        # (2) Pressure
-        # (3) Buoyancy
-        # (4) Diffusion
-        # (5) Third and higher order terms (first guess set to zero)
         M2.plot_tendencies('01_init',Gr,TS)
         self.advect_M2_local(Gr, Ref, TS, M1, M2)
         M2.plot_tendencies('02_advect',Gr,TS)
@@ -179,10 +175,13 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
         # self.plot_all('vw', Gr, TS, M1, M2, temp[1,2,:], 1, 2)
         # self.plot_all('ww', Gr, TS, M1, M2, temp[2,2,:], 2, 2)
         # self.plot_all('wth', Gr, TS, M1, M2, temp[2,3,:], 2, 3)
-        # self.pressure_correlations_Andre(Gr,Ref,TS,M1, M2)
-        # M2.plot_tendencies('03_pressureAndre',Gr,TS)
-        self.pressure_correlations_Golaz(Gr,Ref,TS,M1, M2)
-        M2.plot_tendencies('03_pressureGolaz',Gr,TS)
+        print('control after advection:', np.amax(self.tendencies_M2), np.amin(self.tendencies_M2))
+
+        # (2) Pressure
+        self.pressure_correlations_Andre(Gr,Ref,TS,M1, M2)
+        M2.plot_tendencies('03_pressureAndre',Gr,TS)
+        # self.pressure_correlations_Golaz(Gr,Ref,TS,M1, M2)
+        # M2.plot_tendencies('03_pressureGolaz',Gr,TS)
         # self.plot_var2('difference',0,0,M2.tendencies[0,0,:],temp4[0,0,:],Gr,Ref,TS,M1,M2)
         # self.plot_var2('difference',0,2,M2.tendencies[0,2,:],temp4[0,2,:],Gr,Ref,TS,M1,M2)
         # self.plot_var2('difference',2,2,M2.tendencies[2,2,:],temp4[2,2,:],Gr,Ref,TS,M1,M2)
@@ -190,12 +189,18 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
         # self.plot_var2('difference',3,3,M2.tendencies[3,3,:],temp4[3,3,:],Gr,Ref,TS,M1,M2)
         ## self.pressure_correlations_Cheng(Gr, M1, M2)
         ## self.pressure_correlations_Mironov(Gr, M1, M2)
+        print('control after pressure:', np.amax(self.tendencies_M2), np.amin(self.tendencies_M2))
+
+        # (3) Buoyancy
         self.buoyancy_update(Gr, Ref, TS, M1, M2)
         M2.plot_tendencies('04_buoyancy',Gr,TS)
         self.plot_all('uw', Gr, TS, M1, M2, temp2[0,2,:], 0, 2)
         self.plot_all('vw', Gr, TS, M1, M2, temp2[1,2,:], 1, 2)
         self.plot_all('ww', Gr, TS, M1, M2, temp2[2,2,:], 2, 2)
         self.plot_all('wth', Gr, TS, M1, M2, temp2[2,3,:], 2, 3)
+
+        # (4) Diffusion
+        # (5) Third and higher order terms (first guess set to zero)
         return
 
 
@@ -240,8 +245,6 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
                     # tendencies[m,n,k] = rho0_half[k]*0.5*(w[k+1]+w[k])*dzi2*(rho0_half[k+1]*M2.values[m,n,k+1]-rho0_half[k-1]*M2.values[m,n,k-1])
                     # tendencies[m,n,k] += - alpha0_half[k]*dzi*(flux[k]-flux[k-1])
                     tendencies[m,n,k] += - alpha0_half[k]*dzi*(flux[m,n,k]-flux[m,n,k-1])
-
-
 
         print('M2 advection tendencies:', np.amax(np.abs(tendencies)), np.amax(np.abs(self.tendencies_M2)) )
         self.plot_var2('advection_uu', 0,0,flux[0,0,:], tendencies[0,0,:], Gr, Ref, TS, M1, M2)
@@ -290,12 +293,12 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
         # # print('---- M2 advection tendencies:', np.amax(np.abs(tendencies)), np.amax(np.abs(self.tendencies_M2)) )
         # # self.plot_var('advection2', tendencies[2,:,:], Gr, Ref, TS, M1, M2)
 
+
         self.plot_var2('advection_ww2', 2,2,tendencies[2,2,:], tendencies[2,2,:], Gr, Ref, TS, M1, M2)
         self.plot_var2('advection_uw2', 0,2,tendencies[0,2,:], tendencies[0,2,:], Gr, Ref, TS, M1, M2)
         self.plot_var2('advection_wth2', 2,3,tendencies[2,3,:], tendencies[2,3,:], Gr, Ref, TS, M1, M2)
 
         M2.plot_tendencies('02b_advect',Gr,TS)
-
         return
 
 
@@ -391,7 +394,7 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
                 c1 = 0.019+0.051*l[k]/lb
             else:
                 c1 = 0.07           # ???? correct value?
-            print('c1', c1, 0.019+0.051)#, Gr.z[k], Gr.z_half[k])
+            # print('c1', c1, 0.019+0.051)#, Gr.z[k], Gr.z_half[k])
             epsilon[k] = c1*np.sqrt(tke[k]*tke[k]*tke[k])
             if np.isnan(epsilon[k]):
                 print('epsilon is nan', epsilon[k], k)
@@ -413,7 +416,6 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
                 P[m,w_index,k] = alpha*g*(M2_values[m,th_index,k])
                 P[w_index,m,k] = alpha*g*(M2_values[m,th_index,k])
             for k in xrange(nzg):
-                # M2.tendencies[n,n,k] += 2/3*( c4*epsilon[k] + c5*P_tke[k])
                 tendencies[m,m,k] += 2./3.*( c4*epsilon[k] + c5*P_tke[k] )
         # (3b) off-diagnoal elements
             for n in xrange(m,n_vel):
@@ -424,10 +426,8 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
                     #     print('....... P is nan, ', m,n,k)
                 for k in xrange(1,nzg):
                     if tke[k] > 0:
-                        # M2.tendencies[m,n,k] += -c4*epsilon[k]/tke[k]*M2.values[m,n,k] - c5*P[m,n,k]
                         tendencies[m,n,k] += -c4*epsilon[k]/tke[k]*M2_values[m,n,k] - c5*P[m,n,k]
                     else:
-                        # M2.tendencies[m,n,k] -= c5*P[m,n,k]     # c5=0
                         tendencies[m,n,k] -= c5*P[m,n,k]     # c5=0
         # if np.isnan(P).any():
         #     print('PPPPP: P is nan')
@@ -443,10 +443,8 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
                                       - M2_values[v_index,w_index,k]*(v[k]-v[k-1])*dzi
                 for k in xrange(1,nzg):
                     if tke[k] > 0:
-                        # M2.tendencies[n,th_index,k] += -c6*epsilon[k]/tke[k]*M2.values[n,th_index,k] - c7*P[n,th_index,k]
                         tendencies[n,th_index,k] += -c6*epsilon[k]/tke[k]*M2.values[n,th_index,k] - c7*P[n,th_index,k]
                     else:
-                        # M2.tendencies[i,th_index,k] -= c7*P[i,th_index,k]
                         tendencies[n,th_index,k] -= c7*P[n,th_index,k]
         if np.isnan(P).any():
             print('PPPPP: P is nan after')
@@ -466,14 +464,13 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
                 else:
                     P[w_index,qt_index,k] = alpha*g*M2.values[qt_index,th_index,k]
             for k in xrange(Gr.nzg-1):
-                # M2.tendencies[w_index,qt_index,k] = -c6*epsilon[k]/tke[k]*M2.values[w_index,qt_index,k] \
-                #                                     - c7*P[w_index,qt_index,k]
                 tendencies[w_index,qt_index,k] = -c6*epsilon[k]/tke[k]*M2.values[w_index,qt_index,k] \
                                                     - c7*P[w_index,qt_index,k]
         for m in xrange(n_vel):
             for n in xrange(n_vel):
                 for k in xrange(1,nzg):
                     M2.tendencies[m,n,k] += tendencies[m,n,k]
+                    tendencies[m,n,k] = 0.0
 
         self.plot_var2('pressure_uu', 0,0, tendencies[0,0,:], M2.tendencies[0,0,:], Gr, Ref, TS, M1, M2)
         self.plot_var2('pressure_vv', 1,1, tendencies[1,1,:], M2.tendencies[1,1,:], Gr, Ref, TS, M1, M2)
@@ -489,6 +486,8 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
         self.plot_var2('pressure_Ptke', 0,0, P_tke[:], tke[:], Gr, Ref, TS, M1, M2)
         self.plot_var2('pressure_eps', 0,2, epsilon[:], tendencies[0,2,:], Gr, Ref, TS, M1, M2)
 
+        print('Pressure Andre control:', np.amax(self.tendencies_M2), np.amin(self.tendencies_M2))
+        print(np.amax(tendencies), np.amin(tendencies))
         # time += 1
         return
 
@@ -510,9 +509,6 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
             Py_ssize_t qt_index
             Py_ssize_t n_vel = M1.nv_velocities
             double [:,:] M1_values = M1.values
-            # double [:] u = M1.values[u_index,:]
-            # double [:] v = M1.values[v_index,:]
-            # double [:] w = M1.values[w_index,:]
             double [:] th_v = np.zeros((Gr.nzg),dtype=np.double,order='c')
             double [:,:,:] M2_values = M2.values
             double [:,:,:] tendencies = self.tendencies_M2
@@ -607,8 +603,8 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
 
         # (5) Scalar Fluxes
             for k in xrange(gw,nzg-gw):
-                P[2,0,k] = g/th0_half[k]*M2_values[th_index,th_index,k]
-                P[m,0,k] -= M2_values[2,th_index,k]*(M1_values[m,k]-M1_values[m,k-1])*dzi
+                P[2,th_index,k] = g/th0_half[k]*M2_values[th_index,th_index,k]
+                P[m,th_index,k] -= M2_values[2,th_index,k]*(M1_values[m,k]-M1_values[m,k-1])*dzi
                 tendencies[m,th_index,k] -= c6/tau[k]*M2_values[m,th_index,k] - c7*P[m,0,k]
 
         if 'qt' in M1.name_index:
@@ -616,110 +612,14 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
             for k in xrange(gw,nzg-gw):
                 tendencies[2,qt_index,k] -= c6/tau[k]*M2_values[2,qt_index,k]
 
+        for m in xrange(n_vel):
+            for n in xrange(n_vel):
+                for k in xrange(1,nzg):
+                    M2.tendencies[m,n,k] += tendencies[m,n,k]
+                    tendencies[m,n,k] = 0.0
 
-        # karman = 0.35           # von Karman constant
-        # l0 = 15.                 # mixing length far above the ground, take 15m (Jieliu, 2011)
-        # for k in xrange(1,nzg-1):
-        #     lb = karman*k/(1+karman*k/l0)       # stable stratification; k>0 required
-        #     # print(k, 'lb', lb)
-        #     delta = (M1.values[th_index,k+1]-M1.values[th_index,k])*dzi
-        #     if delta > 0.0:
-        #         # print(k, 'delta > 0.0', delta)
-        #         ld = 0.75*(np.sqrt(tke[k]))*1/np.sqrt(alpha*g*delta)      # neutral
-        #         l[k] = np.minimum(lb,ld)
-        #     else:
-        #         print(k, 'delta is zero', delta)
-        #         l[k] = lb
-        #     # print('l[k]', l[k])
-        #     c1 = 0.019+0.051*l[k]/lb
-        #     # print('c1', c1)
-        #     epsilon[k] = c1*np.sqrt(tke[k]*tke[k]*tke[k])
-        #     # if epsilon[k] == 0.0 or np.isnan(epsilon[k]):
-        #     #     print('epsilon is zero or nan', epsilon[k], k)
-        #     #     print('c1, lb, ld, l[k], tke[k]: ', c1, lb, ld, l[k], tke[k], k)
-        #     if epsilon[k] == - float('Inf'):
-        #         print('espilon is -infinity: k, eps', k, Gr.nz, gw, epsilon[k], c1, lb, ld, l[k], tke[k])
-        #
-        # # if np.isnan(epsilon).any():
-        # #     print('PPPPP: epsilon is nan')
-        # print('eps 2:', np.amax(epsilon), np.amin(epsilon), np.isnan(epsilon).any())
-        # print('tke 3:', np.amax(tke), np.amin(tke), np.isnan(tke).any())
-        #
-        # # (3) Momentum Fluxes: generation rate and tendency
-        # # (3a) diagonal elements
-        # for m in xrange(n_vel):
-        #     for k in xrange(1,nzg):
-        #         P[m,w_index,k] = alpha*g*(M2_values[m,th_index,k])
-        #         P[w_index,m,k] = alpha*g*(M2_values[m,th_index,k])
-        #     for k in xrange(nzg):
-        #         tendencies[m,m,k] += 2./3.*( c4*epsilon[k] + c5*P_tke[k] )
-        # # (3b) off-diagnoal elements
-        #     for n in xrange(m,n_vel):
-        #         for k in xrange(1,nzg):
-        #             P[m,n,k] -= M2_values[m,w_index,k]*(M1.values[n,k]-M1.values[n,k-1])*dzi \
-        #                         + M2_values[n,w_index,k]*(M1.values[m,k]-M1.values[m,k-1])*dzi
-        #             # if np.isnan(P[m,n,k]):
-        #             #     print('....... P is nan, ', m,n,k)
-        #         for k in xrange(gw,nzg):
-        #             if tke[k] > 0:
-        #                 tendencies[m,n,k] += -c4*epsilon[k]/tke[k]*M2_values[m,n,k] - c5*P[m,n,k]
-        #             else:
-        #                 tendencies[m,n,k] -= c5*P[m,n,k]     # c5=0
-        # # if np.isnan(P).any():
-        # #     print('PPPPP: P is nan')
-        # # if np.isnan(M2.tendencies).any():
-        # #     print('PPPPP: M2.tend is nan')
-        #
-        # # (4) Heat Flux generation rate and tendency
-        # with nogil:
-        #     for n in xrange(n_vel):
-        #         for k in xrange(gw,nzg):
-        #             P[n,th_index,k] = alpha*g*M2_values[w_index,th_index,k] \
-        #                               - M2_values[u_index,w_index,k]*(u[k]-u[k-1])*dzi \
-        #                               - M2_values[v_index,w_index,k]*(v[k]-v[k-1])*dzi
-        #         for k in xrange(gw,nzg):
-        #             if tke[k] > 0:
-        #                 tendencies[n,th_index,k] += -c6*epsilon[k]/tke[k]*M2.values[n,th_index,k] - c7*P[n,th_index,k]
-        #             else:
-        #                 tendencies[n,th_index,k] -= c7*P[n,th_index,k]
-        # if np.isnan(P).any():
-        #     print('PPPPP: P is nan after')
-        # if np.isnan(P_tke).any():
-        #     print('PPPPP: P_tke is nan')
-        # if np.isnan(tke).any():
-        #     print('PPPPP: tke is nan')
-        # if np.isnan(tendencies).any():
-        #     print('PPPPP: tendencies is nan')
-        #
-        # # (5) Moisture Flux generation rate and tendency
-        # if 'qt' in M1.name_index:
-        #     qt_index = M1.name_index['qt']
-        #     for k in xrange(Gr.nzg-1):
-        #         if th_index < qt_index:
-        #             P[w_index,qt_index,k] = alpha*g*M2.values[th_index,qt_index,k]
-        #         else:
-        #             P[w_index,qt_index,k] = alpha*g*M2.values[qt_index,th_index,k]
-        #     for k in xrange(Gr.nzg-1):
-        #         tendencies[w_index,qt_index,k] = -c6*epsilon[k]/tke[k]*M2.values[w_index,qt_index,k] \
-        #                                             - c7*P[w_index,qt_index,k]
-        # for m in xrange(n_vel):
-        #     for n in xrange(n_vel):
-        #         for k in xrange(1,nzg):
-        #             M2.tendencies[m,n,k] += tendencies[m,n,k]
-        #
-        # self.plot_var2('pressure_uu', 0,0, tendencies[0,0,:], M2.tendencies[0,0,:], Gr, Ref, TS, M1, M2)
-        # self.plot_var2('pressure_vv', 1,1, tendencies[1,1,:], M2.tendencies[1,1,:], Gr, Ref, TS, M1, M2)
-        # self.plot_var2('pressure_ww', 2,2, tendencies[2,2,:], M2.tendencies[2,2,:], Gr, Ref, TS, M1, M2)
-        # self.plot_var2('pressure_uw', 0,2, tendencies[0,2,:], M2.tendencies[0,2,:], Gr, Ref, TS, M1, M2)
-        # self.plot_var2('pressure_wu', 2,0, tendencies[2,0,:], M2.tendencies[2,0,:], Gr, Ref, TS, M1, M2)
-        # self.plot_var2('pressure_wth', 2,3, tendencies[2,3,:], M2.tendencies[2,3,:], Gr, Ref, TS, M1, M2)
-        #
-        # self.plot_var2('pressure_Puu', 0,0, P[0,0,:], tendencies[0,0,:], Gr, Ref, TS, M1, M2)
-        # self.plot_var2('pressure_Pww', 2,2, P[2,2,:], tendencies[2,2,:], Gr, Ref, TS, M1, M2)
-        # self.plot_var2('pressure_Puw', 0,2, P[0,2,:], tendencies[0,2,:], Gr, Ref, TS, M1, M2)
-        # self.plot_var2('pressure_Pwth', 2,3, P[2,3,:], tendencies[2,3,:], Gr, Ref, TS, M1, M2)
-        # self.plot_var2('pressure_Ptke', 0,0, P_tke[:], tke[:], Gr, Ref, TS, M1, M2)
-        # self.plot_var2('pressure_eps', 0,2, epsilon[:], tendencies[0,2,:], Gr, Ref, TS, M1, M2)
+        print('Pressure Golaz control', np.amax(self.tendencies_M2), np.amin(self.tendencies_M2))
+
 
         return
 
@@ -855,9 +755,6 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
         return
 
 
-    cpdef stats_io(self):
-
-        return
 
 
 
@@ -871,13 +768,15 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
             double [:] p = p0               # !!! need actual pressure !!!
             double [:] wql = np.zeros((Gr.nzg),dtype=np.double,order='c')       # !!!! how to get <w'ql'>????
             double [:,:] M2_b = np.zeros((M1.nv,Gr.nzg),dtype=np.double,order='c')
-            double [:,:,:] tendencies_M2 = self.tendencies_M2
+            double [:,:,:] tendencies = self.tendencies_M2
 
             int n_qt, m, k
             int n_w = M1.name_index['w']
             int n_th = M1.name_index['th']
             double L
             str var
+
+        print('buoyancy update: ', np.amax(np.abs(tendencies)), np.amax(tendencies), np.amin(tendencies))
 
         # Buoyancy Flux: in w
         if 'qt' in M1.name_index.keys():
@@ -915,33 +814,53 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
         # for n in xrange(M1.nv):
         #     for k in xrange(Gr.nzg):
         #         M1.tendencies[n,k] -= g/th0[k]*self.buoyancy[n,k]
+        if np.isnan(self.buoyancy).any():
+            print('!!! Nan in self.buoyancy 1')
+        if np.isnan(tendencies).any():
+            print('!!! Nan in buoyancy update: tendencies 1', M2.nv, M2.tendencies.shape)
 
         for n in xrange(M2.nv):
             for k in xrange(Gr.nzg):
                 if n < n_w:
-                    tendencies_M2[n,n_w,k] += g/th0[k]*self.buoyancy[n,k]
+                    tendencies[n,n_w,k] += g/th0[k]*self.buoyancy[n,k]
                 elif n == n_w:
-                    tendencies_M2[n,n_w,k] += 2*g/th0[k]*self.buoyancy[n,k]
+                    tendencies[n,n_w,k] += 2*g/th0[k]*self.buoyancy[n,k]
                 else:
-                    tendencies_M2[n_w,n,k] += g/th0[k]*self.buoyancy[n,k]
+                    tendencies[n_w,n,k] += g/th0[k]*self.buoyancy[n,k]
 
+        if np.isnan(self.buoyancy).any():
+            print('!!! Nan in self.buoyancy 2')
+        if np.isnan(tendencies).any():
+            print('!!! Nan in buoyancy update: tendencies 2', M2.nv, M2.tendencies.shape)
+            if np.isnan(tendencies[0,:]).any():
+                print('!! Nan in tend[0,:]')
+            if np.isnan(tendencies[1,:]).any():
+                print('!! Nan in tend[1,:]')
+            if np.isnan(tendencies[2,:]).any():
+                print('!! Nan in tend[2,:]')
+            if np.isnan(tendencies[3,:]).any():
+                print('!! Nan in tend[3,:]')
+            if np.isnan(tendencies[4,:]).any():
+                print('!! Nan in tend[4,:]')
         self.plot_var('buoyancy', self.buoyancy, Gr, Ref, TS, M1, M2)
-        # with nogil:
-        #     for n in xrange(M2.nv):
-        #         for k in xrange(Gr.nzg):
-        #             if n < n_th:
-        #                 M2.tendencies[n,n_w,k] += tendencies_M2[n,n_w,k]
-        #                 tendencies_M2[n,n_w,k] = 0.0
-        #             else:
-        #                 M2.tendencies[n_w,n,k] += tendencies_M2[n_w,n,k]
-        #                 tendencies_M2[n_w,n,k] = 0.0
-
+        with nogil:
+            for n in xrange(M2.nv):
+                for k in xrange(Gr.nzg):
+                    if n <= n_w:
+                        M2.tendencies[n,n_w,k] += tendencies[n,n_w,k]
+                        tendencies[n,n_w,k] = 0.0
+                    else:
+                        M2.tendencies[n_w,n,k] += tendencies[n_w,n,k]
+                        tendencies[n_w,n,k] = 0.0
 
         return
 
 
 
 
+    cpdef stats_io(self):
+
+        return
 
 
 
