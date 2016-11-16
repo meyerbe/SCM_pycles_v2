@@ -220,15 +220,16 @@ cdef class SurfaceSullivanPatton(SurfaceBase):
     # cpdef update(self, Grid Gr, ReferenceState Ref, PrognosticVariables PV,
     #              DiagnosticVariables.DiagnosticVariables DV, TimeStepping.TimeStepping TS):
     cpdef update(self, Grid Gr, ReferenceState Ref, PrognosticVariables PV, MeanVariables M1, SecondOrderMomenta M2, TimeStepping.TimeStepping TS):
-        # Since this case is completely dry, the computation of entropy flux from sensible heat flux is very simple
+        # Since this case is completely dry, the liquid potential temperature is equivalent to the potential temperature
         cdef:
             Py_ssize_t gw = Gr.dims
             # Py_ssize_t temp_shift = DV.get_varshift(Gr, 'temperature')
         print('!!! Surface Scheme Sullivan: wrong temperature !!!')
 
-        temperature = 293.0
+        # no computation necessary, since theta-flux directly given and dry dynamics
         # self.s_flux = cpd * self.theta_flux*exner(Ref.p0_half[gw])/DV.values[temp_shift,gw]
-        self.s_flux = cpd * self.theta_flux*exner(Ref.p0_half[gw])/temperature
+        # temperature = 293.0
+        # self.s_flux = cpd * self.theta_flux*exner(Ref.p0_half[gw])/temperature
 
         cdef:
             Py_ssize_t u_index = M1.get_varshift(Gr, 'u')
@@ -240,13 +241,10 @@ cdef class SurfaceSullivanPatton(SurfaceBase):
         windspeed = np.fmax(np.sqrt(u*u + v*v), self.gustiness)
 
         # Get the shear stresses
-        print('!!! Surface Scheme Sullivan: compute ustar / friction velocity !!!')
         self.friction_velocity = compute_ustar(windspeed,self.buoyancy_flux, self.z0, Gr.dims.dz/2.0)
-        # self.friction_velocity = 1.0
         self.u_flux = -self.friction_velocity**2 / windspeed * (PV.values[u_index,gw] + Ref.u0)
         self.v_flux = -self.friction_velocity**2 / windspeed * (PV.values[v_index,gw] + Ref.v0)
 
-        # SurfaceBase.update(self, Gr, Ref, PV, DV, TS)
         SurfaceBase.update(self, Gr, Ref, PV, M1, M2, TS)
         return
 
