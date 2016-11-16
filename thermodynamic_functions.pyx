@@ -30,7 +30,7 @@ cpdef double pv_c(double p0, double qt, double qv):
 
 
 '''Potential Temperature'''
-cpdef double exner(const double p):
+cpdef double exner(const double p) nogil:
     return pow((p/p_tilde),kappa)
 
 # // Dry potential temperature
@@ -51,6 +51,13 @@ cpdef double thetav(const double p, const double T, const double qt):
 #     return T_tilde*exp((s-(1.0-qt)*sd_tilde - qt*sv_tilde)/cpm_c(qt))
 #     # return thetas_c(s, qt)
 
+# // Density Temperature
+cpdef double theta_rho(const double p0, const double T, const double qt, const double qv) nogil:
+    # return theta_rho_c(p0, T, qt, qv)
+    return density_temperature_c(T,qt,qv)/exner(p0)
+cpdef double density_temperature_c(const double T, const double qt, const double qv) nogil:
+    # return density_temperature_c(T, qt, qv)
+    return T * (1.0 - qt + eps_vi * qv)
 
 
 
@@ -203,13 +210,8 @@ cpdef eos_struct eos(double p0, double qt, double prog):
 
 
 
-# cpdef inline double density_temperature(const double T, const double qt, const double qv) nogil:
-#     return density_temperature_c(T, qt, qv)
-#
-# cpdef inline double theta_rho(const double p0, const double T, const double qt, const double qv) nogil:
-#     return theta_rho_c(p0, T, qt, qv)
-#
-#
+
+
 # cpdef inline double thetas_t(const double p0, const double T, const double qt, const double qv,
 #                       const double qc, const double L) nogil:
 #     return thetas_t_c( p0,  T, qt, qv, qc, L)

@@ -111,17 +111,17 @@ cdef class SurfaceBase:
     cpdef update(self, Grid Gr, ReferenceState Ref, PrognosticVariables PV, MeanVariables M1, SecondOrderMomenta M2, TimeStepping.TimeStepping TS):
         # DiagnosticVariables.DiagnosticVariables DV, TimeStepping.TimeStepping TS):
         cdef :
-            Py_ssize_t gw = Gr.dims
+            Py_ssize_t gw = Gr.gw
             # Py_ssize_t t_index = DV.get_varshift(Gr, 'temperature')
-            Py_ssize_t th_index = M1.get_varshift(Gr, 's')
-            Py_ssize_t u_index = M1.get_varshift(Gr,'u')
-            Py_ssize_t v_index = M1.get_varshift(Gr,'v')
-            Py_ssize_t w_index = M1.get_varshift(Gr,'w')
+            Py_ssize_t th_index = M1.name_index['th']
+            Py_ssize_t u_index = M1.name_index['u']
+            Py_ssize_t v_index = M1.name_index['v']
+            Py_ssize_t w_index = M1.name_index['w']
             Py_ssize_t ql_index, qt_index
             double [:] t_mean = np.zeros(Gr.nzg) #=  Pa.HorizontalMean(Gr, &DV.values[t_shift])
             # double cp_, lam, lv, pv, pd
             # double sv, sd
-            # double dzi = 1.0/Gr.dims.dz
+            # double dzi = Gr.dzi
             # double tendency_factor = Ref.alpha0_half[gw]/Ref.alpha0[gw-1]*dzi
 
         if self.dry_case:
@@ -142,7 +142,7 @@ cdef class SurfaceBase:
         else:
             print('Surface Base: get DV ql')
             # ql_index = DV.get_varshift(Gr,'ql')
-            qt_index = M1.get_varshift(Gr, 'qt')
+            qt_index = M1.name_index['qt']
             temperature = 293.0
             t_mean[gw] = temperature
             lam = 1.0
@@ -222,7 +222,7 @@ cdef class SurfaceSullivanPatton(SurfaceBase):
     cpdef update(self, Grid Gr, ReferenceState Ref, PrognosticVariables PV, MeanVariables M1, SecondOrderMomenta M2, TimeStepping.TimeStepping TS):
         # Since this case is completely dry, the liquid potential temperature is equivalent to the potential temperature
         cdef:
-            Py_ssize_t gw = Gr.dims
+            Py_ssize_t gw = Gr.gw
             # Py_ssize_t temp_shift = DV.get_varshift(Gr, 'temperature')
         print('!!! Surface Scheme Sullivan: wrong temperature !!!')
 
@@ -232,8 +232,8 @@ cdef class SurfaceSullivanPatton(SurfaceBase):
         # self.s_flux = cpd * self.theta_flux*exner(Ref.p0_half[gw])/temperature
 
         cdef:
-            Py_ssize_t u_index = M1.get_varshift(Gr, 'u')
-            Py_ssize_t v_index = M1.get_varshift(Gr, 'v')
+            Py_ssize_t u_index = M1.name_index['u']
+            Py_ssize_t v_index = M1.name_index['v']
             double windspeed = 0.0
             double u = M1.values[u_index,gw] + Ref.u0
             double v = M1.values[v_index,gw] + Ref.v0
@@ -241,7 +241,7 @@ cdef class SurfaceSullivanPatton(SurfaceBase):
         windspeed = np.fmax(np.sqrt(u*u + v*v), self.gustiness)
 
         # Get the shear stresses
-        self.friction_velocity = compute_ustar(windspeed,self.buoyancy_flux, self.z0, Gr.dims.dz/2.0)
+        self.friction_velocity = compute_ustar(windspeed,self.buoyancy_flux, self.z0, Gr.dz/2.0)
         self.u_flux = -self.friction_velocity**2 / windspeed * (PV.values[u_index,gw] + Ref.u0)
         self.v_flux = -self.friction_velocity**2 / windspeed * (PV.values[v_index,gw] + Ref.v0)
 
@@ -279,8 +279,8 @@ cdef class SurfaceSoares(SurfaceBase):
         # self.buoyancy_flux = g * ((self.theta_flux + (eps_vi-1.0)*(self.theta_surface*self.qt_flux[ij] + self.qt_surface *self.theta_flux))
         #                       /(self.theta_surface*(1.0 + (eps_vi-1)*self.qt_surface)))     # adopted from Bomex ??
         # Sullivan:
-        T0 = Ref.p0_half[Gr.dims] * Ref.alpha0_half[Gr.dims]/Rd
-        self.buoyancy_flux = self.theta_flux * exner(Ref.p0_half[Gr.dims]) * g /T0
+        T0 = Ref.p0_half[Gr.gw] * Ref.alpha0_half[Gr.gw]/Rd
+        self.buoyancy_flux = self.theta_flux * exner(Ref.p0_half[Gr.gw]) * g /T0
 
         return
 
@@ -292,14 +292,14 @@ cdef class SurfaceSoares(SurfaceBase):
     cpdef update(self, Grid Gr, ReferenceState Ref, PrognosticVariables PV, MeanVariables M1, SecondOrderMomenta M2, TimeStepping.TimeStepping TS):
         # Since this case is completely dry, the computation of entropy flux from sensible heat flux is very simple
         cdef:
-            Py_ssize_t gw = Gr.dims
+            Py_ssize_t gw = Gr.gw
             # Py_ssize_t imax = Gr.dims.nlg[0]
             # Py_ssize_t jmax = Gr.dims.nlg[1]
             # Py_ssize_t istride = Gr.dims.nlg[1] * Gr.dims.nlg[2]
             # Py_ssize_t jstride = Gr.dims.nlg[2]
             # Py_ssize_t istride_2d = Gr.dims.nlg[1]
             # Py_ssize_t temp_shift = DV.get_varshift(Gr, 'temperature')
-            Py_ssize_t th_index = PV.get_varshift(Gr, 's')
+            Py_ssize_t th_index = M1.name_index['th']
             Py_ssize_t qt_index, qv_index
 
         # Scalar fluxes (adopted from Bomex)
@@ -313,8 +313,8 @@ cdef class SurfaceSoares(SurfaceBase):
 
         # Windspeed (adopted from Sullivan, equivalent to Bomex)
         cdef:
-            Py_ssize_t u_index = M1.get_varshift(Gr, 'u')
-            Py_ssize_t v_index = M1.get_varshift(Gr, 'v')
+            Py_ssize_t u_index = M1.name_index['u']
+            Py_ssize_t v_index = M1.name_index['v']
             double windspeed = 0.0
             double u = M1.values[u_index,gw] + Ref.u0
             double v = M1.values[v_index,gw] + Ref.v0
@@ -368,10 +368,10 @@ cdef class SurfaceBomex(SurfaceBase):
 #             return
 
         cdef :
-            Py_ssize_t gw = Gr.dims
+            Py_ssize_t gw = Gr.gw
             # Py_ssize_t temp_shift = DV.get_varshift(Gr, 'temperature')
-            Py_ssize_t th_index = M1.get_varshift(Gr, 's')
-            Py_ssize_t qt_index = M1.get_varshift(Gr, 'qt')
+            Py_ssize_t th_index = M1.name_index['th']
+            Py_ssize_t qt_index = M1.name_index['qt']
             # Py_ssize_t qv_index = DV.get_varshift(Gr,'qv')
 
         # Get the scalar flux
@@ -392,8 +392,8 @@ cdef class SurfaceBomex(SurfaceBase):
         self.th_flux = 0.0
 
         cdef:
-            Py_ssize_t u_index = M1.get_varshift(Gr, 'u')
-            Py_ssize_t v_index = M1.get_varshift(Gr, 'v')
+            Py_ssize_t u_index = M1.name_index['u']
+            Py_ssize_t v_index = M1.name_index['v']
             double windspeed = 0.0
             double u = M1.values[u_index,gw] + Ref.u0
             double v = M1.values[v_index,gw] + Ref.v0
@@ -443,21 +443,21 @@ cdef class SurfaceGabls(SurfaceBase):
 #                  DiagnosticVariables.DiagnosticVariables DV, TimeStepping.TimeStepping TS):
     cpdef update(self, Grid Gr, ReferenceState Ref, PrognosticVariables PV, MeanVariables M1, SecondOrderMomenta M2, TimeStepping.TimeStepping TS):
         cdef:
-            Py_ssize_t gw = Gr.dims
+            Py_ssize_t gw = Gr.gw
 
             # Py_ssize_t s_shift = M1.get_varshift(Gr, 's')
             # Py_ssize_t t_index = DV.get_varshift(Gr, 'temperature')
             # Py_ssize_t th_index = DV.get_varshift(Gr, 'theta')
-            Py_ssize_t th_index = M1.get_varshift(Gr, 'theta')
-            Py_ssize_t u_index = M1.get_varshift(Gr, 'u')
-            Py_ssize_t v_index = M1.get_varshift(Gr, 'v')
+            Py_ssize_t th_index = M1.name_index['th']
+            Py_ssize_t u_index = M1.name_index['u']
+            Py_ssize_t v_index = M1.name_index['v']
             double u = M1.values[u_index,gw] + Ref.u0
             double v = M1.values[v_index,gw] + Ref.v0
 
             double windspeed = 0.0
 
             # double theta_rho_b, Nb2, Ri
-            double zb = Gr.dims.dz * 0.5
+            double zb = Gr.dz * 0.5
             # double [:] cm= np.zeros(Gr.dims.nlg[0]*Gr.dims.nlg[1], dtype=np.double, order='c')
             double cm = 0.0
             double ch=0.0
