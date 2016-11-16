@@ -81,7 +81,7 @@ class Simulation1d:
 
         self.MA.initialize(self.Gr, self.M1)
         self.SA.initialize(self.Gr, self.M1)
-        self.Turb.initialize(self.Gr, self.M1)
+        self.Turb.initialize(self.Gr, self.M1, self.M2)
 
         self.SGS.initialize(self.Gr, self.M1, self.M2)
         self.Diff.initialize(self.Gr, self.M1)

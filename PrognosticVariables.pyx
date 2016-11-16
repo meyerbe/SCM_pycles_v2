@@ -422,8 +422,8 @@ cdef class SecondOrderMomenta:
         self.var_index = {}         # key = name of variables (u,v,w,th,qt,p)
         self.units = {}
         self.nv = 0                 # M2.nv = M1.nv+1 (additional variable: pressure); M2.nv=len(M2.var_index)
-        self.nv_scalars = 0
-        self.nv_velocities = 0
+        self.nv_scalars = 0         # number of scalar (co-)variances and scalar fluxes
+        self.nv_velocities = 0      # number of velocity (co-)variances
         self.var_type = np.array([],dtype=np.int,order='c')
         self.bc_type = np.expand_dims(np.array([0],dtype=np.double,order='c'),axis=1,)
         return
