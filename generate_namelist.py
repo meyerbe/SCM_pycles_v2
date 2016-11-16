@@ -96,10 +96,13 @@ def SullivanPatton():
     namelist['diffusion']['qt_entropy_source'] = False
 
     namelist['momentum_transport'] = {}
-    namelist['momentum_transport']['order'] = 7
+    namelist['momentum_transport']['order'] = 2
+
+    namelist['turbulence'] = {}
+    namelist['turbulence']['scheme'] = '2nd_order'
 
     namelist['scalar_transport'] = {}
-    namelist['scalar_transport']['order'] = 7
+    namelist['scalar_transport']['order'] = 2
 
     namelist['damping'] = {}
     namelist['damping']['scheme'] = 'Rayleigh'

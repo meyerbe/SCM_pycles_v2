@@ -29,8 +29,10 @@ include 'parameters.pxi'
 
 def InitializationFactory(namelist):
         casename = namelist['meta']['casename']
-        # if casename == 'SullivanPatton':
-        #     return InitSullivanPatton
+        if casename == 'SullivanPatton':
+            print('!!! Initialized like Soares !!!')
+            # return InitSullivanPatton()
+            return InitSoares()
         # elif casename == 'StableBubble':
         #     return InitStableBubble
         # elif casename == 'SaturatedBubble':
@@ -219,8 +221,6 @@ cdef class InitSoares(InitializationBase):
         # #     e_varshift = PV.get_varshift(Gr, 'e')
         # #     for k in xrange(Gr.nzg):
         # #       PV.values[e_varshift + k] = 0.0
-
-
 
         return
 
