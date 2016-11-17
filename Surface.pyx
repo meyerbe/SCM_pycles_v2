@@ -27,6 +27,17 @@ import numpy as np
 include "parameters.pxi"
 
 
+'''Description'''
+# - SurfaceBase:
+#       - computes the latent (lhf) and sensible heat flux (shf), which are only necessary if the SurfaceBudget is employed
+#       - computes b_flux (necessary for obukhov-length)
+#       - computes the obukhov-length (necessary for the computation of the exchange coefficients in GABLS and CGILS)
+# - Surface"Case":
+#       - computes th_l-flux, qt-flux, which serve as boundary conditions for M2
+#       - computes the u-flux, v-flux from the friction velocity and windspeed
+#       - computes the friction velocity and windspeed
+''
+
 # cdef extern from "thermodynamic_functions.h":
 #     inline double theta_rho_c(double p0, double T,double qt, double qv) nogil
 # cdef extern from "surface.h":
@@ -47,21 +58,9 @@ def SurfaceFactory(namelist):
         if casename == 'SullivanPatton':
             # return SurfaceSullivanPatton(LH)
             return SurfaceSullivanPatton()
-        # elif casename == 'Bomex':
-        #     return SurfaceBomex(LH)
-        # elif casename == 'Gabls':
-        #     return SurfaceGabls(namelist,LH)
-        # elif casename == 'DYCOMS_RF01':
-        #     return SurfaceDYCOMS_RF01(namelist, LH)
-        # elif casename == 'DYCOMS_RF02':
-        #     return SurfaceDYCOMS_RF02(namelist, LH)
-        # elif casename == 'Rico':
-        #     return SurfaceRico(LH)
-        # elif casename == 'CGILS':
-        #     return SurfaceCGILS(namelist, LH, Par)
-        # elif casename == 'ZGILS':
-        #     return SurfaceZGILS(namelist, LH, Par)
-        # elif casename == 'DCBLSoares':
+        elif casename == 'Bomex':
+            # return SurfaceBomex(LH)
+            return SurfaceBomex()
         if casename == 'DCBLSoares':
             # return SurfaceSoares(LH)
             return SurfaceSoares()
@@ -120,23 +119,17 @@ cdef class SurfaceBase:
             Py_ssize_t ql_index, qt_index
             double [:] t_mean = np.zeros(Gr.nzg) #=  Pa.HorizontalMean(Gr, &DV.values[t_shift])
             # double cp_, lam, lv, pv, pd
-            # double sv, sd
-            # double dzi = Gr.dzi
-            # double tendency_factor = Ref.alpha0_half[gw]/Ref.alpha0[gw-1]*dzi
 
         if self.dry_case:
             # Sensible Heat Flux: shf = Q-flux * rho0 = (cpd * T-flux) *rho0 = (cpd * (th-flux * exner(p)) ) * rho0
             self.shf = cpd * self.th_flux * exner(Ref.p0_half[gw]) * Ref.rho0_half[gw]
             # self.shf = self.s_flux * Ref.rho0_half[gw] * temperature#DV.values[t_index,gw]
             print('!!! not correct temperature in Surface Base update !!!')
-            temperature = 293.0
-            t_mean[gw] = temperature
-            self.b_flux = self.shf * g * Ref.alpha0_half[gw]/cpd/t_mean[gw]
-            self.obukhov_length = -self.friction_velocity * self.friction_velocity * self.friction_velocity /self.b_flux/vkb
+            # temperature = 293.0
+            # t_mean[gw] = temperature
+            # self.b_flux = self.shf * g * Ref.alpha0_half[gw]/cpd/t_mean[gw]
+            # self.obukhov_length = -self.friction_velocity * self.friction_velocity * self.friction_velocity /self.b_flux/vkb
 
-            # PV.tendencies[u_index,gw] +=  self.u_flux * tendency_factor
-            # PV.tendencies[v_index,gw] +=  self.v_flux * tendency_factor
-            # PV.tendencies[th_index,gw] +=  self.th_flux * tendency_factor
             M2.tendencies[u_index,w_index,gw] +=  self.u_flux
             M2.tendencies[v_index,w_index,gw] +=  self.v_flux
             M2.tendencies[w_index,th_index,gw] +=  self.th_flux
@@ -165,10 +158,6 @@ cdef class SurfaceBase:
             #               (self.shf + (eps_vi-1.0)*cp_*t_mean[gw]*self.lhf/lv)
             # self.obukhov_length = -self.friction_velocity *self.friction_velocity *self.friction_velocity / self.b_flux/vkb
 
-            # PV.tendencies[u_index,gw] +=  self.u_flux * tendency_factor
-            # PV.tendencies[v_index,gw] +=  self.v_flux * tendency_factor
-            # PV.tendencies[th_index,gw] +=  self.th_flux * tendency_factor
-            # PV.tendencies[qt_index,gw] +=  self.qt_flux * tendency_factor
             M2.tendencies[u_index,w_index,gw] +=  self.u_flux
             M2.tendencies[v_index,w_index,gw] +=  self.v_flux
             M2.tendencies[w_index,th_index,gw] +=  self.th_flux
@@ -257,6 +246,7 @@ cdef class SurfaceSoares(SurfaceBase):
         # self.qt_flux = 2.5e-5 # 1/s
         self.z0 = 0.001         # m (Roughness length)
         self.gustiness = 0.001  # m/s, minimum surface windspeed for determination of u*
+        self.dry_case = True
         return
 
     # @cython.boundscheck(False)  #Turn off numpy array index bounds checking
@@ -281,26 +271,13 @@ cdef class SurfaceSoares(SurfaceBase):
     # @cython.wraparound(False)
     # @cython.cdivision(True)
     # update adopted and modified from Sullivan + Bomex
-    # cpdef update(self, Grid Gr, ReferenceState Ref, PrognosticVariables PV, DiagnosticVariables.DiagnosticVariables DV, TimeStepping.TimeStepping TS):
     cpdef update(self, Grid Gr, ReferenceState Ref, PrognosticVariables PV, MeanVariables M1, SecondOrderMomenta M2, TimeStepping.TimeStepping TS):
-        # Since this case is completely dry, the computation of entropy flux from sensible heat flux is very simple
+        # Since this case is completely dry, the liquid potential temperature is equivalent to the potential temperature
+        # --> no computation necessary, since theta-flux directly prescribed
         cdef:
             Py_ssize_t gw = Gr.gw
-            # Py_ssize_t imax = Gr.dims.nlg[0]
-            # Py_ssize_t jmax = Gr.dims.nlg[1]
-            # Py_ssize_t istride = Gr.dims.nlg[1] * Gr.dims.nlg[2]
-            # Py_ssize_t jstride = Gr.dims.nlg[2]
-            # Py_ssize_t istride_2d = Gr.dims.nlg[1]
-            # Py_ssize_t temp_shift = DV.get_varshift(Gr, 'temperature')
-            Py_ssize_t th_index = M1.name_index['th']
-            Py_ssize_t qt_index, qv_index
-
-        # Scalar fluxes (adopted from Bomex)
-        temperature = 293.0
-        print('!!! Surface Base Soares: wrong temperature, surface flux s_flux --> th_flux !!!')
-        # Sullivan
-        # self.s_flux = cpd * self.theta_flux*exner(Ref.p0_half[gw])/DV.values[temp_shift,gw]
-        self.s_flux = cpd * self.theta_flux*exner(Ref.p0_half[gw])/temperature
+            # Py_ssize_t th_index = M1.name_index['th']
+            # Py_ssize_t qt_index, qv_index
         # Bomex (entropy flux includes qt flux)
         # self.s_flux = entropyflux_from_thetaflux_qtflux(self.theta_flux, self.qt_flux, Ref.p0_half[gw], DV.values[temp_shift,gw], PV.values[qt_shift,gw], DV.values[qv_shift,gw])
 
@@ -314,9 +291,8 @@ cdef class SurfaceSoares(SurfaceBase):
         # compute_windspeed(&Gr.dims, &PV.values[u_index], &PV.values[v_index], &windspeed[0],Ref.u0, Ref.v0,self.gustiness)
         windspeed = np.fmax(np.sqrt(u*u + v*v), self.gustiness)
 
-       # Surface Values: friction velocity, obukhov lenght (adopted from Sullivan, since same Surface parameters prescribed)
-        print('Surface Base Soares: compute friction velocity !!!')
-       #  self.friction_velocity = compute_ustar(windspeed,self.buoyancy_flux,self.z0, Gr.dims.dx[2]/2.0)
+       # Surface Values: friction velocity (adopted from Sullivan, since same Surface parameters prescribed)
+        self.friction_velocity = compute_ustar(windspeed,self.buoyancy_flux, self.z0, Gr.dz/2.0)
 
         # Get the shear stresses (adopted from Sullivan, since same Surface parameters prescribed)
         self.u_flux = -self.friction_velocity**2 / windspeed * (PV.values[u_index,gw] + Ref.u0)

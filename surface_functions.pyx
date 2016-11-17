@@ -3,6 +3,8 @@
 
 import numpy as np
 cimport numpy as np
+# math modules act only on scalars, numpy modules can be applied on whole arrays and matrices
+from math import atan, sqrt, log
 
 from Grid cimport Grid
 include 'parameters.pxi'
@@ -16,10 +18,10 @@ cpdef inline double psi_m_unstable(double zeta, double zeta0):
     cdef:
         # const double x = np.pow((1.0 - gamma_m * zeta),0.25)
         # const double x0 = pow((1.0 - gamma_m * zeta0), 0.25)
-        # double psi_m = 2.0 * log((1.0 + x)/(1.0 + x0)) + log((1.0 + x*x)/(1.0 + x0 * x0))-2.0*np.atan(x)+2.0*np.atan(x0)
+        # double psi_m = 2.0 * log((1.0 + x)/(1.0 + x0)) + log((1.0 + x*x)/(1.0 + x0 * x0))-2.0*np.arctan(x)+2.0*np.arctan(x0)
         double x = (1.0 - gamma_m * zeta)**0.25
         double x0 = (1.0 - gamma_m * zeta0)**0.25
-        double psi_m = 2.0 * np.log((1.0 + x)/(1.0 + x0)) + np.log((1.0 + x*x)/(1.0 + x0 * x0))-2.0*np.atan(x)+2.0*np.atan(x0)
+        double psi_m = 2.0 * log((1.0 + x)/(1.0 + x0)) + log((1.0 + x*x)/(1.0 + x0 * x0))-2.0*atan(x)+2.0*atan(x0)
     return psi_m
 
 cpdef inline double psi_h_unstable(double zeta, double zeta0):
@@ -28,9 +30,9 @@ cpdef inline double psi_h_unstable(double zeta, double zeta0):
         # const double y0 = np.sqrt(1.0 - gamma_h * zeta0 )
         # double psi_h = 2.0 * np.log((1.0 + y)/(1.0+y0))
     cdef:
-        double y = np.sqrt(1.0 - gamma_h * zeta )
-        double y0 = np.sqrt(1.0 - gamma_h * zeta0 )
-        double psi_h = 2.0 * np.log((1.0 + y)/(1.0+y0))
+        double y = sqrt(1.0 - gamma_h * zeta )
+        double y0 = sqrt(1.0 - gamma_h * zeta0 )
+        double psi_h = 2.0 * log((1.0 + y)/(1.0+y0))
     return psi_h
 
 cpdef inline double psi_m_stable(double zeta, double zeta0):
@@ -47,7 +49,7 @@ cpdef double compute_ustar(double windspeed, double buoyancy_flux, double z0, do
     cdef:
         double lmo, zeta, zeta0, psi_m, ustar
         double ustar0, ustar1, ustar_new, f0, f1, delta_ustar
-        double logz = np.log(zb/z0)
+        double logz = log(zb/z0)
 
     #//use neutral condition as first guess
     ustar0 = windspeed * vkb/logz

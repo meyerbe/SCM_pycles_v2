@@ -354,7 +354,7 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
         print('Turb.update_M2 pressure', np.amax(tendencies))
 
         # print('eps 1: ', np.amax(epsilon), np.amin(epsilon), np.isnan(epsilon).any())
-        print('tke 1: ', np.amax(tke), np.amin(tke), np.amax(tke[gw:nzg]), np.amin(tke[gw:nzg]))
+        # print('tke 1: ', np.amax(tke), np.amin(tke), np.amax(tke[gw:nzg]), np.amin(tke[gw:nzg]))
         print('M2.values: ', np.amin(M2.values[0:2,0:2,:]), np.isnan(M2.values).any())
 
         # (1) TKE and TKE generation rate
@@ -370,7 +370,7 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
             if tke[k] < 0.0:
                 print(k, 'tke is negative', tke[k])
 
-        print('tke 2: ', np.amax(tke), np.amin(tke), np.amax(tke[gw:nzg]), np.amin(tke[gw:nzg]), np.isnan(tke).any())
+        # print('tke 2: ', np.amax(tke), np.amin(tke), np.amax(tke[gw:nzg]), np.amin(tke[gw:nzg]), np.isnan(tke).any())
         if np.isnan(tke).any():
             print('tke 2: tke is nan')
         print('P_tke:', np.amax(P_tke), np.amin(P_tke), np.isnan(P_tke).any())
@@ -404,8 +404,8 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
             # if epsilon[k] == - float('Inf'):
             #     print('espilon is -infinity: k, eps', k, Gr.nz, gw, epsilon[k], c1, lb, ld, l[k], tke[k])
 
-        print('eps 2:', np.amax(epsilon), np.amin(epsilon), np.isnan(epsilon).any(), np.isnan(epsilon[1:nzg-1]).any())
-        print('tke 3:', np.amax(tke), np.amin(tke), np.isnan(tke).any())
+        # print('eps 2:', np.amax(epsilon), np.amin(epsilon), np.isnan(epsilon).any(), np.isnan(epsilon[1:nzg-1]).any())
+        # print('tke 3:', np.amax(tke), np.amin(tke), np.isnan(tke).any())
 
         # (3) Momentum Fluxes: generation rate and tendency
         # (3a) buoyancy & diagonal elements
