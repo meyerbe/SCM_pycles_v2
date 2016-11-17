@@ -217,11 +217,11 @@ cdef class SurfaceSullivanPatton(SurfaceBase):
             Py_ssize_t gw = Gr.gw
             Py_ssize_t u_index = M1.name_index['u']
             Py_ssize_t v_index = M1.name_index['v']
-            double windspeed = 0.0
             double u = M1.values[u_index,gw] + Ref.u0
             double v = M1.values[v_index,gw] + Ref.v0
+            double windspeed = np.fmax(np.sqrt(u*u + v*v), self.gustiness)
         # compute_windspeed(&Gr.dims, &PV.values[u_shift], &PV.values[v_shift], &windspeed,Ref.u0, Ref.v0,self.gustiness)
-        windspeed = np.fmax(np.sqrt(u*u + v*v), self.gustiness)
+
 
         # Get the shear stresses
         self.friction_velocity = compute_ustar(windspeed,self.buoyancy_flux, self.z0, Gr.dz/2.0)
@@ -285,11 +285,11 @@ cdef class SurfaceSoares(SurfaceBase):
         cdef:
             Py_ssize_t u_index = M1.name_index['u']
             Py_ssize_t v_index = M1.name_index['v']
-            double windspeed = 0.0
             double u = M1.values[u_index,gw] + Ref.u0
             double v = M1.values[v_index,gw] + Ref.v0
+            double windspeed = np.fmax(np.sqrt(u*u + v*v), self.gustiness)
         # compute_windspeed(&Gr.dims, &PV.values[u_index], &PV.values[v_index], &windspeed[0],Ref.u0, Ref.v0,self.gustiness)
-        windspeed = np.fmax(np.sqrt(u*u + v*v), self.gustiness)
+
 
        # Surface Values: friction velocity (adopted from Sullivan, since same Surface parameters prescribed)
         self.friction_velocity = compute_ustar(windspeed,self.buoyancy_flux, self.z0, Gr.dz/2.0)
@@ -309,7 +309,7 @@ cdef class SurfaceSoares(SurfaceBase):
 
 
 
-
+'''BOMEX'''
 cdef class SurfaceBomex(SurfaceBase):
     # def __init__(self,  LatentHeat LH):
     def __init__(self):
@@ -321,7 +321,6 @@ cdef class SurfaceBomex(SurfaceBase):
     cpdef initialize(self, Grid Gr, ReferenceState Ref, NetCDFIO_Stats NS):
         SurfaceBase.initialize(self,Gr,Ref,NS)
         self.qt_flux = np.add(self.qt_flux,5.2e-5) # m/s
-
         self.theta_flux = 8.0e-3 # K m/s
         self.ustar_ = 0.28 #m/s
         self.theta_surface = 299.1 #K
@@ -333,9 +332,6 @@ cdef class SurfaceBomex(SurfaceBase):
     # cpdef update(self, Grid Gr, ReferenceState Ref, PrognosticVariables PV,
     #              DiagnosticVariables.DiagnosticVariables DV, TimeStepping.TimeStepping TS):
     cpdef update(self, Grid Gr, ReferenceState Ref, PrognosticVariables PV, MeanVariables M1, SecondOrderMomenta M2, TimeStepping.TimeStepping TS):
-#         if Pa.sub_z_rank != 0:
-#             return
-
         cdef :
             Py_ssize_t gw = Gr.gw
             # Py_ssize_t temp_shift = DV.get_varshift(Gr, 'temperature')
@@ -344,32 +340,22 @@ cdef class SurfaceBomex(SurfaceBase):
             # Py_ssize_t qv_index = DV.get_varshift(Gr,'qv')
 
         # Get the scalar flux
-        print('Surface Scheme BOMEX: wrong flux - entropy instead of pot. temperature')
+        print('!!! Surface Scheme BOMEX: wrong th-flux, wrong temperature & qv !!!')
+        print('Surface Scheme BOMEX: compute liquid pot. temp. flux from prescribed dry pot. temp. flux')
         self.friction_velocity = self.ustar_
+        # self.th_flux = ...
         # self.s_flux[ij] = entropyflux_from_thetaflux_qtflux(self.theta_flux, self.qt_flux[ij], Ref.p0_half[gw],
         #                     DV.values[temp_index+ijk], PV.values[qt_index+ijk], DV.values[qv_index+ijk])
+        self.th_flux = self.theta_flux
 
-
-        print('!!! Surface Scheme BOMEX: wrong temperature & qv !!!')
-        temperature = 293.0
-        qv = 0.0
-        self.friction_velocity = self.ustar_
-        # self.s_flux = entropyflux_from_thetaflux_qtflux(self.theta_flux, self.qt_flux, Ref.p0_half[gw],
-                        # DV.values[temp_index,gw], PV.values[qt_index,gw], DV.values[qv_index,gw])
-        # self.th_flux = entropyflux_from_thetaflux_qtflux(self.theta_flux, self.qt_flux, Ref.p0_half[gw],
-        #                 temperature, PV.values[qt_index,gw], qv)
-        self.th_flux = 0.0
-
+        # Get the shear stresses
         cdef:
             Py_ssize_t u_index = M1.name_index['u']
             Py_ssize_t v_index = M1.name_index['v']
-            double windspeed = 0.0
             double u = M1.values[u_index,gw] + Ref.u0
             double v = M1.values[v_index,gw] + Ref.v0
+            double windspeed = np.fmax(np.sqrt(u*u + v*v), self.gustiness)
         # compute_windspeed(&Gr.dims, &PV.values[u_shift], &PV.values[v_shift], &windspeed[0], Ref.u0, Ref.v0, self.gustiness)
-        windspeed = np.fmax(np.sqrt(u*u + v*v), self.gustiness)
-
-        # Get the shear stresses
         self.u_flux = -self.ustar_**2/windspeed * (PV.values[u_index, gw] + Ref.u0)
         self.v_flux = -self.ustar_**2/windspeed * (PV.values[v_index, gw] + Ref.v0)
 
@@ -384,6 +370,7 @@ cdef class SurfaceBomex(SurfaceBase):
         return
 
 
+'''GABLS'''
 cdef class SurfaceGabls(SurfaceBase):
     # def __init__(self, namelist,  LatentHeat LH):
     def __init__(self, namelist):
@@ -413,26 +400,20 @@ cdef class SurfaceGabls(SurfaceBase):
     cpdef update(self, Grid Gr, ReferenceState Ref, PrognosticVariables PV, MeanVariables M1, SecondOrderMomenta M2, TimeStepping.TimeStepping TS):
         cdef:
             Py_ssize_t gw = Gr.gw
-
-            # Py_ssize_t s_shift = M1.get_varshift(Gr, 's')
             # Py_ssize_t t_index = DV.get_varshift(Gr, 'temperature')
-            # Py_ssize_t th_index = DV.get_varshift(Gr, 'theta')
             Py_ssize_t th_index = M1.name_index['th']
             Py_ssize_t u_index = M1.name_index['u']
             Py_ssize_t v_index = M1.name_index['v']
             double u = M1.values[u_index,gw] + Ref.u0
             double v = M1.values[v_index,gw] + Ref.v0
-
-            double windspeed = 0.0
+            double windspeed = np.fmax(np.sqrt(u*u + v*v), self.gustiness)
+            # compute_windspeed(&Gr.dims, &PV.values[u_shift], &PV.values[v_shift], &windspeed[0], Ref.u0, Ref.v0, self.gustiness)
 
             # double theta_rho_b, Nb2, Ri
             double zb = Gr.dz * 0.5
             # double [:] cm= np.zeros(Gr.dims.nlg[0]*Gr.dims.nlg[1], dtype=np.double, order='c')
             double cm = 0.0
             double ch=0.0
-
-        # compute_windspeed(&Gr.dims, &PV.values[u_shift], &PV.values[v_shift], &windspeed[0], Ref.u0, Ref.v0, self.gustiness)
-        windspeed = np.fmax(np.sqrt(u*u + v*v), self.gustiness)
 
         self.T_surface = 265.0 - self.cooling_rate * TS.t/3600.0 # sst = theta_surface also
 
