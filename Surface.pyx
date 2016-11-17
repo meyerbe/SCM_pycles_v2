@@ -51,22 +51,20 @@ include "parameters.pxi"
 
 # def SurfaceFactory(namelist, LatentHeat LH):
 def SurfaceFactory(namelist):
-        try:
-            casename = namelist['meta']['casename']
-        except:
-            casename = 'None'
+        casename = namelist['meta']['casename']
         if casename == 'SullivanPatton':
-            # return SurfaceSullivanPatton(LH)
             return SurfaceSullivanPatton()
         elif casename == 'Bomex':
             # return SurfaceBomex(LH)
             return SurfaceBomex()
         if casename == 'DCBLSoares':
             # return SurfaceSoares(LH)
+            print('call Surface Soares')
             return SurfaceSoares()
         # elif casename == 'DCBLSoares_moist':
         #     return SurfaceSoares_moist(LH)
         else:
+            print('calling Surface None')
             return SurfaceNone()
 
 
