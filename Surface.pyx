@@ -125,10 +125,12 @@ cdef class SurfaceBase:
             # double tendency_factor = Ref.alpha0_half[gw]/Ref.alpha0[gw-1]*dzi
 
         if self.dry_case:
+            # Sensible Heat Flux: shf = Q-flux * rho0 = (cpd * T-flux) *rho0 = (cpd * (th-flux * exner(p)) ) * rho0
+            self.shf = cpd * self.th_flux * exner(Ref.p0_half[gw]) * Ref.rho0_half[gw]
+            # self.shf = self.s_flux * Ref.rho0_half[gw] * temperature#DV.values[t_index,gw]
+            print('!!! not correct temperature in Surface Base update !!!')
             temperature = 293.0
             t_mean[gw] = temperature
-            print('!!! not correct temperature in Surface Base update !!!')
-            self.shf = self.s_flux * Ref.rho0_half[gw] * temperature#DV.values[t_index,gw]
             self.b_flux = self.shf * g * Ref.alpha0_half[gw]/cpd/t_mean[gw]
             self.obukhov_length = -self.friction_velocity * self.friction_velocity * self.friction_velocity /self.b_flux/vkb
 
@@ -206,8 +208,8 @@ cdef class SurfaceNone(SurfaceBase):
 cdef class SurfaceSullivanPatton(SurfaceBase):
     def __init__(self):
         self.theta_flux = 0.24  # K m/s
-        self.z0 = 0.1           #m (Roughness length)
-        self.gustiness = 0.001  #m/s, minimum surface windspeed for determination of u*
+        self.z0 = 0.1           # m (Roughness length)
+        self.gustiness = 0.001  # m/s, minimum surface windspeed for determination of u*
         self.dry_case = True
         return
 
@@ -221,17 +223,9 @@ cdef class SurfaceSullivanPatton(SurfaceBase):
     #              DiagnosticVariables.DiagnosticVariables DV, TimeStepping.TimeStepping TS):
     cpdef update(self, Grid Gr, ReferenceState Ref, PrognosticVariables PV, MeanVariables M1, SecondOrderMomenta M2, TimeStepping.TimeStepping TS):
         # Since this case is completely dry, the liquid potential temperature is equivalent to the potential temperature
+        # --> no computation necessary, since theta-flux directly given and dry dynamics
         cdef:
             Py_ssize_t gw = Gr.gw
-            # Py_ssize_t temp_shift = DV.get_varshift(Gr, 'temperature')
-        print('!!! Surface Scheme Sullivan: wrong temperature !!!')
-
-        # no computation necessary, since theta-flux directly given and dry dynamics
-        # self.s_flux = cpd * self.theta_flux*exner(Ref.p0_half[gw])/DV.values[temp_shift,gw]
-        # temperature = 293.0
-        # self.s_flux = cpd * self.theta_flux*exner(Ref.p0_half[gw])/temperature
-
-        cdef:
             Py_ssize_t u_index = M1.name_index['u']
             Py_ssize_t v_index = M1.name_index['v']
             double windspeed = 0.0
@@ -259,8 +253,10 @@ cdef class SurfaceSullivanPatton(SurfaceBase):
 # like in Bomex case: surface heat and moisture flux constant and prescribed
 cdef class SurfaceSoares(SurfaceBase):
     def __init__(self):
-        self.z0 = 0.001 #m (Roughness length)
-        self.gustiness = 0.001 #m/s, minimum surface windspeed for determination of u*
+        self.theta_flux = 0.06  # K m/s
+        # self.qt_flux = 2.5e-5 # 1/s
+        self.z0 = 0.001         # m (Roughness length)
+        self.gustiness = 0.001  # m/s, minimum surface windspeed for determination of u*
         return
 
     # @cython.boundscheck(False)  #Turn off numpy array index bounds checking
@@ -271,9 +267,6 @@ cdef class SurfaceSoares(SurfaceBase):
 
         self.theta_surface = 300.0 # K
         # self.qt_surface = 5.0e-3 # kg/kg
-
-        self.theta_flux = 0.06 # K m/s
-        # self.qt_flux = 2.5e-5 # m/s
 
         # Bomex:
         # self.buoyancy_flux = g * ((self.theta_flux + (eps_vi-1.0)*(self.theta_surface*self.qt_flux[ij] + self.qt_surface *self.theta_flux))
