@@ -109,7 +109,7 @@ class Simulation1d:
             print('time:', self.TS.t)
             self.M1.plot('1_start', self.Gr, self.TS)
             self.M1.plot_tendencies('1_start', self.Gr, self.TS)
-            self.M2.plot_nogw('1_start', self.Gr, self.TS)
+            # self.M2.plot_nogw('1_start', self.Gr, self.TS)
             self.M2.plot('1_start', self.Gr, self.TS)
             self.M2.plot_tendencies('1_start', self.Gr, self.TS)
 
@@ -149,13 +149,13 @@ class Simulation1d:
             self.M2.plot_tendencies('control', self.Gr, self.TS)
             self.TS.update()
             self.M1.plot('before_bcs', self.Gr, self.TS)
-            self.M2.plot_nogw('before_bcs', self.Gr, self.TS)
+            # self.M2.plot_nogw('before_bcs', self.Gr, self.TS)
             self.M2.plot('before_bcs', self.Gr, self.TS)
             self.M1.update_boundary_conditions(self.Gr)
             self.M2.update_boundary_conditions(self.Gr)
             self.M1.plot('end', self.Gr, self.TS)
             self.M1.plot_tendencies('end', self.Gr, self.TS)
-            self.M2.plot_nogw('end', self.Gr, self.TS)
+            # self.M2.plot_nogw('end', self.Gr, self.TS)
             self.M2.plot('end', self.Gr, self.TS)
 
             # (3) IO

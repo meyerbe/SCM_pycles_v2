@@ -192,8 +192,8 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
         print('control after pressure:', np.amax(self.tendencies_M2), np.amin(self.tendencies_M2))
 
         # (3) Buoyancy
-        self.buoyancy_update(Gr, Ref, TS, M1, M2)
-        M2.plot_tendencies('04_buoyancy',Gr,TS)
+        # self.buoyancy_update(Gr, Ref, TS, M1, M2)
+        # M2.plot_tendencies('04_buoyancy',Gr,TS)
         self.plot_all('uw', Gr, TS, M1, M2, temp2[0,2,:], 0, 2)
         self.plot_all('vw', Gr, TS, M1, M2, temp2[1,2,:], 1, 2)
         self.plot_all('ww', Gr, TS, M1, M2, temp2[2,2,:], 2, 2)
@@ -262,7 +262,7 @@ cdef class Turbulence2ndOrder(TurbulenceBase):
         print('Turb.update_M2 after advection by M1', np.amax(tendencies))
 
         M2.plot_tendencies('02a_advect',Gr,TS)
-        M2.plot_nogw_tendencies('02a_advect',Gr,TS)
+        # M2.plot_nogw_tendencies('02a_advect',Gr,TS)
 
         # (ii) advection by M2
         #     u,v,w,th,qt: on w-grid

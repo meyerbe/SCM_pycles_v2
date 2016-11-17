@@ -179,7 +179,7 @@ cdef class InitSoares(InitializationBase):
             theta[k] = 297.3 + 2.0/1000.0 * (Gr.z[k])
 
 
-        # # (ii) Velocities & Entropy & Moisture
+        # (ii) Velocities & Moisture
         cdef:
             double qt = 0.0
             double ql = 0.0
@@ -222,6 +222,75 @@ cdef class InitSoares(InitializationBase):
         # #     for k in xrange(Gr.nzg):
         # #       PV.values[e_varshift + k] = 0.0
 
+        return
+
+
+
+
+cdef class InitSullivanPatton(InitializationBase):
+    def __init__(self):
+        print('Initializng Sullivan Patton')
+        return
+
+    cpdef initialize_reference(self, Grid Gr, ReferenceState Ref, NetCDFIO_Stats NS):
+        #Generate the reference profiles
+        Ref.Pg = 1.0e5  #Pressure at ground
+        Ref.Tg = 300.0  #Temperature at ground
+        Ref.qtg = 0.0   #Total water mixing ratio at surface
+        Ref.u0 = 1.0  # velocities removed in Galilean transformation
+        Ref.v0 = 0.0
+
+        Ref.initialize(Gr, NS)
+
+    cpdef initialize_profiles(self, Grid Gr, ReferenceState Ref, TimeStepping TS, MeanVariables M1, SecondOrderMomenta M2, NetCDFIO_Stats NS):
+        # (1) Generate initial perturbations (here we are generating more than we need)
+            # np.random.seed(Pa.rank)
+        cdef:
+            Py_ssize_t k
+            double [:] theta_pert = np.random.random_sample(Gr.nzg)
+            double theta_pert_
+            # double temp
+
+        # (2) Initialize Mean Variables
+        #       Get the variable number for each of the velocity components
+        cdef:
+            Py_ssize_t u_index = M1.name_index['u']
+            Py_ssize_t v_index = M1.name_index['v']
+            Py_ssize_t w_index = M1.name_index['w']
+            Py_ssize_t th_index = M1.name_index['th']
+            # Py_ssize_t e_varshift
+            double [:] theta = np.empty((Gr.nzg),dtype=np.double,order='c')
+            double [:] p0 = Ref.p0_half
+
+
+        # (i) Theta (potential temperature) profile
+        for k in xrange(Gr.nzg):
+            if Gr.zl_half[k] <=  974.0:
+                theta[k] = 300.0
+            elif Gr.zl_half[k] <= 1074.0:
+                theta[k] = 300.0 + (Gr.zl_half[k] - 974.0) * 0.08
+            else:
+                theta[k] = 308.0 + (Gr.zl_half[k] - 1074.0) * 0.003
+        # Now set the entropy prognostic variable including a potential temperature perturbation
+        for k in xrange(Gr.nzg):
+            if Gr.zl_half[k] < 200.0:
+                theta_pert_ = (theta_pert[k] - 0.5)* 0.1
+            else:
+                theta_pert_ = 0.0
+            # temp = (theta[k] + theta_pert_)*exner_c(RS.p0_half[k])
+            M1.values[th_index,k] = (theta[k] + theta_pert_)*exner(p0[k])
+
+
+        # (ii) Velocities & Moisture
+        for k in xrange(Gr.nzg):
+            M1.values[u_index,k] = 1.0 - Ref.u0
+            M1.values[v_index,k] = 0.0 - Ref.v0
+            M1.values[w_index,k] = 0.0
+
+        # if 'e' in PV.name_index:
+        #     e_varshift = PV.get_varshift(Gr, 'e')
+        #     for k in xrange(Gr.nzg):
+        #         PV.values[e_varshift,k] = 0.0
         return
 
 

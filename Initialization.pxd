@@ -36,6 +36,14 @@ cdef class InitSoares(InitializationBase):
     # cpdef initialize_io(self, NetCDFIO_Stats Stats)
     # cpdef update_surface(self, MeanVariables MV)
 
+cdef class InitSullivanPatton(InitializationBase):
+    cpdef initialize_reference(self, Grid Gr, ReferenceState Ref, NetCDFIO_Stats NS)
+    cpdef initialize_profiles(self, Grid Gr, ReferenceState Ref, TimeStepping TS, MeanVariables M1, SecondOrderMomenta M2, NetCDFIO_Stats NS)
+    # cpdef initialize_surface(self, Grid Gr, ReferenceState Ref )
+    # cpdef initialize_io(self, NetCDFIO_Stats Stats)
+    # cpdef update_surface(self, MeanVariables MV)
+
+
 
 cdef class InitTest(InitializationBase):
     cpdef initialize_reference(self, Grid Gr, ReferenceState Ref, NetCDFIO_Stats NS)
