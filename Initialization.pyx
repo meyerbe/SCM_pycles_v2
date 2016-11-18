@@ -140,7 +140,8 @@ cdef class InitSoares(InitializationBase):
         Ref.Pg = 1.0e5      # Pressure at ground (Soares)
         Ref.Tg = 300.0      # Temperature at ground (Soares)
         Ref.qtg = 5e-3      # Total water mixing ratio at surface: qt = 5 g/kg (Soares)
-        Ref.u0 = 0.01       # velocities removed in Galilean transformation (Soares: u = 0.01 m/s, IOP: 0.0 m/s)
+        # Ref.u0 = 0.01       # velocities removed in Galilean transformation (Soares: u = 0.01 m/s, IOP: 0.0 m/s)
+        Ref.u0 = 0.0       # velocities removed in Galilean transformation (Soares: u = 0.01 m/s, IOP: 0.0 m/s)
         Ref.v0 = 0.0        # (Soares: v = 0.0 m/s)
 
         Ref.initialize(Gr, NS)
@@ -194,8 +195,8 @@ cdef class InitSoares(InitializationBase):
             # # M1.values[th_index,k] = entropy_from_tp(Ref.p0_half[k],temp,qt,ql,qi)               # s = Thermodynamics.entropy(p_half[k],temperature_half[k],self.qtg,ql_half[k],qi_half[k])
             # M1.values[th_index,k] = temp
             M1.values[th_index,k] = theta[k]
-            M1.values[u_index,k] = 0.0
-            M1.values[v_index,k] = 0.0
+            M1.values[u_index,k] = 0.0 - Ref.u0
+            M1.values[v_index,k] = 0.0 - Ref.v0
             M1.values[w_index,k] = 0.0
 
         if 'qt' in M1.name_index:
