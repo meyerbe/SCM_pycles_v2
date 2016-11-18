@@ -122,7 +122,7 @@ cdef class SurfaceBase:
             # Sensible Heat Flux: shf = Q-flux * rho0 = (cpd * T-flux) *rho0 = (cpd * (th-flux * exner(p)) ) * rho0
             self.shf = cpd * self.th_flux * exner(Ref.p0_half[gw]) * Ref.rho0_half[gw]
             # self.shf = self.s_flux * Ref.rho0_half[gw] * temperature#DV.values[t_index,gw]
-            print('!!! not correct temperature in Surface Base update !!!')
+            print('!!! no b_flux, obukhov_length in Surface Base update !!!')
             # temperature = 293.0
             # t_mean[gw] = temperature
             # self.b_flux = self.shf * g * Ref.alpha0_half[gw]/cpd/t_mean[gw]

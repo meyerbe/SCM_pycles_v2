@@ -135,7 +135,6 @@ class Simulation1d:
             self.M2.plot_tendencies('2_before_Turb',self.Gr,self.TS)
             self.Turb.update_M2(self.Gr, self.Ref, self.TS, self.M1, self.M2)
             self.M2.plot_tendencies('3_after_Turb',self.Gr,self.TS)
-            # # ??? surface fluxes ??? (--> in SGS or MD/SD scheme?)
             self.Sur.update(self.Gr, self.Ref, self.PV, self.M1, self.M2, self.TS)
             self.M2.plot_tendencies('4_after_Surface',self.Gr,self.TS)
 
